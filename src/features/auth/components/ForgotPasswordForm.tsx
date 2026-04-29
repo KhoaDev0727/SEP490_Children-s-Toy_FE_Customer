@@ -1,0 +1,262 @@
+"use client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { authApi } from "@/features/auth/services/auth-api";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
+
+const forgotSchema = z.object({
+  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
+});
+
+const resetSchema = z.object({
+  otpCode: z
+    .string()
+    .min(1, "Mã OTP là bắt buộc")
+    .length(6, "Mã OTP gồm 6 chữ số")
+    .regex(/^\d{6}$/, "Mã OTP chỉ gồm chữ số"),
+  newPassword: z
+    .string()
+    .min(8, "Tối thiểu 8 ký tự")
+    .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
+    .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
+    .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
+    .regex(/[^a-zA-Z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
+  confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
+}).refine((d) => d.newPassword === d.confirmPassword, {
+  message: "Mật khẩu không khớp",
+  path: ["confirmPassword"],
+});
+
+type ForgotFormValues = z.infer<typeof forgotSchema>;
+type ResetFormValues = z.infer<typeof resetSchema>;
+
+type Step = "email" | "reset";
+
+export default function ForgotPasswordForm() {
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const router = useRouter();
+
+  const forgotForm = useForm<ForgotFormValues>({ resolver: zodResolver(forgotSchema) });
+  const resetForm = useForm<ResetFormValues>({ resolver: zodResolver(resetSchema) });
+
+  const onSendOtp = async (data: ForgotFormValues) => {
+    setIsSending(true);
+    try {
+      await authApi.forgotPassword(data);
+      setEmail(data.email);
+      setStep("reset");
+      toast.success("Mã OTP đã được gửi đến email của bạn.");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message ?? "Không thể gửi OTP. Vui lòng thử lại.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const onResetPassword = async (data: ResetFormValues) => {
+    setIsResetting(true);
+    try {
+      await authApi.resetPassword({ email, ...data });
+      toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
+      router.push("/login");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message ?? "Đặt lại mật khẩu thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+      <div className="w-full max-w-md sm:pt-10 mx-auto mb-5 px-6 lg:px-0">
+        <Link
+          href="/login"
+          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Quay lại đăng nhập
+        </Link>
+      </div>
+
+      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6 lg:px-0">
+        <div>
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
+            </div>
+            <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
+              Quên mật khẩu
+            </h1>
+            <p className="text-sm text-gray-500">
+              {step === "email"
+                ? "Nhập email để nhận mã OTP đặt lại mật khẩu."
+                : `Nhập mã OTP đã gửi đến ${email} và mật khẩu mới.`}
+            </p>
+          </div>
+
+          {step === "email" && (
+            <form onSubmit={forgotForm.handleSubmit(onSendOtp)} noValidate>
+              <div className="space-y-5">
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="fp-email">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="fp-email"
+                    type="email"
+                    placeholder="example@email.com"
+                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    {...forgotForm.register("email")}
+                  />
+                  {forgotForm.formState.errors.email && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {forgotForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSending}
+                  className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+                >
+                  {isSending ? "Đang gửi..." : "Gửi mã OTP"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {step === "reset" && (
+            <form onSubmit={resetForm.handleSubmit(onResetPassword)} noValidate>
+              <div className="space-y-5">
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="otp-code">
+                    Mã OTP <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="otp-code"
+                    type="text"
+                    placeholder="Nhập mã 6 chữ số"
+                    maxLength={6}
+                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    {...resetForm.register("otpCode")}
+                  />
+                  {resetForm.formState.errors.otpCode && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {resetForm.formState.errors.otpCode.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="new-pass">
+                    Mật khẩu mới <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="new-pass"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Tối thiểu 8 ký tự"
+                      className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      {...resetForm.register("newPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {resetForm.formState.errors.newPassword && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {resetForm.formState.errors.newPassword.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="confirm-pass">
+                    Xác nhận mật khẩu mới <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="confirm-pass"
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Nhập lại mật khẩu mới"
+                      className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      {...resetForm.register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showConfirm ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {resetForm.formState.errors.confirmPassword && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {resetForm.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+                >
+                  {isResetting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStep("email")}
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors py-1"
+                >
+                  Gửi lại OTP
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
