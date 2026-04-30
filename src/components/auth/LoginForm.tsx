@@ -50,8 +50,8 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      <div className="w-full max-w-md sm:pt-10 mx-auto mb-5 px-6 lg:px-0">
+    <div className="flex flex-col flex-1 w-full">
+      <div className="w-full max-w-md sm:pt-10 mx-auto lg:mx-0 mb-5 px-6 lg:px-10">
         <Link
           href="/"
           className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700"
@@ -63,7 +63,7 @@ export default function LoginForm() {
         </Link>
       </div>
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6 lg:px-0">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto lg:mx-0 px-6 lg:px-10">
         <div>
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-6">
@@ -151,7 +151,7 @@ export default function LoginForm() {
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-6 pb-6">
             <p className="text-sm text-center text-gray-600">
               Chưa có tài khoản?{" "}
               <Link href="/register" className="font-medium hover:underline" style={{ color: "#ff6a00" }}>
