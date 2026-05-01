@@ -3,6 +3,8 @@ import type {
   AccountInfo,
   AuthResponse,
   ForgotPasswordRequest,
+  GoogleLoginRequest,
+  GoogleRegisterRequest,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
@@ -32,5 +34,13 @@ export const authApi = {
 
   logout: async (): Promise<void> => {
     return axiosClient.post<void>("/auth/logout");
+  },
+
+  googleLogin: async (payload: GoogleLoginRequest): Promise<AuthResponse> => {
+    return axiosClient.post<AuthResponse, GoogleLoginRequest>("/auth/google-login", payload);
+  },
+
+  googleRegister: async (payload: GoogleRegisterRequest): Promise<AuthResponse> => {
+    return axiosClient.post<AuthResponse, GoogleRegisterRequest>("/auth/google-register", payload);
   },
 };

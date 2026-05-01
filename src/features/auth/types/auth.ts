@@ -41,3 +41,12 @@ export interface AuthResponse {
   expiresIn: number;
   account: AccountInfo;
 }
+
+export interface GoogleLoginRequest {
+  idToken: string;
+  roleId?: number;
+}
+
+export interface GoogleRegisterRequest {
+  idToken: string;
+}
