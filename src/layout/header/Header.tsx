@@ -195,7 +195,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800"
+      className="site-header sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800"
       style={{
         backgroundColor: "rgba(255,255,255,0.80)",
         backdropFilter: "blur(12px)",
@@ -205,9 +205,9 @@ export default function Header() {
       {/* Dark mode override */}
       <style>{`
         @media (prefers-color-scheme: dark) {
-          header { background-color: rgba(17,17,17,0.80) !important; }
+          .site-header { background-color: rgba(17,17,17,0.80) !important; }
         }
-        .dark header { background-color: rgba(17,17,17,0.80) !important; }
+        .dark .site-header { background-color: rgba(17,17,17,0.80) !important; }
       `}</style>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -307,12 +307,12 @@ export default function Header() {
               >
                 Khuyến mãi
               </a>
-              <a
-                href="#"
+              <Link
+                href="/blog"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
               >
                 Tin tức
-              </a>
+              </Link>
             </nav>
           </div>
 
