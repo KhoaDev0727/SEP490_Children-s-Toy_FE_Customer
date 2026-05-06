@@ -43,6 +43,69 @@ const renderRatingStars = (rating: number) => {
   });
 };
 
+const sanitizeRichTextHtml = (html: string | null | undefined) => {
+  if (!html || !html.trim()) {
+    return "";
+  }
+
+  const decodeHtmlEntities = (value: string) => {
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = value;
+    return textarea.value;
+  };
+
+  const normalizedInput =
+    html.includes("&lt;") && html.includes("&gt;") ? decodeHtmlEntities(html) : html;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(normalizedInput, "text/html");
+
+  doc.querySelectorAll("script, style, iframe, object, embed").forEach((node) => node.remove());
+
+  doc.querySelectorAll("*").forEach((el) => {
+    for (const attr of Array.from(el.attributes)) {
+      if (attr.name.toLowerCase().startsWith("on")) {
+        el.removeAttribute(attr.name);
+      }
+    }
+
+    const style = (el.getAttribute("style") ?? "").toLowerCase();
+    const className = (el.getAttribute("class") ?? "").toLowerCase();
+
+    const hasOverlayClass = /(overlay|backdrop|modal)/.test(className);
+    const hasFixedOrAbsolute = /position\s*:\s*(fixed|absolute)/.test(style);
+    const hasViewportCover =
+      /(inset\s*:\s*0|top\s*:\s*0|left\s*:\s*0)/.test(style) &&
+      /(width\s*:\s*100(vw|%)|height\s*:\s*100(vh|%))/.test(style);
+    const hasDarkBackground =
+      /(background(-color)?\s*:\s*(#000|black|rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.[0-9]+\)))/.test(style);
+
+    if (hasOverlayClass || (hasFixedOrAbsolute && (hasViewportCover || hasDarkBackground))) {
+      el.remove();
+      return;
+    }
+
+    if (style) {
+      const cleaned = style
+        .replace(/position\s*:[^;]+;?/g, "")
+        .replace(/z-index\s*:[^;]+;?/g, "")
+        .replace(/inset\s*:[^;]+;?/g, "")
+        .replace(/top\s*:[^;]+;?/g, "")
+        .replace(/left\s*:[^;]+;?/g, "")
+        .replace(/right\s*:[^;]+;?/g, "")
+        .replace(/bottom\s*:[^;]+;?/g, "");
+
+      if (cleaned.trim()) {
+        el.setAttribute("style", cleaned);
+      } else {
+        el.removeAttribute("style");
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
+};
+
 export default function ProductDetailsView({ productId }: { productId: number }) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
@@ -101,6 +164,10 @@ export default function ProductDetailsView({ productId }: { productId: number })
   }, [productId]);
 
   const images = useMemo(() => buildImageList(product), [product]);
+  const safeDescriptionHtml = useMemo(
+    () => sanitizeRichTextHtml(product?.description),
+    [product?.description],
+  );
 
   const specs = useMemo(() => {
     if (!product) return [];
@@ -152,7 +219,7 @@ export default function ProductDetailsView({ productId }: { productId: number })
           </div>
           {images.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
-              {images.slice(0, 4).map((img) => (
+              {images.slice(0, 7).map((img) => (
                 <button
                   key={img}
                   onClick={() => setActiveImage(img)}
@@ -266,7 +333,7 @@ export default function ProductDetailsView({ productId }: { productId: number })
         </div>
       </div>
 
-      <div className="mb-16">
+      <div className="mb-16 flow-root">
         <div className="border-b border-slate-200 flex items-center gap-8 mb-8 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("description")}
@@ -301,12 +368,19 @@ export default function ProductDetailsView({ productId }: { productId: number })
         </div>
 
         {activeTab === "description" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-3 prose max-w-none text-slate-600 leading-relaxed">
-              <p className="mb-4">
-                {product.description ||
-                  "Sản phẩm đang được cập nhật mô tả chi tiết. Hãy quay lại sau để xem thêm thông tin về chất liệu, tính năng và lợi ích cho bé."}
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 flow-root">
+            <div className="relative z-0 lg:col-span-3 prose max-w-none text-slate-600 leading-relaxed flow-root">
+              {safeDescriptionHtml ? (
+                <div
+                  className="ql-editor p-0 overflow-hidden break-words"
+                  dangerouslySetInnerHTML={{ __html: safeDescriptionHtml }}
+                />
+              ) : (
+                <p className="mb-4">
+                  Sản phẩm đang được cập nhật mô tả chi tiết. Hãy quay lại sau để xem thêm thông tin về chất liệu, tính năng và lợi ích cho bé.
+                </p>
+              )}
+              <div className="clear-both" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div className="rounded-xl border border-slate-100 p-4">
                   <p className="text-sm font-semibold text-slate-900">Ngày ra mắt</p>
@@ -422,7 +496,7 @@ export default function ProductDetailsView({ productId }: { productId: number })
         )}
       </div>
 
-      <section className="mb-16">
+      <section className="relative mt-24 mb-16 flow-root lg:mt-28">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-black">Sản phẩm tương tự</h2>
           <Link href="/products" className="text-[#ff6a00] font-bold flex items-center gap-1 hover:gap-2 transition-all">
