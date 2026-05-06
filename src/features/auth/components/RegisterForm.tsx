@@ -2,6 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "@/features/auth/services/auth-api";
 import { useAuthContext } from "@/context/AuthContext";
+import GoogleAuthButton from "./GoogleAuthButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -276,6 +277,17 @@ export default function RegisterForm() {
               >
                 {isRegistering ? "Đang tạo tài khoản..." : "Đăng ký"}
               </button>
+
+              <div className="relative flex items-center justify-center my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative bg-white px-4 text-xs text-gray-500">
+                  Hoặc đăng ký bằng
+                </div>
+              </div>
+
+              <GoogleAuthButton mode="register" />
             </div>
           </form>
 

@@ -1,6 +1,14 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const normalizeApiBaseUrl = (url?: string): string => {
+  const fallback = "http://localhost:5216/api";
+  if (!url || !url.trim()) return fallback;
+
+  const trimmedUrl = url.trim().replace(/\/+$/, "");
+  return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
+};
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
