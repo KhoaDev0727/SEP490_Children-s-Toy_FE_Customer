@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { SidebarProvider } from "@/context/SidebarContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -23,10 +25,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body style={{ fontFamily: "'Inter', sans-serif" }}>
+      <body style={{ fontFamily: "'Inter', sans-serif" }} suppressHydrationWarning>
         <AuthProvider>
-          {children}
-          <Toaster position="top-right" />
+          <ThemeProvider>
+            <SidebarProvider>
+              {children}
+              <Toaster position="top-right" />
+            </SidebarProvider>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
