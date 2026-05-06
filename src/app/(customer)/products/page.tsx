@@ -1,8 +1,41 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import FilterSidebar from "./_components/FilterSidebar";
 import ProductGrid from "./_components/ProductGrid";
-import Link from "next/link";
+import { productApi } from "@/features/products/services/product-api";
+import { ProductFilters, ProductLookups } from "@/features/products/types/product";
 
 export default function ProductsPage() {
+  const [filters, setFilters] = useState<ProductFilters>({});
+  const [lookups, setLookups] = useState<ProductLookups | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchLookups = async () => {
+      setLookupLoading(true);
+      setLookupError(null);
+      try {
+        const result = await productApi.getLookups();
+        if (!active) return;
+        setLookups(result);
+      } catch {
+        if (!active) return;
+        setLookupError("Không thể tải bộ lọc sản phẩm.");
+      } finally {
+        if (active) setLookupLoading(false);
+      }
+    };
+
+    fetchLookups();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumbs */}
@@ -13,12 +46,19 @@ export default function ProductsPage() {
         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
           chevron_right
         </span>
-        <span className="text-slate-900 font-medium">Danh sách sản phẩm</span>
+        <span className="text-slate-900 font-medium">Danh sách đồ chơi</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        <FilterSidebar />
-        <ProductGrid />
+        <FilterSidebar
+          lookups={lookups}
+          filters={filters}
+          onChange={setFilters}
+          onRefresh={() => setFilters({})}
+          isLoading={lookupLoading}
+          error={lookupError}
+        />
+        <ProductGrid filters={filters} />
       </div>
     </div>
   );
