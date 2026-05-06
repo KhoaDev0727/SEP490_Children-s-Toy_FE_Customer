@@ -1,121 +1,141 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AddressCard, { type Address } from "./AddressCard";
 import AddressModal from "./AddressModal";
+import { addressApi } from "@/features/address/services/address-api";
+import type { DistrictOption, ProvinceOption, WardOption } from "@/features/address/types/address";
 
-const initialAddresses: Address[] = [
-  {
-    id: "1",
-    name: "Nguyễn Văn Khách",
-    phone: "(+84) 912 345 678",
-    street: "Tòa nhà Landmark 81, 720A Điện Biên Phủ",
-    ward: "Phường 22",
-    district: "Quận Bình Thạnh",
-    city: "TP. Hồ Chí Minh",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    name: "Nguyễn Văn Khách",
-    phone: "(+84) 987 654 321",
-    street: "Số 123 Đường Nguyễn Huệ",
-    ward: "Phường Bến Nghé",
-    district: "Quận 1",
-    city: "TP. Hồ Chí Minh",
-  },
-  {
-    id: "3",
-    name: "Trần Thị B",
-    phone: "(+84) 901 234 567",
-    street: "Căn hộ 12A, Tòa A, Chung cư An Bình",
-    ward: "Phường 10",
-    district: "Quận 10",
-    city: "TP. Hồ Chí Minh",
-  },
-];
+const toViewModel = (item: Awaited<ReturnType<typeof addressApi.getMyAddresses>>[number]): Address => ({
+  id: item.addressId,
+  name: item.recipientName,
+  phone: item.phoneNumber,
+  street: item.addressLine,
+  ward: item.wardName ?? "",
+  district: item.districtName ?? "",
+  city: item.provinceName ?? "",
+  wardCode: item.wardCode,
+  districtId: item.districtId,
+  provinceId: item.provinceId,
+  isDefault: item.isDefault,
+});
 
 export default function AddressList() {
-  const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
+  const [districts, setDistricts] = useState<DistrictOption[]>([]);
+  const [wards, setWards] = useState<WardOption[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const isMaxAddresses = addresses.length >= 5;
 
-  const handleAdd = () => {
-    setEditingAddress(null);
-    setModalOpen(true);
-  };
+  const loadAddresses = useCallback(async () => {
+    const data = await addressApi.getMyAddresses();
+    setAddresses(data.map(toViewModel));
+  }, []);
 
-  const handleEdit = (address: Address) => {
+  useEffect(() => {
+    void loadAddresses();
+    addressApi.getProvinces().then(setProvinces).catch(() => setProvinces([]));
+  }, [loadAddresses]);
+
+  const handleProvinceChange = useCallback(async (provinceId: number) => {
+    if (!provinceId) {
+      setDistricts([]);
+      setWards([]);
+      return;
+    }
+
+    const items = await addressApi.getDistricts(provinceId);
+    setDistricts(items);
+    setWards([]);
+  }, []);
+
+  const handleDistrictChange = useCallback(async (districtId: number) => {
+    if (!districtId) {
+      setWards([]);
+      return;
+    }
+
+    const items = await addressApi.getWards(districtId);
+    setWards(items);
+  }, []);
+
+  const handleEdit = async (address: Address) => {
     setEditingAddress(address);
+    if (address.provinceId) {
+      await handleProvinceChange(address.provinceId);
+    }
+    if (address.districtId) {
+      await handleDistrictChange(address.districtId);
+    }
     setModalOpen(true);
   };
 
-  const handleSave = (data: Omit<Address, "id"> & { id?: string }) => {
+  const handleSave = async (data: {
+    id?: number;
+    recipientName: string;
+    phoneNumber: string;
+    addressLine: string;
+    provinceId: number;
+    districtId: number;
+    wardCode: string;
+    isDefault: boolean;
+  }) => {
     if (data.id) {
-      setAddresses((prev) =>
-        prev.map((a) => {
-          if (a.id === data.id) return { ...a, ...data } as Address;
-          if (data.isDefault) return { ...a, isDefault: false };
-          return a;
-        }),
-      );
+      await addressApi.updateAddress(data.id, data);
     } else {
-      const newAddress: Address = {
-        ...data,
-        id: Date.now().toString(),
-      };
-      setAddresses((prev) => {
-        const updated = data.isDefault ? prev.map((a) => ({ ...a, isDefault: false })) : prev;
-        return [...updated, newAddress];
-      });
+      await addressApi.createAddress(data);
     }
+    await loadAddresses();
   };
 
-  const handleDelete = (id: string) => {
-    setDeleteConfirmId(id);
-  };
-
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirmId) {
-      setAddresses((prev) => prev.filter((a) => a.id !== deleteConfirmId));
+      await addressApi.deleteAddress(deleteConfirmId);
       setDeleteConfirmId(null);
+      await loadAddresses();
     }
   };
 
-  const handleSetDefault = (id: string) => {
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
+  const handleSetDefault = async (id: number) => {
+    await addressApi.updateAddress(id, { isDefault: true });
+    await loadAddresses();
   };
 
   return (
     <>
       <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">Địa chỉ của tôi</h1>
+        <h1 className="text-2xl font-bold text-[#261812]">My Addresses</h1>
         <button
-          onClick={handleAdd}
-          className="bg-[#ff6a00] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#e65f00] transition-colors flex items-center gap-1.5"
+          onClick={() => {
+            if (isMaxAddresses) return;
+            setEditingAddress(null);
+            setDistricts([]);
+            setWards([]);
+            setModalOpen(true);
+          }}
+          disabled={isMaxAddresses}
+          title={isMaxAddresses ? "Maximum 5 addresses reached" : "Add new address"}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${
+            isMaxAddresses ? "bg-[#ff6a00]/50 cursor-not-allowed" : "bg-[#ff6a00]"
+          }`}
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Thêm địa chỉ mới
+          Add new address
         </button>
       </div>
 
       <div className="flex flex-col p-6 gap-4">
         {addresses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-[#5a4136]">
-            <span className="material-symbols-outlined text-5xl opacity-30 mb-3">location_off</span>
-            <p className="text-sm">Bạn chưa có địa chỉ nào.</p>
-            <button onClick={handleAdd} className="mt-4 text-[#a14000] text-sm font-medium hover:underline">
-              + Thêm địa chỉ đầu tiên
-            </button>
-          </div>
+          <p className="text-sm text-[#5a4136]">You do not have any addresses yet.</p>
         ) : (
           addresses.map((address) => (
             <AddressCard
               key={address.id}
               address={address}
               onEdit={handleEdit}
-              onDelete={address.isDefault ? undefined : handleDelete}
+              onDelete={address.isDefault ? undefined : setDeleteConfirmId}
               onSetDefault={address.isDefault ? undefined : handleSetDefault}
             />
           ))
@@ -127,33 +147,27 @@ export default function AddressList() {
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
         editingAddress={editingAddress}
+        provinces={provinces}
+        districts={districts}
+        wards={wards}
+        onProvinceChange={handleProvinceChange}
+        onDistrictChange={handleDistrictChange}
       />
 
       {deleteConfirmId && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#ba1a1a]">delete</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Xóa địa chỉ</h3>
-                <p className="text-sm text-slate-500">Bạn có chắc chắn muốn xóa địa chỉ này?</p>
-              </div>
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl p-6">
+            <div className="mb-4">
+              <h3 className="font-semibold text-slate-900">Delete address</h3>
+              <p className="text-sm text-slate-500">Are you sure you want to delete this address?</p>
             </div>
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Hủy
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm">
+                Cancel
               </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-[#ba1a1a] text-white text-sm font-medium hover:bg-red-700 transition-colors"
-              >
-                Xóa
+              <button onClick={confirmDelete} className="px-4 py-2 rounded-lg bg-[#ba1a1a] text-white text-sm">
+                Delete
               </button>
             </div>
           </div>
