@@ -1,8 +1,13 @@
 "use client";
+import Image from "next/image"; // Thêm import Image
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { productApi } from "@/features/products/services/product-api";
-import { PaginatedResponse, ProductFilters, ProductList } from "@/features/products/types/product";
+import {
+  PaginatedResponse,
+  ProductFilters,
+  ProductList,
+} from "@/features/products/types/product";
 import { formatCurrency } from "@/features/products/utils/format";
 
 const PAGE_SIZE = 20;
@@ -46,14 +51,19 @@ function ProductCard({ product }: { product: ProductList }) {
 
   return (
     <div className="group bg-white rounded-xl border border-slate-200 hover:border-[#ff6a00] overflow-hidden flex flex-col transition-shadow hover:shadow-lg">
-      <Link href={`/products/${product.productId}`} className="relative aspect-square bg-slate-100 overflow-hidden">
-        <img
+      <Link
+        href={`/products/${product.productId}`}
+        className="relative block aspect-square bg-slate-100 overflow-hidden"
+      >
+        <Image
           src={product.mainImageUrl || FALLBACK_IMAGE}
           alt={product.productName}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <span
-          className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded ${
+          className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded z-10 ${
             inStock ? "bg-emerald-500 text-white" : "bg-slate-400 text-white"
           }`}
         >
@@ -70,16 +80,46 @@ function ProductCard({ product }: { product: ProductList }) {
           {product.productName}
         </Link>
         <div className="mt-auto pt-3">
-          <div className="flex items-baseline gap-2 mb-4">
-            <span className="text-lg font-bold text-[#ff6a00]">
-              {formatCurrency(product.price)}
-            </span>
-            {product.brandName && (
-              <span className="text-xs text-slate-400">{product.brandName}</span>
-            )}
-          </div>
+          {product.discountedPrice != null ? (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg font-bold text-[#ff6a00]">
+                  {formatCurrency(product.discountedPrice)}
+                </span>
+                {product.discountPercent != null &&
+                  product.discountPercent > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white">
+                      -{product.discountPercent}%
+                    </span>
+                  )}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400 line-through">
+                  {formatCurrency(product.price)}
+                </span>
+                {product.brandName && (
+                  <span className="text-xs text-slate-400">
+                    {product.brandName}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-baseline justify-between mb-4">
+              <span className="text-lg font-bold text-[#ff6a00]">
+                {formatCurrency(product.price)}
+              </span>
+              {product.brandName && (
+                <span className="text-xs text-slate-400">
+                  {product.brandName}
+                </span>
+              )}
+            </div>
+          )}
           <button className="w-full py-2 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 bg-[#ff6a00] hover:bg-[#e05e00] transition-colors">
-            <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+            <span className="material-symbols-outlined text-[18px]">
+              add_shopping_cart
+            </span>
             Thêm vào giỏ
           </button>
         </div>
@@ -106,7 +146,9 @@ function Pagination({
         className="w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-[#ff6a00] hover:text-white hover:border-[#ff6a00] transition-colors"
         disabled={current === 1}
       >
-        <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+        <span className="material-symbols-outlined text-[20px]">
+          chevron_left
+        </span>
       </button>
 
       {pages.map((p, index) => (
@@ -132,7 +174,9 @@ function Pagination({
         className="w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-[#ff6a00] hover:text-white hover:border-[#ff6a00] transition-colors"
         disabled={current === total}
       >
-        <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+        <span className="material-symbols-outlined text-[20px]">
+          chevron_right
+        </span>
       </button>
     </nav>
   );
@@ -145,9 +189,14 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Reset page khi filters thay đổi (Derived State)
+  const filterString = JSON.stringify(filters);
+  const [prevFilterString, setPrevFilterString] = useState(filterString);
+
+  if (filterString !== prevFilterString) {
     setPage(1);
-  }, [filters, sort]);
+    setPrevFilterString(filterString);
+  }
 
   useEffect(() => {
     let active = true;
@@ -186,13 +235,17 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 mb-6">
         <p className="text-slate-600 text-sm">
           Hiển thị{" "}
-          <span className="font-bold text-slate-900">{totalCount}</span> sản phẩm
+          <span className="font-bold text-slate-900">{totalCount}</span> sản
+          phẩm
         </p>
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-500">Sắp xếp theo:</span>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1); // CÁCH MỚI: Reset page thẳng tại event handler khi đổi sort
+            }}
             className="text-sm border-none bg-slate-100 rounded-lg py-1.5 pl-3 pr-8 outline-none focus:ring-2 focus:ring-[#ff6a00]/20 cursor-pointer"
           >
             {SORT_OPTIONS.map((o) => (
@@ -205,7 +258,9 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
       </div>
 
       {isLoading && (
-        <div className="py-16 text-center text-slate-500">Đang tải sản phẩm...</div>
+        <div className="py-16 text-center text-slate-500">
+          Đang tải sản phẩm...
+        </div>
       )}
 
       {!isLoading && error && (
@@ -213,7 +268,9 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
       )}
 
       {!isLoading && !error && data && data.items.length === 0 && (
-        <div className="py-16 text-center text-slate-500">Chưa có sản phẩm phù hợp.</div>
+        <div className="py-16 text-center text-slate-500">
+          Chưa có sản phẩm phù hợp.
+        </div>
       )}
 
       {!isLoading && !error && data && data.items.length > 0 && (
