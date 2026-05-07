@@ -55,6 +55,36 @@ const fetchAllPublishedBlogs = async (searchTerm?: string) => {
   return collected;
 };
 
+const enrichBlogsWithContent = async (blogs: BlogListItem[]) => {
+  const missingContentIds = blogs
+    .filter((blog) => !blog.blogContent?.trim())
+    .map((blog) => blog.blogPostId);
+
+  if (missingContentIds.length === 0) {
+    return blogs;
+  }
+
+  const detailResponses = await Promise.all(
+    missingContentIds.map(async (blogPostId) => {
+      try {
+        const detail = await customerBlogApi.getBlogById(blogPostId);
+        return { blogPostId, blogContent: detail.blogContent };
+      } catch {
+        return { blogPostId, blogContent: "" };
+      }
+    }),
+  );
+
+  const contentById = new Map<number, string>(
+    detailResponses.map((item) => [item.blogPostId, item.blogContent]),
+  );
+
+  return blogs.map((blog) => ({
+    ...blog,
+    blogContent: blog.blogContent ?? contentById.get(blog.blogPostId) ?? "",
+  }));
+};
+
 export const useBlogPageData = () => {
   const [allBlogs, setAllBlogs] = useState<BlogListItem[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -74,10 +104,11 @@ export const useBlogPageData = () => {
 
       try {
         const collected = await fetchAllPublishedBlogs();
+        const enriched = await enrichBlogsWithContent(collected);
 
         if (!isCancelled) {
-          setAllBlogs(collected);
-          setSearchedBlogs(collected);
+          setAllBlogs(enriched);
+          setSearchedBlogs(enriched);
         }
       } catch {
         if (!isCancelled) {
@@ -105,12 +136,11 @@ export const useBlogPageData = () => {
       setError(null);
 
       try {
-        const collected = submittedKeyword.trim()
-          ? await fetchAllPublishedBlogs(submittedKeyword)
-          : allBlogs;
+        const collected = submittedKeyword.trim() ? await fetchAllPublishedBlogs(submittedKeyword) : allBlogs;
+        const enriched = submittedKeyword.trim() ? await enrichBlogsWithContent(collected) : collected;
 
         if (!isCancelled) {
-          setSearchedBlogs(collected);
+          setSearchedBlogs(enriched);
         }
       } catch {
         if (!isCancelled) {

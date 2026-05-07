@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { customerBlogApi } from "../services/blog-api";
 import { BlogDetail, BlogListItem } from "../types/blog";
+import { buildBlogPreview } from "../utils/blog-preview";
 
 const resolveBlogImage = (image: string | null) => {
   const fallbackImage = "/assets/images/d.jpg";
@@ -24,15 +25,13 @@ const resolveBlogImage = (image: string | null) => {
   return `${normalizedBase}${normalizedPath}`;
 };
 
-const buildShortDescription = (title: string) => {
-  const normalizedTitle = title.replace(/\s+/g, " ").trim();
-  if (!normalizedTitle) {
-    return "Quick tips for your family today.";
-  }
-
-  const words = normalizedTitle.split(" ").slice(0, 7);
-  return words.join(" ");
-};
+const toFeaturedCard = (item: BlogListItem) => ({
+  id: item.blogPostId,
+  title: item.blogTitle,
+  date: item.blogAt ?? item.createdAt,
+  image: resolveBlogImage(item.blogThumbnail),
+  isFeatured: item.isFeatured,
+});
 
 const fetchAllPublishedBlogs = async () => {
   const firstPage = await customerBlogApi.getPublishedBlogs({
@@ -110,41 +109,26 @@ export const useBlogDetailData = (blogPostId: number) => {
     };
   }, [blogPostId]);
 
-  const featuredBlogs = useMemo(() => {
-    const toFeaturedCard = (item: BlogListItem) => ({
+  const topFeatured = blogs.filter((item) => item.isFeatured).slice(0, 5);
+  const currentInFeatured = topFeatured.some((item) => item.blogPostId === blogPostId);
+  const featuredBlogs = currentInFeatured
+    ? blogs
+        .filter((item) => item.isFeatured && item.blogPostId !== blogPostId)
+        .slice(0, 4)
+        .map(toFeaturedCard)
+    : topFeatured.map(toFeaturedCard);
+
+  const newBlogs = blogs
+    .filter((item) => item.blogPostId !== blogPostId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3)
+    .map((item) => ({
       id: item.blogPostId,
       title: item.blogTitle,
       date: item.blogAt ?? item.createdAt,
       image: resolveBlogImage(item.blogThumbnail),
-      isFeatured: item.isFeatured,
-    });
-
-    const topFeatured = blogs.filter((item) => item.isFeatured).slice(0, 5);
-
-    const currentInFeatured = topFeatured.some((item) => item.blogPostId === blogPostId);
-    if (!currentInFeatured) {
-      return topFeatured.map(toFeaturedCard);
-    }
-
-    return blogs
-      .filter((item) => item.isFeatured && item.blogPostId !== blogPostId)
-      .slice(0, 4)
-      .map(toFeaturedCard);
-  }, [blogPostId, blogs]);
-
-  const newBlogs = useMemo(() => {
-    return blogs
-      .filter((item) => item.blogPostId !== blogPostId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 3)
-      .map((item) => ({
-        id: item.blogPostId,
-        title: item.blogTitle,
-        date: item.blogAt ?? item.createdAt,
-        image: resolveBlogImage(item.blogThumbnail),
-        description: buildShortDescription(item.blogTitle),
-      }));
-  }, [blogPostId, blogs]);
+      description: buildBlogPreview(item.blogContent, 95),
+    }));
 
   return {
     post,
