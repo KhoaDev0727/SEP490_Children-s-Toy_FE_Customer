@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { BlogListItem } from "@/features/blog/types/blog";
+import { buildBlogPreview } from "@/features/blog/utils/blog-preview";
 
 const formatDate = (dateValue: string | null) => {
   if (!dateValue) {
@@ -19,14 +20,6 @@ const formatDate = (dateValue: string | null) => {
     day: "2-digit",
     year: "numeric",
   }).format(date);
-};
-
-const getShortDescription = (title: string) => {
-  const words = title.trim().split(/\s+/).filter(Boolean);
-  if (words.length >= 10) {
-    return `${words.slice(0, 15).join(" ")}${words.length > 15 ? "..." : ""}`;
-  }
-  return "Discover practical insights and highlights in this concise blog update for readers.";
 };
 
 interface BlogGridProps {
@@ -86,7 +79,7 @@ export default function BlogGrid({
                 alt={article.blogTitle}
                 fill
                 unoptimized
-                className="object-contain group-hover:scale-105 transition-transform duration-500"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
 
@@ -96,7 +89,7 @@ export default function BlogGrid({
                 {article.blogTitle}
               </h3>
               <p className="text-slate-600 text-[13px] leading-relaxed line-clamp-2 mb-3 flex-grow">
-                {getShortDescription(article.blogTitle)}
+                {buildBlogPreview(article.blogContent, 120)}
               </p>
               <div className="mt-auto text-[#ff6a00] font-bold text-sm hover:underline underline-offset-4 inline-flex items-center gap-1">
                   Read More

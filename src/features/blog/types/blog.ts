@@ -13,6 +13,7 @@ export interface BlogListItem {
   blogCategoryId: number;
   blogCategoryName: string;
   blogTitle: string;
+  blogContent?: string;
   blogThumbnail: string | null;
   status: string;
   isHidden: boolean;

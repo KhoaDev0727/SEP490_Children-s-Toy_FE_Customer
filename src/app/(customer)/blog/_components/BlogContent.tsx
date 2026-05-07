@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useBlogPageData } from "@/features/blog/hooks/useBlogPageData";
+import { buildBlogPreview } from "@/features/blog/utils/blog-preview";
 import BlogGrid from "./BlogGrid";
 import FilterSidebar from "./FilterSidebar";
 
@@ -38,7 +39,7 @@ export default function BlogContent() {
                 alt={featuredBlog?.blogTitle ?? "Featured post"}
                 fill
                 unoptimized
-                className="object-contain group-hover:scale-105 transition-transform duration-700"
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col justify-end p-6 md:p-8">
@@ -50,7 +51,7 @@ export default function BlogContent() {
               </h1>
               <p className="text-slate-200 text-sm max-w-2xl mb-5 leading-relaxed line-clamp-2">
                 {featuredBlog
-                  ? `Explore key highlights and practical takeaways from this featured blog update today.`
+                  ? buildBlogPreview(featuredBlog.blogContent, 160)
                   : "Please check back later for featured content."}
               </p>
               <span className="text-[#ff6a00] font-bold text-base hover:underline underline-offset-4 w-max">
