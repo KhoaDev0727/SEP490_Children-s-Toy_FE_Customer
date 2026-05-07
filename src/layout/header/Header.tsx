@@ -40,7 +40,7 @@ const categories = [
 ];
 
 function UserDropdown() {
-  const { account, isAuthenticated, clearAuth } = useAuthContext();
+  const { account, isAuthenticated, isHydrated, clearAuth } = useAuthContext();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -66,6 +66,10 @@ function UserDropdown() {
     toast.success("Đã đăng xuất.");
     router.push("/");
   };
+
+  if (!isHydrated) {
+    return <div className="h-10 w-[110px]" aria-hidden="true" />;
+  }
 
   if (!isAuthenticated || !account) {
     return (
@@ -161,15 +165,15 @@ function UserDropdown() {
               </span>
               Ví
             </a>
-            <a
-              href="#"
+            <Link
+              href="/profile"
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
             >
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 manage_accounts
               </span>
               Tài khoản
-            </a>
+            </Link>
           </div>
 
           <div className="border-t border-slate-100 dark:border-slate-800 py-1">
@@ -370,3 +374,5 @@ export default function Header() {
     </header>
   );
 }
+
+
