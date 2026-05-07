@@ -114,13 +114,13 @@ export default function FilterSidebar({
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
+                <div className="relative w-24 min-w-24 aspect-[4/3] rounded-lg overflow-hidden bg-transparent flex-shrink-0 flex items-center justify-center">
                 <Image
                   src={blog.blogThumbnail ?? "/assets/images/d.jpg"}
                   alt={blog.blogTitle}
                   fill
                   unoptimized
-                  className="object-cover"
+                  className="object-contain p-1"
                 />
                 </div>
                 <div className="min-w-0 flex-1">
