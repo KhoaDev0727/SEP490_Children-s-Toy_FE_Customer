@@ -264,10 +264,27 @@ export default function ProductDetailsView({ productId }: { productId: number })
           </div>
 
           <div className="p-6 bg-slate-50 rounded-2xl mb-8">
-            <div className="flex items-baseline gap-4 mb-2">
-              <span className="text-4xl font-black text-[#ff6a00]">{formatCurrency(product.price)}</span>
-              <span className="text-sm text-slate-400">Giá bán lẻ đề xuất</span>
-            </div>
+            {product.discountedPrice != null ? (
+              <div className="mb-2">
+                <div className="flex items-center gap-4 mb-1">
+                  <span className="text-4xl font-black text-[#ff6a00]">{formatCurrency(product.discountedPrice)}</span>
+                  {product.discountPercent != null && product.discountPercent > 0 && (
+                    <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-md shadow-sm">
+                      -{product.discountPercent}%
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg text-slate-400 line-through">{formatCurrency(product.price)}</span>
+                  <span className="text-xs text-slate-400">(Giá gốc)</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-4 mb-2">
+                <span className="text-4xl font-black text-[#ff6a00]">{formatCurrency(product.price)}</span>
+                <span className="text-sm text-slate-400">Giá bán lẻ đề xuất</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
               <span className="material-symbols-outlined text-base">confirmation_number</span>
               <span>Mã TOY200 giảm ngay 200k cho đơn từ 999k</span>
@@ -524,10 +541,28 @@ export default function ProductDetailsView({ productId }: { productId: number })
                   <h3 className="text-sm font-bold line-clamp-2 mb-2 group-hover:text-[#ff6a00] transition-colors">
                     {item.productName}
                   </h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-black text-[#ff6a00]">
-                      {formatCurrency(item.price)}
-                    </span>
+                  <div className="mt-auto">
+                    {item.discountedPrice != null ? (
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg font-black text-[#ff6a00]">
+                            {formatCurrency(item.discountedPrice)}
+                          </span>
+                          {item.discountPercent != null && item.discountPercent > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
+                              -{item.discountPercent}%
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-400 line-through block">
+                          {formatCurrency(item.price)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-lg font-black text-[#ff6a00]">
+                        {formatCurrency(item.price)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>
