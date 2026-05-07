@@ -31,6 +31,11 @@ export interface AccountInfo {
   accountName: string;
   email: string;
   imageUrl?: string;
+  phoneNumber?: string | null;
+  dob?: string | null;
+  sexId?: number | null;
+  sexName?: string | null;
+  provider?: string | null;
   roleId: number;
   roleName: string;
 }

@@ -15,11 +15,11 @@ const NAV_ITEMS = [
 ];
 
 export default function ProfileSidebar() {
-  const { account } = useAuthContext();
+  const { account, isHydrated } = useAuthContext();
   const pathname = usePathname();
 
-  const avatarUrl = account?.imageUrl;
-  const name = account?.accountName ?? "Người dùng";
+  const avatarUrl = isHydrated ? account?.imageUrl : undefined;
+  const name = isHydrated ? account?.accountName ?? "Người dùng" : "Người dùng";
 
   const initials = name
     .split(" ")
@@ -99,3 +99,4 @@ export default function ProfileSidebar() {
     </aside>
   );
 }
+
