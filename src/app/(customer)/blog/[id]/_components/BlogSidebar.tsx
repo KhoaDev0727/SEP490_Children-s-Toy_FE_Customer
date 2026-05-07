@@ -41,8 +41,8 @@ export default function BlogSidebar({ featuredBlogs, newBlogs }: BlogSidebarProp
         <div className="flex flex-col gap-4">
           {featuredBlogs.map((post) => (
             <Link key={post.id} href={`/blog/${post.id}`} className="flex gap-3 group items-start">
-              <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-[#f8ddd2]">
-                <Image src={post.image} alt={post.title} fill unoptimized className="object-cover" />
+              <div className="relative w-24 min-w-24 aspect-[4/3] rounded-lg overflow-hidden bg-transparent">
+                <Image src={post.image} alt={post.title} fill unoptimized className="object-contain p-1" />
               </div>
               <div className="flex-grow min-w-0">
                 <h4 className="text-sm font-semibold text-[#261812] group-hover:text-[#ff6a00] transition-colors line-clamp-2 leading-snug">
@@ -63,8 +63,8 @@ export default function BlogSidebar({ featuredBlogs, newBlogs }: BlogSidebarProp
         <div className="flex flex-col gap-4">
           {newBlogs.map((blog) => (
             <Link key={blog.id} href={`/blog/${blog.id}`} className="flex gap-3 group items-start">
-              <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-[#f8ddd2]">
-                <Image src={blog.image} alt={blog.title} fill unoptimized className="object-cover" />
+              <div className="relative w-24 min-w-24 aspect-[4/3] rounded-lg overflow-hidden bg-transparent">
+                <Image src={blog.image} alt={blog.title} fill unoptimized className="object-contain p-1" />
               </div>
               <div className="flex-grow min-w-0">
                 <h4 className="text-sm font-semibold text-[#261812] group-hover:text-[#ff6a00] transition-colors line-clamp-2 leading-snug">
