@@ -336,7 +336,11 @@ export default function Header() {
           {/* Right icons */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Cart */}
-            <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative text-slate-600 dark:text-slate-300">
+            <Link
+              href="/cart"
+              aria-label="Open cart"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative text-slate-600 dark:text-slate-300"
+            >
               <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
                 shopping_cart
               </span>
@@ -348,7 +352,7 @@ export default function Header() {
                   {cartCount}
                 </span>
               )}
-            </button>
+            </Link>
 
             {/* Notifications */}
             <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative text-slate-600 dark:text-slate-300">
