@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { customerBlogApi } from "../services/blog-api";
-import { BlogDetail, BlogListItem } from "../types/blog";
+import { BlogDetail, BlogListItem, BlogReview } from "../types/blog";
 import { buildBlogPreview } from "../utils/blog-preview";
 
 const resolveBlogImage = (image: string | null) => {
@@ -69,6 +69,7 @@ const fetchAllPublishedBlogs = async () => {
 export const useBlogDetailData = (blogPostId: number) => {
   const [post, setPost] = useState<BlogDetail | null>(null);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
+  const [reviews, setReviews] = useState<BlogReview[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,14 +81,24 @@ export const useBlogDetailData = (blogPostId: number) => {
       setError(null);
 
       try {
-        const [detail, allPublishedBlogs] = await Promise.all([
+        const [detailResult, publishedResult, reviewResult] = await Promise.allSettled([
           customerBlogApi.getBlogById(blogPostId),
           fetchAllPublishedBlogs(),
+          customerBlogApi.getBlogReviews(blogPostId),
         ]);
 
+        if (detailResult.status !== "fulfilled" || publishedResult.status !== "fulfilled") {
+          throw new Error("Unable to load blog detail.");
+        }
+
         if (!isCancelled) {
-          setPost(detail);
-          setBlogs(allPublishedBlogs);
+          setPost(detailResult.value);
+          setBlogs(publishedResult.value);
+          if (reviewResult.status === "fulfilled") {
+            setReviews(reviewResult.value.filter((item) => item.status === "Visible"));
+          } else {
+            setReviews([]);
+          }
         }
       } catch {
         if (!isCancelled) {
@@ -132,6 +143,11 @@ export const useBlogDetailData = (blogPostId: number) => {
 
   return {
     post,
+    reviews,
+    reloadReviews: async () => {
+      const blogReviews = await customerBlogApi.getBlogReviews(blogPostId);
+      setReviews(blogReviews.filter((item) => item.status === "Visible"));
+    },
     featuredBlogs,
     newBlogs,
     isLoading,

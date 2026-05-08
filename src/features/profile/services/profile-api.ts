@@ -1,7 +1,7 @@
 import axiosClient from "@/configs/axios-client";
 import type { AxiosError } from "axios";
 import type {
-  ChangeCustomerPasswordPayload
+  ChangeCustomerPasswordPayload,
   CustomerProfile,
   UpdateCustomerProfilePayload,
   UploadAvatarResponse,
