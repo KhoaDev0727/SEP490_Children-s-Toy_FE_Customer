@@ -61,6 +61,15 @@ const parseDobDateInputToIso = (value: string) => {
 
   return date.toISOString();
 };
+const toDateInput = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${year}-${month}-${day}`;
+};
 
 const normalizeNullable = (value: string) => {
   const trimmed = value.trim();
@@ -73,6 +82,7 @@ export default function ProfileForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [sexes, setSexes] = useState<Array<{ id: number; label: string }>>([]);
 
   const [accountName, setAccountName] = useState("");
   const [email, setEmail] = useState("");
@@ -81,6 +91,7 @@ export default function ProfileForm() {
   const [sexId, setSexId] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [savedProfile, setSavedProfile] = useState<Partial<CustomerProfile>>({});
+  const [provider, setProvider] = useState("");
   const hasShownLoadErrorRef = useRef(false);
 
   const initials = useMemo(() => {
@@ -103,7 +114,8 @@ export default function ProfileForm() {
       setEmail(profile.email ?? account?.email ?? "");
       setPhoneNumber(profile.phoneNumber ?? account?.phoneNumber ?? "");
       setAvatarUrl(profile.imageUrl ?? account?.imageUrl ?? "");
-      setDobInput(formatDobForDateInput(profile.dob ?? account?.dob ?? null));
+      setDobInput(toDateInput(profile.dob ?? account?.dob ?? null));
+      setProvider((profile.provider ?? account?.provider ?? "Email").trim() || "Email");
       setSexId(
         profile.sexId != null
           ? String(profile.sexId)
