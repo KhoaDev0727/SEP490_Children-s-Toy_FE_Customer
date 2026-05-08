@@ -21,3 +21,9 @@ export interface UpdateCustomerProfilePayload {
 export interface UploadAvatarResponse {
   url: string;
 }
+
+export interface ChangeCustomerPasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}

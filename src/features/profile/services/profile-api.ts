@@ -1,5 +1,7 @@
 import axiosClient from "@/configs/axios-client";
+import type { AxiosError } from "axios";
 import type {
+  ChangeCustomerPasswordPayload,
   CustomerProfile,
   UpdateCustomerProfilePayload,
   UploadAvatarResponse,
@@ -7,6 +9,7 @@ import type {
 
 const PROFILE_ENDPOINTS = ["/customer/profiles/me", "/profiles/me"] as const;
 const AVATAR_ENDPOINTS = ["/customer/profiles/me/avatar", "/profiles/me/avatar"] as const;
+const PASSWORD_ENDPOINTS = ["/customer/profiles/me/password", "/profiles/me/password"] as const;
 
 const requestWithFallback = async <TResponse>(
   endpoints: readonly string[],
@@ -19,6 +22,12 @@ const requestWithFallback = async <TResponse>(
       return await request(endpoint);
     } catch (error) {
       lastError = error;
+
+       const status = (error as AxiosError)?.response?.status;
+       // Only fallback when endpoint is not available; keep business/auth errors from the primary endpoint.
+       if (status !== 404 && status !== 405) {
+         throw error;
+       }
     }
   }
 
@@ -33,8 +42,11 @@ export const profileApi = {
   },
 
   updateMyProfile: async (payload: UpdateCustomerProfilePayload): Promise<CustomerProfile> => {
+    await requestWithFallback(PROFILE_ENDPOINTS, (endpoint) =>
+      axiosClient.put<unknown, UpdateCustomerProfilePayload>(endpoint, payload),
+    );
     return requestWithFallback(PROFILE_ENDPOINTS, (endpoint) =>
-      axiosClient.put<CustomerProfile, UpdateCustomerProfilePayload>(endpoint, payload),
+      axiosClient.get<CustomerProfile>(endpoint),
     );
   },
 
@@ -48,6 +60,12 @@ export const profileApi = {
           "Content-Type": "multipart/form-data",
         },
       }),
+    );
+  },
+
+  changeMyPassword: async (payload: ChangeCustomerPasswordPayload): Promise<void> => {
+    await requestWithFallback(PASSWORD_ENDPOINTS, (endpoint) =>
+      axiosClient.put<unknown, ChangeCustomerPasswordPayload>(endpoint, payload),
     );
   },
 };
