@@ -7,7 +7,11 @@ const NAV_ITEMS = [
   { label: "Hồ sơ", icon: "person", href: "/profile" },
   { label: "Quản lý Ví", icon: "account_balance_wallet", href: "/profile/wallet" },
   { label: "Quản lý Đơn hàng", icon: "package_2", href: "/profile/orders" },
-  { label: "Ngân hàng", icon: "account_balance", href: "/profile/bank" },
+  {
+    label: "Quản lí ngày sinh",
+    icon: "cake",
+    href: "/profile/birthday-management",
+  },
   { label: "Địa chỉ", icon: "location_on", href: "/profile/address" },
   { label: "Đổi mật khẩu", icon: "lock", href: "/profile/password" },
   { label: "Thông báo", icon: "notifications", href: "/profile/notifications" },
@@ -29,7 +33,10 @@ export default function ProfileSidebar() {
     .slice(0, 2);
 
   return (
-    <aside className="hidden md:flex flex-col gap-2">
+    <aside 
+      className="hidden md:flex flex-col gap-2 z-10"
+      style={{ position: "sticky", top: "100px", height: "max-content", alignSelf: "start" }}
+    >
       {/* User info */}
       <div className="flex items-center gap-3 mb-6 px-4">
         <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
