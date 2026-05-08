@@ -47,7 +47,7 @@ const resolveBlogImage = (image: string | null) => {
 export default function BlogDetailPage() {
   const params = useParams<{ id: string }>();
   const blogPostId = Number(params.id);
-  const { post, featuredBlogs, newBlogs, isLoading, error } = useBlogDetailData(blogPostId);
+  const { post, reviews, reloadReviews, featuredBlogs, newBlogs, isLoading, error } = useBlogDetailData(blogPostId);
 
   const viewModel = useMemo(() => {
     if (!post) {
@@ -90,7 +90,7 @@ export default function BlogDetailPage() {
         <article className="lg:col-span-8 flex flex-col gap-10">
           <ArticleHeader post={viewModel} />
           <ArticleBody content={viewModel.content} />
-          <CommentSection comments={[]} />
+          <CommentSection blogPostId={blogPostId} comments={reviews} onReload={reloadReviews} />
         </article>
 
         <aside className="lg:col-span-4">

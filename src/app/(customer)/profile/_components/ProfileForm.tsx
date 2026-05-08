@@ -3,10 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useAuthContext } from "@/context/AuthContext";
-import { productApi } from "@/features/products/services/product-api";
 import { profileApi } from "@/features/profile/services/profile-api";
 import type { CustomerProfile } from "@/features/profile/types/profile";
 import toast from "react-hot-toast";
+
+const SEX_OPTIONS = [
+  { id: 1, label: "Nam" },
+  { id: 2, label: "Nữ" },
+  { id: 3, label: "Khác" },
+] as const;
+
+const getSexLabelById = (id: number | null | undefined) => {
+  if (id == null) return "";
+  return SEX_OPTIONS.find((option) => option.id === id)?.label ?? "";
+};
 
 const formatDob = (value: string | null | undefined) => {
   if (!value) return "";
@@ -18,6 +28,39 @@ const formatDob = (value: string | null | undefined) => {
   return `${day}/${month}/${year}`;
 };
 
+const formatDobForDateInput = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDobDateInputToIso = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date.toISOString();
+};
 const toDateInput = (value: string | null | undefined) => {
   if (!value) return "";
   const date = new Date(value);
@@ -38,6 +81,7 @@ export default function ProfileForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [sexes, setSexes] = useState<Array<{ id: number; label: string }>>([]);
 
   const [accountName, setAccountName] = useState("");
@@ -45,8 +89,9 @@ export default function ProfileForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dobInput, setDobInput] = useState("");
   const [sexId, setSexId] = useState<string>("");
-  const [provider, setProvider] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [savedProfile, setSavedProfile] = useState<Partial<CustomerProfile>>({});
+  const [provider, setProvider] = useState("");
   const hasShownLoadErrorRef = useRef(false);
 
   const initials = useMemo(() => {
@@ -78,6 +123,14 @@ export default function ProfileForm() {
             ? String(account.sexId)
             : "",
       );
+      setSavedProfile({
+        accountName: profile.accountName ?? account?.accountName ?? "",
+        email: profile.email ?? account?.email ?? "",
+        imageUrl: profile.imageUrl ?? account?.imageUrl ?? "",
+        phoneNumber: profile.phoneNumber ?? account?.phoneNumber ?? null,
+        dob: profile.dob ?? account?.dob ?? null,
+        sexId: profile.sexId ?? account?.sexId ?? null,
+      });
 
       updateAccount({
         accountName: profile.accountName ?? account?.accountName ?? "",
@@ -94,14 +147,7 @@ export default function ProfileForm() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [profile, lookups] = await Promise.all([
-          profileApi.getMyProfile(),
-          productApi.getLookups().catch(() => null),
-        ]);
-
-        if (lookups?.sexes && !cancelled) {
-          setSexes(lookups.sexes);
-        }
+        const profile = await profileApi.getMyProfile();
 
         applyProfile(profile);
       } catch {
@@ -130,9 +176,10 @@ export default function ProfileForm() {
     return () => {
       cancelled = true;
     };
-  }, [account, updateAccount]);
+  }, []);
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditing) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -145,7 +192,6 @@ export default function ProfileForm() {
       setIsUploading(true);
       const uploaded = await profileApi.uploadAvatar(file);
       setAvatarUrl(uploaded.url);
-      updateAccount({ imageUrl: uploaded.url });
       toast.success("Avatar uploaded successfully.");
     } catch {
       toast.error("Unable to upload avatar.");
@@ -158,11 +204,17 @@ export default function ProfileForm() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      const dobIso = parseDobDateInputToIso(dobInput);
+      if (dobInput.trim() && !dobIso) {
+        toast.error("Date of birth is invalid.");
+        return;
+      }
+
       const payload = {
         accountName: normalizeNullable(accountName),
         phoneNumber: normalizeNullable(phoneNumber),
         imageUrl: normalizeNullable(avatarUrl),
-        dob: dobInput ? new Date(dobInput).toISOString() : null,
+        dob: dobIso,
         sexId: sexId ? Number(sexId) : null,
       };
 
@@ -172,9 +224,10 @@ export default function ProfileForm() {
       setEmail(updated.email ?? email);
       setPhoneNumber(updated.phoneNumber ?? "");
       setAvatarUrl(updated.imageUrl ?? "");
-      setDobInput(toDateInput(updated.dob));
-      setProvider((updated.provider ?? provider).trim() || "Email");
+      setDobInput(formatDobForDateInput(updated.dob));
       setSexId(updated.sexId != null ? String(updated.sexId) : "");
+      setIsEditing(false);
+      setSavedProfile(updated);
 
       updateAccount({
         accountName: updated.accountName ?? accountName,
@@ -184,7 +237,7 @@ export default function ProfileForm() {
         dob: updated.dob ?? null,
         sexId: updated.sexId ?? null,
         sexName: updated.sexName ?? null,
-        provider: updated.provider ?? provider,
+        provider: updated.provider ?? account?.provider ?? null,
       });
 
       toast.success("Profile updated successfully.");
@@ -195,19 +248,31 @@ export default function ProfileForm() {
     }
   };
 
+  const handleCancelEdit = () => {
+    setAccountName(savedProfile.accountName ?? "");
+    setEmail(savedProfile.email ?? "");
+    setPhoneNumber(savedProfile.phoneNumber ?? "");
+    setAvatarUrl(savedProfile.imageUrl ?? "");
+    setDobInput(formatDobForDateInput(savedProfile.dob ?? null));
+    setSexId(savedProfile.sexId != null ? String(savedProfile.sexId) : "");
+    setIsEditing(false);
+  };
+
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200/60 bg-white">
-        <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-3xl shadow-[0_14px_40px_rgba(15,23,42,0.08)] border border-slate-200/80 overflow-hidden">
+      <div className="px-6 md:px-8 py-6 border-b border-slate-200/70 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/70">
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-slate-900">My Profile</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage your personal information and avatar.</p>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 md:p-8">
         {isLoading ? (
           <div className="text-sm text-slate-500">Loading profile...</div>
         ) : (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row gap-6 md:items-center">
-              <div className="w-28 h-28 rounded-full overflow-hidden border border-slate-200">
+          <div className="flex flex-col gap-8">
+            <div className="relative flex flex-col md:flex-row gap-5 md:gap-7 md:items-center p-5 md:p-6 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-orange-100/40 blur-2xl pointer-events-none" />
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-[3px] border-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] z-10">
                 {avatarUrl ? (
                   <div className="relative w-full h-full">
                     <Image
@@ -227,104 +292,142 @@ export default function ProfileForm() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png"
-                  onChange={handleAvatarChange}
-                  disabled={isUploading}
-                  className="block text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-2 file:font-semibold file:text-orange-600 hover:file:bg-orange-100"
-                />
-                <p className="text-xs text-slate-400">Max size 1MB, format JPG/PNG.</p>
-              </div>
+              {isEditing ? (
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={handleAvatarChange}
+                    disabled={isUploading}
+                    className="block text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-2 file:font-semibold file:text-orange-600 hover:file:bg-orange-100"
+                  />
+                  <p className="text-xs text-slate-400">Max size 1MB, format JPG/PNG.</p>
+                </div>
+              ) : null}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
               <label className="text-sm text-slate-700">
-                Account Name
+                <span className="font-semibold tracking-[0.01em]">Account Name</span>
                 <input
                   type="text"
                   value={accountName}
                   onChange={(event) => setAccountName(event.target.value)}
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2"
+                  readOnly={!isEditing}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
                   style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
                 />
               </label>
 
               <label className="text-sm text-slate-700">
-                Email
+                <span className="font-semibold tracking-[0.01em]">Email</span>
                 <input
                   type="email"
                   value={email}
                   readOnly
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-700"
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
                 />
               </label>
 
               <label className="text-sm text-slate-700">
-                Phone Number
+                <span className="font-semibold tracking-[0.01em]">Phone Number</span>
                 <input
                   type="tel"
                   value={phoneNumber}
                   onChange={(event) => setPhoneNumber(event.target.value)}
                   placeholder="Enter phone number"
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2"
+                  readOnly={!isEditing}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
                   style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
                 />
               </label>
 
-              <label className="text-sm text-slate-700">
-                Sex
-                <select
-                  value={sexId}
-                  onChange={(event) => setSexId(event.target.value)}
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
-                >
-                  <option value="">Select sex</option>
-                  {sexes.map((sex) => (
-                    <option key={sex.id} value={sex.id}>
-                      {sex.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Sex</span>
+                {isEditing ? (
+                  <div className="mt-1.5 min-h-12 px-4 py-2 border border-slate-200 rounded-2xl bg-white flex items-center gap-5">
+                    {SEX_OPTIONS.map((option) => (
+                      <label key={option.id} className="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="radio"
+                          name="sex"
+                          value={String(option.id)}
+                          checked={sexId === String(option.id)}
+                          onChange={(event) => setSexId(event.target.value)}
+                          className="h-4 w-4 text-orange-500 border-slate-300 focus:ring-orange-500"
+                        />
+                        <span className="text-sm text-slate-700">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    readOnly
+                    value={getSexLabelById(sexId ? Number(sexId) : null)}
+                    className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                  />
+                )}
+              </div>
 
               <label className="text-sm text-slate-700">
-                DOB
-                <input
-                  type="date"
-                  value={dobInput}
-                  onChange={(event) => setDobInput(event.target.value)}
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
-                />
-                <span className="mt-1 block text-xs text-slate-500">
-                  Display: {formatDob(dobInput || null) || "--/--/----"} (dd/MM/yyyy)
-                </span>
-              </label>
-
-              <label className="text-sm text-slate-700">
-                Provider
-                <input
-                  type="text"
-                  value={provider || "Email"}
-                  readOnly
-                  className="mt-1 w-full p-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-700"
-                />
+                <span className="font-semibold tracking-[0.01em]">Date of birth</span>
+                <div className="relative mt-1.5">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="material-symbols-outlined text-[20px] leading-none">calendar_month</span>
+                  </span>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={dobInput}
+                      onChange={(event) => setDobInput(event.target.value)}
+                      max={new Date().toISOString().split("T")[0]}
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white"
+                      style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      readOnly
+                      value={formatDob(parseDobDateInputToIso(dobInput))}
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                      placeholder="dd/MM/yyyy"
+                    />
+                  )}
+                </div>
               </label>
             </div>
 
-            <div>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-8 py-3 text-white text-sm font-bold rounded-lg disabled:opacity-60"
-                style={{ backgroundColor: "#ff6a00" }}
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
-              </button>
+            <div className="pt-2">
+              {!isEditing ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                  style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                >
+                  Edit Profile
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                    style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="h-12 px-7 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

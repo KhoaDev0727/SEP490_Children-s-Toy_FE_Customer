@@ -1,7 +1,9 @@
 "use client";
-import Image from "next/image"; // Thêm import Image
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
 import {
   PaginatedResponse,
@@ -13,10 +15,10 @@ import { formatCurrency } from "@/features/products/utils/format";
 const PAGE_SIZE = 20;
 
 const SORT_OPTIONS = [
-  { label: "Phổ biến nhất", value: "popular" },
-  { label: "Mới nhất", value: "createdAt_desc" },
-  { label: "Giá: Thấp đến Cao", value: "price_asc" },
-  { label: "Giá: Cao đến Thấp", value: "price_desc" },
+  { label: "Pho bien nhat", value: "popular" },
+  { label: "Moi nhat", value: "createdAt_desc" },
+  { label: "Gia: Thap den Cao", value: "price_asc" },
+  { label: "Gia: Cao den Thap", value: "price_desc" },
 ];
 
 const FALLBACK_IMAGE = "https://placehold.co/600x600/png?text=Toy";
@@ -45,9 +47,21 @@ const buildPages = (current: number, total: number) => {
   return Array.from(pages).sort((a, b) => a - b);
 };
 
-function ProductCard({ product }: { product: ProductList }) {
+function ProductCard({
+  product,
+  quantityInCart,
+  isAdding,
+  onAddToCart,
+}: {
+  product: ProductList;
+  quantityInCart: number;
+  isAdding: boolean;
+  onAddToCart: (product: ProductList) => void;
+}) {
   const inStock = product.quantity > 0 && product.productStatus === "Active";
-  const statusLabel = inStock ? "Còn hàng" : "Hết hàng";
+  const remainingStock = inStock ? Math.max(product.quantity - quantityInCart, 0) : 0;
+  const canAddToCart = inStock && remainingStock > 0;
+  const statusLabel = !inStock ? "Out of stock" : remainingStock > 0 ? "In stock" : "Max in cart";
 
   return (
     <div className="group bg-white rounded-xl border border-slate-200 hover:border-[#ff6a00] overflow-hidden flex flex-col transition-shadow hover:shadow-lg">
@@ -55,16 +69,18 @@ function ProductCard({ product }: { product: ProductList }) {
         href={`/products/${product.productId}`}
         className="relative block aspect-square bg-slate-100 overflow-hidden"
       >
-        <Image
+        <img
           src={product.mainImageUrl || FALLBACK_IMAGE}
           alt={product.productName}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <span
           className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded z-10 ${
-            inStock ? "bg-emerald-500 text-white" : "bg-slate-400 text-white"
+            !inStock
+              ? "bg-slate-400 text-white"
+              : canAddToCart
+                ? "bg-emerald-500 text-white"
+                : "bg-amber-500 text-white"
           }`}
         >
           {statusLabel}
@@ -116,12 +132,20 @@ function ProductCard({ product }: { product: ProductList }) {
               )}
             </div>
           )}
-          <button className="w-full py-2 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 bg-[#ff6a00] hover:bg-[#e05e00] transition-colors">
+          <button
+            className="w-full py-2 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 bg-[#ff6a00] hover:bg-[#e05e00] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            type="button"
+            disabled={!canAddToCart || isAdding}
+            onClick={() => onAddToCart(product)}
+          >
             <span className="material-symbols-outlined text-[18px]">
               add_shopping_cart
             </span>
-            Thêm vào giỏ
+            {isAdding ? "Adding..." : "Add to cart"}
           </button>
+          <p className="mt-2 text-[11px] text-slate-500">
+            In cart: {quantityInCart} | Can add: {remainingStock}
+          </p>
         </div>
       </div>
     </div>
@@ -183,13 +207,14 @@ function Pagination({
 }
 
 export default function ProductGrid({ filters }: { filters: ProductFilters }) {
+  const { addItem, cart } = useCart();
   const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<ProductList> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addingProductId, setAddingProductId] = useState<number | null>(null);
 
-  // Reset page khi filters thay đổi (Derived State)
   const filterString = JSON.stringify(filters);
   const [prevFilterString, setPrevFilterString] = useState(filterString);
 
@@ -215,7 +240,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         setData(result);
       } catch {
         if (!active) return;
-        setError("Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.");
+        setError("Khong the tai danh sach san pham. Vui long thu lai sau.");
       } finally {
         if (active) setIsLoading(false);
       }
@@ -229,22 +254,52 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
 
   const totalCount = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 1;
+  const cartQuantityByProductId = useMemo(() => {
+    const quantityByProductId = new Map<number, number>();
+    for (const item of cart?.items ?? []) {
+      quantityByProductId.set(item.productId, item.quantity);
+    }
+    return quantityByProductId;
+  }, [cart?.items]);
+
+  const handleAddToCart = async (product: ProductList) => {
+    if (product.quantity <= 0 || product.productStatus !== "Active") {
+      toast.error("Product is out of stock.");
+      return;
+    }
+
+    const quantityInCart = cartQuantityByProductId.get(product.productId) ?? 0;
+    const remainingStock = Math.max(product.quantity - quantityInCart, 0);
+    if (remainingStock <= 0) {
+      toast.error("Cart quantity has reached the maximum available stock.");
+      return;
+    }
+
+    try {
+      setAddingProductId(product.productId);
+      await addItem(product.productId, 1);
+      toast.success("Item added to cart.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to add item to cart.";
+      toast.error(message);
+    } finally {
+      setAddingProductId(null);
+    }
+  };
 
   return (
     <div className="flex-1">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 mb-6">
         <p className="text-slate-600 text-sm">
-          Hiển thị{" "}
-          <span className="font-bold text-slate-900">{totalCount}</span> sản
-          phẩm
+          Hien thi <span className="font-bold text-slate-900">{totalCount}</span> san pham
         </p>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500">Sắp xếp theo:</span>
+          <span className="text-sm text-slate-500">Sap xep theo:</span>
           <select
             value={sort}
             onChange={(e) => {
               setSort(e.target.value);
-              setPage(1); // CÁCH MỚI: Reset page thẳng tại event handler khi đổi sort
+              setPage(1);
             }}
             className="text-sm border-none bg-slate-100 rounded-lg py-1.5 pl-3 pr-8 outline-none focus:ring-2 focus:ring-[#ff6a00]/20 cursor-pointer"
           >
@@ -257,26 +312,24 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="py-16 text-center text-slate-500">
-          Đang tải sản phẩm...
-        </div>
-      )}
+      {isLoading && <div className="py-16 text-center text-slate-500">Dang tai san pham...</div>}
 
-      {!isLoading && error && (
-        <div className="py-16 text-center text-red-500">{error}</div>
-      )}
+      {!isLoading && error && <div className="py-16 text-center text-red-500">{error}</div>}
 
       {!isLoading && !error && data && data.items.length === 0 && (
-        <div className="py-16 text-center text-slate-500">
-          Chưa có sản phẩm phù hợp.
-        </div>
+        <div className="py-16 text-center text-slate-500">Chua co san pham phu hop.</div>
       )}
 
       {!isLoading && !error && data && data.items.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {data.items.map((product) => (
-            <ProductCard key={product.productId} product={product} />
+            <ProductCard
+              key={product.productId}
+              product={product}
+              quantityInCart={cartQuantityByProductId.get(product.productId) ?? 0}
+              isAdding={addingProductId === product.productId}
+              onAddToCart={handleAddToCart}
+            />
           ))}
         </div>
       )}

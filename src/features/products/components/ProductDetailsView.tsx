@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductDetail, ProductList } from "@/features/products/types/product";
 import { formatCurrency, formatDateTime } from "@/features/products/utils/format";
@@ -107,9 +109,11 @@ const sanitizeRichTextHtml = (html: string | null | undefined) => {
 };
 
 export default function ProductDetailsView({ productId }: { productId: number }) {
+  const { addItem, cart } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<ProductList[]>([]);
@@ -188,6 +192,18 @@ export default function ProductDetailsView({ productId }: { productId: number })
     ];
   }, [product]);
 
+  const quantityInCart = useMemo(() => {
+    if (!product) return 0;
+    return cart?.items.find((item) => item.productId === product.productId)?.quantity ?? 0;
+  }, [cart?.items, product]);
+
+  const remainingStock = useMemo(() => {
+    if (!product) return 0;
+    const inStock = product.quantity > 0 && product.productStatus === "Active";
+    if (!inStock) return 0;
+    return Math.max(product.quantity - quantityInCart, 0);
+  }, [product, quantityInCart]);
+
   if (isLoading) {
     return <div className="py-16 text-center text-slate-500">Đang tải sản phẩm...</div>;
   }
@@ -198,9 +214,40 @@ export default function ProductDetailsView({ productId }: { productId: number })
 
   const safeImage = activeImage ?? product.mainImageUrl ?? FALLBACK_IMAGE;
   const inStock = product.quantity > 0 && product.productStatus === "Active";
+  const canAddToCart = inStock && remainingStock > 0;
+  const maxSelectableQuantity = Math.max(remainingStock, 1);
+  const selectedQuantity = Math.min(Math.max(quantity, 1), maxSelectableQuantity);
   const averageRating = Number(product.averageRating ?? 0);
   const reviewCount = product.reviewCount ?? 0;
   const soldQuantity = product.soldQuantity ?? 0;
+
+  const handleAddToCart = async () => {
+    if (!inStock) {
+      toast.error("Product is out of stock.");
+      return;
+    }
+
+    if (remainingStock <= 0) {
+      toast.error("Cart quantity has reached the maximum available stock.");
+      return;
+    }
+
+    if (selectedQuantity > remainingStock) {
+      toast.error(`You can only add up to ${remainingStock} more item(s).`);
+      return;
+    }
+
+    try {
+      setIsAddingToCart(true);
+      await addItem(product.productId, selectedQuantity);
+      toast.success("Added to cart successfully.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to add item to cart.";
+      toast.error(message);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
@@ -297,30 +344,39 @@ export default function ProductDetailsView({ productId }: { productId: number })
               <div className="flex items-center border border-slate-200 w-fit rounded-lg overflow-hidden">
                 <button
                   className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                  onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                  onClick={() => setQuantity(Math.max(1, selectedQuantity - 1))}
                 >
                   <span className="material-symbols-outlined text-base">remove</span>
                 </button>
                 <input
                   className="w-14 text-center border-x border-slate-200 py-2 bg-transparent focus:ring-0 outline-none"
                   type="text"
-                  value={quantity}
+                  value={selectedQuantity}
                   readOnly
                 />
                 <button
                   className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                  onClick={() => setQuantity((prev) => Math.min(product.quantity || 1, prev + 1))}
+                  onClick={() => setQuantity(Math.min(maxSelectableQuantity, selectedQuantity + 1))}
+                  disabled={!canAddToCart || selectedQuantity >= maxSelectableQuantity}
                 >
                   <span className="material-symbols-outlined text-base">add</span>
                 </button>
               </div>
+              <p className="mt-2 text-xs text-slate-500">
+                In cart: {quantityInCart} | Can add: {remainingStock}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <button className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2">
+            <button
+              className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canAddToCart || isAddingToCart}
+            >
               <span className="material-symbols-outlined">add_shopping_cart</span>
-              Thêm vào giỏ hàng
+              {isAddingToCart ? "Adding..." : !canAddToCart ? "Max stock reached in cart" : "Add to cart"}
             </button>
             <button className="flex-1 px-8 py-4 bg-[#ff6a00] text-white font-bold rounded-xl hover:bg-[#e05e00] shadow-lg shadow-orange-200 transition-all flex items-center justify-center gap-2">
               Mua ngay

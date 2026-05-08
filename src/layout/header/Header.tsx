@@ -1,5 +1,6 @@
 "use client";
 import { useAuthContext } from "@/context/AuthContext";
+import { useCart } from "@/features/cart/context/CartContext";
 import { authApi } from "@/features/auth/services/auth-api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -195,7 +196,8 @@ function UserDropdown() {
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartCount] = useState(3);
+  const { cart } = useCart();
+  const cartCount = cart?.totalQuantity ?? 0;
 
   return (
     <header
