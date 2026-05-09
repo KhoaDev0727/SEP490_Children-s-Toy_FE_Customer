@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import NotificationPopup from "./NotificationPopup";
 
 const categories = [
   {
@@ -361,12 +362,7 @@ export default function Header() {
             </Link>
 
             {/* Notifications */}
-            <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative text-slate-600 dark:text-slate-300">
-              <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-                notifications
-              </span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
-            </button>
+            <NotificationPopup />
 
             {/* User */}
             <UserDropdown />

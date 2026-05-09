@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: "Địa chỉ", icon: "location_on", href: "/profile/address" },
   { label: "Đổi mật khẩu", icon: "lock", href: "/profile/password" },
   { label: "Thông báo", icon: "notifications", href: "/profile/notifications" },
+  { label: "Cài đặt thông báo", icon: "settings", href: "/profile/setting-notifications" },
   { label: "Kho Voucher", icon: "confirmation_number", href: "/profile/vouchers" },
 ];
 
@@ -33,7 +34,7 @@ export default function ProfileSidebar() {
     .slice(0, 2);
 
   return (
-    <aside 
+    <aside
       className="hidden md:flex flex-col gap-2 z-10"
       style={{ position: "sticky", top: "100px", height: "max-content", alignSelf: "start" }}
     >
