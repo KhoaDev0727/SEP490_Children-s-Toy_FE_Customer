@@ -2,10 +2,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductDetail, ProductList } from "@/features/products/types/product";
 import { formatCurrency, formatDateTime } from "@/features/products/utils/format";
+import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 
 const FALLBACK_IMAGE = "https://placehold.co/900x900/png?text=Toy";
 
@@ -110,6 +112,7 @@ const sanitizeRichTextHtml = (html: string | null | undefined) => {
 
 export default function ProductDetailsView({ productId }: { productId: number }) {
   const { addItem, cart } = useCart();
+  const { isAuthenticated, isHydrated } = useAuthContext();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -117,6 +120,8 @@ export default function ProductDetailsView({ productId }: { productId: number })
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<ProductList[]>([]);
+  const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(new Set());
+  const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">(
     "description",
   );
@@ -167,6 +172,40 @@ export default function ProductDetailsView({ productId }: { productId: number })
     };
   }, [productId]);
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchWishlist = async () => {
+      if (!isHydrated) {
+        return;
+      }
+
+      if (!isAuthenticated) {
+        if (active) {
+          setWishlistProductIds(new Set());
+        }
+        return;
+      }
+
+      try {
+        const items = await wishlistApi.getMyWishlist();
+        if (!active) {
+          return;
+        }
+        setWishlistProductIds(new Set(items.map((item) => item.productId)));
+      } catch {
+        if (active) {
+          setWishlistProductIds(new Set());
+        }
+      }
+    };
+
+    void fetchWishlist();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, isHydrated]);
+
   const images = useMemo(() => buildImageList(product), [product]);
   const safeDescriptionHtml = useMemo(
     () => sanitizeRichTextHtml(product?.description),
@@ -203,6 +242,11 @@ export default function ProductDetailsView({ productId }: { productId: number })
     if (!inStock) return 0;
     return Math.max(product.quantity - quantityInCart, 0);
   }, [product, quantityInCart]);
+
+  const isFavorite = useMemo(() => {
+    if (!product) return false;
+    return wishlistProductIds.has(product.productId);
+  }, [product, wishlistProductIds]);
 
   if (isLoading) {
     return <div className="py-16 text-center text-slate-500">Đang tải sản phẩm...</div>;
@@ -249,6 +293,44 @@ export default function ProductDetailsView({ productId }: { productId: number })
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!product) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error("Please login to manage wishlist.");
+      return;
+    }
+
+    try {
+      setIsWishlistUpdating(true);
+      if (isFavorite) {
+        await wishlistApi.removeItem(product.productId);
+        setWishlistProductIds((previous) => {
+          const next = new Set(previous);
+          next.delete(product.productId);
+          return next;
+        });
+        toast.success("Removed from wishlist.");
+      } else {
+        await wishlistApi.addItem(product.productId);
+        setWishlistProductIds((previous) => {
+          const next = new Set(previous);
+          next.add(product.productId);
+          return next;
+        });
+        toast.success("Added to wishlist.");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to update wishlist.";
+      toast.error(message);
+    } finally {
+      setIsWishlistUpdating(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
@@ -287,7 +369,23 @@ export default function ProductDetailsView({ productId }: { productId: number })
               {inStock ? "Sẵn sàng giao" : "Hết hàng"}
             </span>
           </div>
-          <h1 className="text-3xl font-black leading-tight mb-4">{product.productName}</h1>
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-black leading-tight">{product.productName}</h1>
+            <button
+              type="button"
+              onClick={handleToggleWishlist}
+              disabled={isWishlistUpdating}
+              className="h-11 w-11 rounded-full border border-slate-200 bg-white shadow-sm flex items-center justify-center transition-colors hover:border-red-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <span
+                className={`material-symbols-outlined text-[22px] ${isFavorite ? "text-red-500" : "text-slate-500"}`}
+                style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                favorite
+              </span>
+            </button>
+          </div>
           <div className="flex items-center gap-4 mb-6 text-sm flex-wrap">
             <div className="flex items-center text-[#ff6a00]">
               {renderRatingStars(averageRating)}

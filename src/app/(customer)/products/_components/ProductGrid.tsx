@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
 import {
@@ -11,6 +12,7 @@ import {
   ProductList,
 } from "@/features/products/types/product";
 import { formatCurrency } from "@/features/products/utils/format";
+import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 
 const PAGE_SIZE = 20;
 
@@ -51,12 +53,18 @@ function ProductCard({
   product,
   quantityInCart,
   isAdding,
+  isFavorite,
+  isWishlistUpdating,
   onAddToCart,
+  onToggleWishlist,
 }: {
   product: ProductList;
   quantityInCart: number;
   isAdding: boolean;
+  isFavorite: boolean;
+  isWishlistUpdating: boolean;
   onAddToCart: (product: ProductList) => void;
+  onToggleWishlist: (productId: number) => void;
 }) {
   const inStock = product.quantity > 0 && product.productStatus === "Active";
   const remainingStock = inStock ? Math.max(product.quantity - quantityInCart, 0) : 0;
@@ -64,7 +72,21 @@ function ProductCard({
   const statusLabel = !inStock ? "Out of stock" : remainingStock > 0 ? "In stock" : "Max in cart";
 
   return (
-    <div className="group bg-white rounded-xl border border-slate-200 hover:border-[#ff6a00] overflow-hidden flex flex-col transition-shadow hover:shadow-lg">
+    <div className="group relative bg-white rounded-xl border border-slate-200 hover:border-[#ff6a00] overflow-hidden flex flex-col transition-shadow hover:shadow-lg">
+      <button
+        type="button"
+        className="absolute top-3 left-3 z-20 h-9 w-9 rounded-full bg-white/95 shadow-sm border border-slate-200 flex items-center justify-center transition-colors hover:border-red-200 disabled:opacity-60 disabled:cursor-not-allowed"
+        onClick={() => onToggleWishlist(product.productId)}
+        disabled={isWishlistUpdating}
+        aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        <span
+          className={`material-symbols-outlined text-[18px] ${isFavorite ? "text-red-500" : "text-slate-500"}`}
+          style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
+        >
+          favorite
+        </span>
+      </button>
       <Link
         href={`/products/${product.productId}`}
         className="relative block aspect-square bg-slate-100 overflow-hidden"
@@ -75,7 +97,7 @@ function ProductCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <span
-          className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded z-10 ${
+          className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded z-10 ${
             !inStock
               ? "bg-slate-400 text-white"
               : canAddToCart
@@ -208,12 +230,15 @@ function Pagination({
 
 export default function ProductGrid({ filters }: { filters: ProductFilters }) {
   const { addItem, cart } = useCart();
+  const { isAuthenticated, isHydrated } = useAuthContext();
   const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<ProductList> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
+  const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(new Set());
+  const [updatingWishlistProductId, setUpdatingWishlistProductId] = useState<number | null>(null);
 
   const filterString = JSON.stringify(filters);
   const [prevFilterString, setPrevFilterString] = useState(filterString);
@@ -252,6 +277,40 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     };
   }, [page, sort, filters]);
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchWishlist = async () => {
+      if (!isHydrated) {
+        return;
+      }
+
+      if (!isAuthenticated) {
+        if (active) {
+          setWishlistProductIds(new Set());
+        }
+        return;
+      }
+
+      try {
+        const items = await wishlistApi.getMyWishlist();
+        if (!active) {
+          return;
+        }
+        setWishlistProductIds(new Set(items.map((item) => item.productId)));
+      } catch {
+        if (active) {
+          setWishlistProductIds(new Set());
+        }
+      }
+    };
+
+    void fetchWishlist();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, isHydrated]);
+
   const totalCount = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 1;
   const cartQuantityByProductId = useMemo(() => {
@@ -284,6 +343,42 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
       toast.error(message);
     } finally {
       setAddingProductId(null);
+    }
+  };
+
+  const handleToggleWishlist = async (productId: number) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to manage wishlist.");
+      return;
+    }
+
+    const isFavorite = wishlistProductIds.has(productId);
+
+    try {
+      setUpdatingWishlistProductId(productId);
+      if (isFavorite) {
+        await wishlistApi.removeItem(productId);
+        setWishlistProductIds((previous) => {
+          const next = new Set(previous);
+          next.delete(productId);
+          return next;
+        });
+        toast.success("Removed from wishlist.");
+      } else {
+        await wishlistApi.addItem(productId);
+        setWishlistProductIds((previous) => {
+          const next = new Set(previous);
+          next.add(productId);
+          return next;
+        });
+        toast.success("Added to wishlist.");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to update wishlist.";
+      toast.error(message);
+    } finally {
+      setUpdatingWishlistProductId(null);
     }
   };
 
@@ -328,7 +423,10 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
               product={product}
               quantityInCart={cartQuantityByProductId.get(product.productId) ?? 0}
               isAdding={addingProductId === product.productId}
+              isFavorite={wishlistProductIds.has(product.productId)}
+              isWishlistUpdating={updatingWishlistProductId === product.productId}
               onAddToCart={handleAddToCart}
+              onToggleWishlist={handleToggleWishlist}
             />
           ))}
         </div>
