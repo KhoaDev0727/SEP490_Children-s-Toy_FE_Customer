@@ -27,6 +27,27 @@ const getInitials = (name: string) => {
   return parts.slice(-2).map((part) => part[0]?.toUpperCase() ?? "").join("");
 };
 
+const getReplyIndentClass = (depth: number) => {
+  if (depth <= 1) {
+    return "ml-6";
+  }
+  return "ml-12";
+};
+
+const getReplyThreadClass = (depth: number) => {
+  if (depth < 2) {
+    return "";
+  }
+  return "border-l-2 border-[#f3d7c6] pl-3";
+};
+
+const flattenReplies = (
+  replies: BlogReviewReply[],
+  depth = 1,
+): Array<{ reply: BlogReviewReply; depth: number }> => {
+  return replies.flatMap((item) => [{ reply: item, depth }, ...flattenReplies(item.replies, depth + 1)]);
+};
+
 export default function CommentSection({ blogPostId, comments, onReload }: CommentSectionProps) {
   const { account, isAuthenticated } = useAuthContext();
   const [newComment, setNewComment] = useState("");
@@ -86,8 +107,8 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
   };
 
   const renderReply = (reviewBlogId: number, reply: BlogReviewReply, depth: number) => (
-    <div key={reply.replyBlogId} className="mt-3" style={{ marginLeft: `${Math.min(depth, 4) * 24}px` }}>
-      <div className="flex gap-3">
+    <div key={reply.replyBlogId} className={`mt-3 ${getReplyIndentClass(depth >= 2 ? 2 : depth)}`}>
+      <div className={`flex gap-3 ${getReplyThreadClass(depth)}`}>
         <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[11px]">
           {getInitials(reply.accountName)}
         </div>
@@ -109,7 +130,6 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
           )}
         </div>
       </div>
-      {reply.replies.map((child) => renderReply(reviewBlogId, child, depth + 1))}
     </div>
   );
 
@@ -132,23 +152,6 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
             <button type="button" onClick={handleCreateReview} disabled={!canSubmit || isSubmitting} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
               Add Review
             </button>
-          </div>
-        </div>
-      )}
-
-      {replyTarget && (
-        <div className="rounded-xl border border-[#f8ddd2] bg-[#fff7f2] p-3">
-          <p className="text-xs font-medium text-[#9a3412] mb-2">{replyTarget.label}</p>
-          <textarea
-            value={replyComment}
-            onChange={(event) => setReplyComment(event.target.value)}
-            maxLength={500}
-            rows={2}
-            className="w-full resize-none rounded-lg border border-[#f1ddd2] px-3 py-2 text-sm outline-none focus:border-[#c2410c]"
-          />
-          <div className="mt-2 flex items-center gap-2 justify-end">
-            <button type="button" onClick={() => setReplyTarget(null)} className="text-xs text-slate-600">Cancel</button>
-            <button type="button" onClick={handleReply} disabled={!replyComment.trim() || isSubmitting} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Reply</button>
           </div>
         </div>
       )}
@@ -179,11 +182,36 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                   Reply
                 </button>
               )}
-              {comment.replies.map((reply) => renderReply(comment.reviewBlogId, reply, 1))}
+              {flattenReplies(comment.replies).map(({ reply, depth }) => renderReply(comment.reviewBlogId, reply, depth))}
             </div>
           </div>
         ))}
       </div>
+
+      {replyTarget && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setReplyTarget(null)} />
+          <div className="relative w-full max-w-[620px] rounded-xl bg-white p-5 shadow-xl lg:p-6">
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-[#261812]">{replyTarget.label}</p>
+              <textarea
+                value={replyComment}
+                onChange={(event) => setReplyComment(event.target.value)}
+                maxLength={500}
+                rows={4}
+                className="w-full resize-none rounded-lg border border-[#f1ddd2] px-3 py-2 text-sm outline-none focus:border-[#c2410c]"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#8e7164]">{replyComment.length}/500</span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setReplyTarget(null)} className="rounded border border-slate-200 px-3 py-1 text-xs text-slate-600">Cancel</button>
+                  <button type="button" onClick={handleReply} disabled={!replyComment.trim() || isSubmitting} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Reply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
