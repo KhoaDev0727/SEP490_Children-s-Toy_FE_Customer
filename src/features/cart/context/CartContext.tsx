@@ -170,7 +170,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const connection = new signalr.HubConnectionBuilder()
           .withUrl(url, {
             accessTokenFactory: () => localStorage.getItem("access_token") ?? "",
-            withCredentials: false,
+            withCredentials: true,
           })
           .withAutomaticReconnect()
           .build();
@@ -204,8 +204,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             console.info("[CartSignalR] connected", url);
           }
           return;
-        } catch (error) {
+        } catch (error: any) {
           lastError = error;
+          if (process.env.NODE_ENV === "development") {
+            console.error(`[CartSignalR] Connection failed to ${url}:`, {
+              message: error.message,
+              statusCode: error.statusCode,
+              stack: error.stack
+            });
+          }
           await connection.stop();
         }
       }
