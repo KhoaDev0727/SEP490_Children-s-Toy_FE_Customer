@@ -57,6 +57,14 @@ const axiosClient = {
     const response = await axiosInstance.put<TResponse>(url, payload, config);
     return response.data;
   },
+  patch: async <TResponse, TPayload = unknown>(
+    url: string,
+    payload?: TPayload,
+    config?: RequestConfig,
+  ): Promise<TResponse> => {
+    const response = await axiosInstance.patch<TResponse>(url, payload, config);
+    return response.data;
+  },
   delete: async <TResponse>(url: string, config?: RequestConfig): Promise<TResponse> => {
     const response = await axiosInstance.delete<TResponse>(url, config);
     return response.data;
