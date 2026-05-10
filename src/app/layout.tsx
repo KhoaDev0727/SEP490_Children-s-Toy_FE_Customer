@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { CartProvider } from "@/features/cart/context/CartContext";
 import { Toaster } from "react-hot-toast";
+import { NotificationRealtimeProvider } from "@/features/notifications/context/NotificationRealtimeContext";
 
 export const metadata: Metadata = {
   title: "ToyStore - Đồ Chơi Trẻ Em Chất Lượng",
@@ -32,10 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <CartProvider>
             <ThemeProvider>
-              <SidebarProvider>
-                {children}
-                <Toaster position="top-right" />
-              </SidebarProvider>
+              <NotificationRealtimeProvider>
+                <SidebarProvider>
+                  {children}
+                  <Toaster position="top-right" />
+                </SidebarProvider>
+              </NotificationRealtimeProvider>
             </ThemeProvider>
           </CartProvider>
         </AuthProvider>

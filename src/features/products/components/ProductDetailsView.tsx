@@ -11,6 +11,7 @@ import {
   formatDateTime,
 } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
+import { followApi } from "@/features/products/services/follow-api";
 import Image from "next/image";
 
 const FALLBACK_IMAGE = "https://placehold.co/900x900/png?text=Toy";
@@ -146,6 +147,8 @@ export default function ProductDetailsView({
   const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(
     new Set(),
   );
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [isFollowUpdating, setIsFollowUpdating] = useState(false);
   const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "description" | "specs" | "reviews"
@@ -235,6 +238,25 @@ export default function ProductDetailsView({
       active = false;
     };
   }, [isAuthenticated, isHydrated]);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkFollow = async () => {
+      if (!isHydrated || !isAuthenticated || !product) return;
+      try {
+        const followed = await followApi.isFollowing(product.productId);
+        if (active) setIsFollowed(followed);
+      } catch {
+        // Ignore
+      }
+    };
+
+    void checkFollow();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, isHydrated, product?.productId]);
 
   const images = useMemo(() => buildImageList(product), [product]);
   const safeDescriptionHtml = useMemo(
@@ -376,6 +398,32 @@ export default function ProductDetailsView({
     }
   };
 
+  const handleToggleFollow = async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để theo dõi sản phẩm.");
+      return;
+    }
+
+    try {
+      setIsFollowUpdating(true);
+      if (isFollowed) {
+        await followApi.unfollowProduct(product.productId);
+        setIsFollowed(false);
+        toast.success("Đã hủy theo dõi sản phẩm.");
+      } else {
+        await followApi.followProduct(product.productId);
+        setIsFollowed(true);
+        toast.success("Đã đăng ký nhận thông báo khi sản phẩm ra mắt!");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể thực hiện thao tác.";
+      toast.error(message);
+    } finally {
+      setIsFollowUpdating(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
@@ -429,11 +477,15 @@ export default function ProductDetailsView({
         </div>
 
         <div className="flex flex-col">
-          <div className="mb-2">
-            <span
-              className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${inStock ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}
-            >
-              {inStock ? "Sẵn sàng giao" : "Hết hàng"}
+          <div className="mb-2 flex gap-2">
+            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
+              product.productStatus === "ComingSoon" 
+                ? "bg-blue-100 text-blue-700" 
+                : inStock 
+                  ? "bg-emerald-100 text-emerald-700" 
+                  : "bg-slate-200 text-slate-600"
+            }`}>
+              {product.productStatus === "ComingSoon" ? "Sắp ra mắt" : inStock ? "Sẵn sàng giao" : "Hết hàng"}
             </span>
           </div>
           <div className="mb-4 flex items-start justify-between gap-4">
@@ -613,24 +665,38 @@ export default function ProductDetailsView({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <button
-              className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              type="button"
-              onClick={handleAddToCart}
-              disabled={!canAddToCart || isAddingToCart}
-            >
-              <span className="material-symbols-outlined">
-                add_shopping_cart
-              </span>
-              {isAddingToCart
-                ? "Adding..."
-                : !canAddToCart
-                  ? "Max stock reached in cart"
-                  : "Add to cart"}
-            </button>
-            <button className="flex-1 px-8 py-4 bg-[#ff6a00] text-white font-bold rounded-xl hover:bg-[#e05e00] shadow-lg shadow-orange-200 transition-all flex items-center justify-center gap-2">
-              Mua ngay
-            </button>
+            {product.productStatus === "ComingSoon" || !inStock ? (
+              <button
+                className={`flex-1 px-8 py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${
+                  isFollowed 
+                    ? "bg-slate-100 text-slate-600 border-2 border-slate-200 hover:bg-slate-200" 
+                    : "bg-[#ff6a00] text-white hover:bg-[#e05e00] shadow-lg shadow-orange-200"
+                }`}
+                type="button"
+                onClick={handleToggleFollow}
+                disabled={isFollowUpdating}
+              >
+                <span className="material-symbols-outlined">
+                  {isFollowed ? "notifications_active" : "notifications"}
+                </span>
+                {isFollowUpdating ? "Processing..." : isFollowed ? "Đã theo dõi" : product.productStatus === "ComingSoon" ? "Theo dõi sản phẩm" : "Báo khi có hàng"}
+              </button>
+            ) : (
+              <>
+                <button
+                  className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!canAddToCart || isAddingToCart}
+                >
+                  <span className="material-symbols-outlined">add_shopping_cart</span>
+                  {isAddingToCart ? "Adding..." : !canAddToCart ? "Max stock reached in cart" : "Add to cart"}
+                </button>
+                <button className="flex-1 px-8 py-4 bg-[#ff6a00] text-white font-bold rounded-xl hover:bg-[#e05e00] shadow-lg shadow-orange-200 transition-all flex items-center justify-center gap-2">
+                  Mua ngay
+                </button>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100 pt-8">

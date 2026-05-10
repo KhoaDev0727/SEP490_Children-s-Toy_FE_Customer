@@ -11,6 +11,8 @@ export interface Notification {
   iconBg: string;
   iconColor: string;
   image?: string;
+  actionType?: string;
+  actionTarget?: string;
 }
 
 export const NOTIFICATION_TABS: { key: NotificationCategory; label: string }[] = [
