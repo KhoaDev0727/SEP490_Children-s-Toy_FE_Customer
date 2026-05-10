@@ -6,15 +6,21 @@ import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductDetail, ProductList } from "@/features/products/types/product";
-import { formatCurrency, formatDateTime } from "@/features/products/utils/format";
+import {
+  formatCurrency,
+  formatDateTime,
+} from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import { followApi } from "@/features/products/services/follow-api";
+import Image from "next/image";
 
 const FALLBACK_IMAGE = "https://placehold.co/900x900/png?text=Toy";
 
 const buildImageList = (product: ProductDetail | null) => {
   if (!product) return [];
-  const images = [product.mainImageUrl, ...product.additionalImageUrls].filter(Boolean) as string[];
+  const images = [product.mainImageUrl, ...product.additionalImageUrls].filter(
+    Boolean,
+  ) as string[];
   return Array.from(new Set(images));
 };
 
@@ -26,7 +32,11 @@ const renderRatingStars = (rating: number) => {
   return Array.from({ length: 5 }).map((_, index) => {
     if (index < fullStars) {
       return (
-        <span key={index} className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+        <span
+          key={index}
+          className="material-symbols-outlined text-lg"
+          style={{ fontVariationSettings: "'FILL' 1" }}
+        >
           star
         </span>
       );
@@ -60,12 +70,16 @@ const sanitizeRichTextHtml = (html: string | null | undefined) => {
   };
 
   const normalizedInput =
-    html.includes("&lt;") && html.includes("&gt;") ? decodeHtmlEntities(html) : html;
+    html.includes("&lt;") && html.includes("&gt;")
+      ? decodeHtmlEntities(html)
+      : html;
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(normalizedInput, "text/html");
 
-  doc.querySelectorAll("script, style, iframe, object, embed").forEach((node) => node.remove());
+  doc
+    .querySelectorAll("script, style, iframe, object, embed")
+    .forEach((node) => node.remove());
 
   doc.querySelectorAll("*").forEach((el) => {
     for (const attr of Array.from(el.attributes)) {
@@ -83,9 +97,14 @@ const sanitizeRichTextHtml = (html: string | null | undefined) => {
       /(inset\s*:\s*0|top\s*:\s*0|left\s*:\s*0)/.test(style) &&
       /(width\s*:\s*100(vw|%)|height\s*:\s*100(vh|%))/.test(style);
     const hasDarkBackground =
-      /(background(-color)?\s*:\s*(#000|black|rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.[0-9]+\)))/.test(style);
+      /(background(-color)?\s*:\s*(#000|black|rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.[0-9]+\)))/.test(
+        style,
+      );
 
-    if (hasOverlayClass || (hasFixedOrAbsolute && (hasViewportCover || hasDarkBackground))) {
+    if (
+      hasOverlayClass ||
+      (hasFixedOrAbsolute && (hasViewportCover || hasDarkBackground))
+    ) {
       el.remove();
       return;
     }
@@ -111,7 +130,11 @@ const sanitizeRichTextHtml = (html: string | null | undefined) => {
   return doc.body.innerHTML;
 };
 
-export default function ProductDetailsView({ productId }: { productId: number }) {
+export default function ProductDetailsView({
+  productId,
+}: {
+  productId: number;
+}) {
   const { addItem, cart } = useCart();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const [product, setProduct] = useState<ProductDetail | null>(null);
@@ -121,13 +144,15 @@ export default function ProductDetailsView({ productId }: { productId: number })
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<ProductList[]>([]);
-  const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(new Set());
-  const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">(
-    "description",
+  const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(
+    new Set(),
   );
   const [isFollowed, setIsFollowed] = useState(false);
   const [isFollowUpdating, setIsFollowUpdating] = useState(false);
+  const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "description" | "specs" | "reviews"
+  >("description");
 
   useEffect(() => {
     let active = true;
@@ -160,9 +185,14 @@ export default function ProductDetailsView({ productId }: { productId: number })
 
     const fetchSimilar = async () => {
       try {
-        const result = await productApi.getProducts({ pageNumber: 1, pageSize: 8 });
+        const result = await productApi.getProducts({
+          pageNumber: 1,
+          pageSize: 8,
+        });
         if (!active) return;
-        const items = result.items.filter((item) => item.productId !== productId).slice(0, 5);
+        const items = result.items
+          .filter((item) => item.productId !== productId)
+          .slice(0, 5);
         setSimilarProducts(items);
       } catch {
         if (active) setSimilarProducts([]);
@@ -255,7 +285,10 @@ export default function ProductDetailsView({ productId }: { productId: number })
 
   const quantityInCart = useMemo(() => {
     if (!product) return 0;
-    return cart?.items.find((item) => item.productId === product.productId)?.quantity ?? 0;
+    return (
+      cart?.items.find((item) => item.productId === product.productId)
+        ?.quantity ?? 0
+    );
   }, [cart?.items, product]);
 
   const remainingStock = useMemo(() => {
@@ -271,18 +304,29 @@ export default function ProductDetailsView({ productId }: { productId: number })
   }, [product, wishlistProductIds]);
 
   if (isLoading) {
-    return <div className="py-16 text-center text-slate-500">Đang tải sản phẩm...</div>;
+    return (
+      <div className="py-16 text-center text-slate-500">
+        Đang tải sản phẩm...
+      </div>
+    );
   }
 
   if (error || !product) {
-    return <div className="py-16 text-center text-red-500">{error ?? "Không tìm thấy sản phẩm."}</div>;
+    return (
+      <div className="py-16 text-center text-red-500">
+        {error ?? "Không tìm thấy sản phẩm."}
+      </div>
+    );
   }
 
   const safeImage = activeImage ?? product.mainImageUrl ?? FALLBACK_IMAGE;
   const inStock = product.quantity > 0 && product.productStatus === "Active";
   const canAddToCart = inStock && remainingStock > 0;
   const maxSelectableQuantity = Math.max(remainingStock, 1);
-  const selectedQuantity = Math.min(Math.max(quantity, 1), maxSelectableQuantity);
+  const selectedQuantity = Math.min(
+    Math.max(quantity, 1),
+    maxSelectableQuantity,
+  );
   const averageRating = Number(product.averageRating ?? 0);
   const reviewCount = product.reviewCount ?? 0;
   const soldQuantity = product.soldQuantity ?? 0;
@@ -308,7 +352,8 @@ export default function ProductDetailsView({ productId }: { productId: number })
       await addItem(product.productId, selectedQuantity);
       toast.success("Added to cart successfully.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to add item to cart.";
+      const message =
+        error instanceof Error ? error.message : "Unable to add item to cart.";
       toast.error(message);
     } finally {
       setIsAddingToCart(false);
@@ -382,17 +427,29 @@ export default function ProductDetailsView({ productId }: { productId: number })
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
-        <Link href="/" className="hover:text-[#ff6a00]">Trang chủ</Link>
+        <Link href="/" className="hover:text-[#ff6a00]">
+          Trang chủ
+        </Link>
         <span className="material-symbols-outlined text-xs">chevron_right</span>
-        <Link href="/products" className="hover:text-[#ff6a00]">Sản phẩm</Link>
+        <Link href="/products" className="hover:text-[#ff6a00]">
+          Sản phẩm
+        </Link>
         <span className="material-symbols-outlined text-xs">chevron_right</span>
-        <span className="text-slate-900 font-medium">{product.productName}</span>
+        <span className="text-slate-900 font-medium">
+          {product.productName}
+        </span>
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         <div className="space-y-4">
-          <div className="aspect-square w-full rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm">
-            <img className="w-full h-full object-contain p-8" src={safeImage} alt={product.productName} />
+          <div className="aspect-square w-full rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm relative">
+            <Image
+              className="object-contain p-8"
+              src={safeImage}
+              alt={product.productName}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
+            />
           </div>
           {images.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
@@ -400,11 +457,19 @@ export default function ProductDetailsView({ productId }: { productId: number })
                 <button
                   key={img}
                   onClick={() => setActiveImage(img)}
-                  className={`aspect-square rounded-lg border-2 overflow-hidden bg-white shadow-sm ${
-                    img === safeImage ? "border-[#ff6a00]" : "border-slate-200 hover:border-[#ff6a00]"
+                  className={`aspect-square rounded-lg border-2 overflow-hidden bg-white shadow-sm relative ${
+                    img === safeImage
+                      ? "border-[#ff6a00]"
+                      : "border-slate-200 hover:border-[#ff6a00]"
                   }`}
                 >
-                  <img className="w-full h-full object-cover" src={img} alt={product.productName} />
+                  <Image
+                    className="object-cover"
+                    src={img}
+                    alt={product.productName}
+                    fill
+                    sizes="(max-width: 768px) 25vw, 12vw"
+                  />
                 </button>
               ))}
             </div>
@@ -424,17 +489,23 @@ export default function ProductDetailsView({ productId }: { productId: number })
             </span>
           </div>
           <div className="mb-4 flex items-start justify-between gap-4">
-            <h1 className="text-3xl font-black leading-tight">{product.productName}</h1>
+            <h1 className="text-3xl font-black leading-tight">
+              {product.productName}
+            </h1>
             <button
               type="button"
               onClick={handleToggleWishlist}
               disabled={isWishlistUpdating}
               className="h-11 w-11 rounded-full border border-slate-200 bg-white shadow-sm flex items-center justify-center transition-colors hover:border-red-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+              aria-label={
+                isFavorite ? "Remove from wishlist" : "Add to wishlist"
+              }
             >
               <span
                 className={`material-symbols-outlined text-[22px] ${isFavorite ? "text-red-500" : "text-slate-500"}`}
-                style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
+                style={{
+                  fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
+                }}
               >
                 favorite
               </span>
@@ -443,7 +514,9 @@ export default function ProductDetailsView({ productId }: { productId: number })
           <div className="flex items-center gap-4 mb-6 text-sm flex-wrap">
             <div className="flex items-center text-[#ff6a00]">
               {renderRatingStars(averageRating)}
-              <span className="ml-1 text-sm font-bold">{averageRating.toFixed(1)}</span>
+              <span className="ml-1 text-sm font-bold">
+                {averageRating.toFixed(1)}
+              </span>
             </div>
             <span className="text-slate-400">|</span>
             <span className="text-sm font-medium">{reviewCount} Đánh giá</span>
@@ -452,53 +525,116 @@ export default function ProductDetailsView({ productId }: { productId: number })
           </div>
           <div className="flex items-center gap-3 mb-6 text-sm text-slate-500">
             <span>Danh mục:</span>
-            <span className="font-semibold text-slate-900">{product.categoryName}</span>
+            <span className="font-semibold text-slate-900">
+              {product.categoryName}
+            </span>
             {product.brandName && (
               <>
                 <span className="text-slate-400">|</span>
                 <span>Thương hiệu:</span>
-                <span className="font-semibold text-slate-900">{product.brandName}</span>
+                <span className="font-semibold text-slate-900">
+                  {product.brandName}
+                </span>
               </>
             )}
           </div>
 
-          <div className="p-6 bg-slate-50 rounded-2xl mb-8">
+          <div className="p-6 bg-slate-50 rounded-2xl mb-8 relative overflow-hidden">
+            {product.promotionType === "FLASH_SALE" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ff6a00] text-white rounded-lg mb-4 shadow-sm animate-pulse">
+                <span className="material-symbols-outlined text-sm">bolt</span>
+                <span className="text-xs font-black uppercase tracking-wider">
+                  Flash Sale Đang Diễn Ra
+                </span>
+              </div>
+            )}
             {product.discountedPrice != null ? (
               <div className="mb-2">
                 <div className="flex items-center gap-4 mb-1">
-                  <span className="text-4xl font-black text-[#ff6a00]">{formatCurrency(product.discountedPrice)}</span>
-                  {product.discountPercent != null && product.discountPercent > 0 && (
-                    <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-md shadow-sm">
-                      -{product.discountPercent}%
-                    </span>
-                  )}
+                  <span className="text-4xl font-black text-[#ff6a00]">
+                    {formatCurrency(product.discountedPrice)}
+                  </span>
+                  {product.discountPercent != null &&
+                    product.discountPercent > 0 && (
+                      <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-md shadow-sm">
+                        -{product.discountPercent}%
+                      </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg text-slate-400 line-through">{formatCurrency(product.price)}</span>
+                  <span className="text-lg text-slate-400 line-through">
+                    {formatCurrency(product.price)}
+                  </span>
                   <span className="text-xs text-slate-400">(Giá gốc)</span>
                 </div>
               </div>
             ) : (
               <div className="flex items-baseline gap-4 mb-2">
-                <span className="text-4xl font-black text-[#ff6a00]">{formatCurrency(product.price)}</span>
-                <span className="text-sm text-slate-400">Giá bán lẻ đề xuất</span>
+                <span className="text-4xl font-black text-[#ff6a00]">
+                  {formatCurrency(product.price)}
+                </span>
+                <span className="text-sm text-slate-400">
+                  Giá bán lẻ đề xuất
+                </span>
               </div>
             )}
+
+            {product.promotionType === "FLASH_SALE" &&
+              product.promotionSaleQuantity != null && (
+                <div className="mb-8">
+                  <div className="relative w-full h-7 bg-[#ffeddb] rounded-full overflow-hidden flex items-center shadow-inner border border-[#ff6a00]/10">
+                    {/* Progress Fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 bg-linear-to-r from-[#ff6a00] to-[#ff9d00] rounded-full transition-all duration-1000 ease-out z-0"
+                      style={{
+                        width: `${Math.max(Math.min(((product.promotionSoldQuantity || 0) / product.promotionSaleQuantity) * 100, 100), 0)}%`,
+                      }}
+                    />
+
+                    {/* Text & Icon Overlay */}
+                    <div className="absolute inset-0 flex items-center px-4 gap-1.5 z-10">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 text-yellow-300"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-1.245-1.134-1.792-.153-.547-.173-1.096-.145-1.566.028-.47.16-.92.35-1.31.189-.39.43-.76.71-1.127a1 1 0 00-.336-1.302z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                        Đã bán {product.promotionSoldQuantity || 0}/
+                        {product.promotionSaleQuantity}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
-              <span className="material-symbols-outlined text-base">confirmation_number</span>
+              <span className="material-symbols-outlined text-base">
+                confirmation_number
+              </span>
               <span>Mã TOY200 giảm ngay 200k cho đơn từ 999k</span>
             </div>
           </div>
 
           <div className="space-y-6 mb-8">
             <div>
-              <p className="text-sm font-bold mb-3 uppercase tracking-tight">Số lượng:</p>
+              <p className="text-sm font-bold mb-3 uppercase tracking-tight">
+                Số lượng:
+              </p>
               <div className="flex items-center border border-slate-200 w-fit rounded-lg overflow-hidden">
                 <button
                   className="px-3 py-2 hover:bg-slate-100 transition-colors"
                   onClick={() => setQuantity(Math.max(1, selectedQuantity - 1))}
                 >
-                  <span className="material-symbols-outlined text-base">remove</span>
+                  <span className="material-symbols-outlined text-base">
+                    remove
+                  </span>
                 </button>
                 <input
                   className="w-14 text-center border-x border-slate-200 py-2 bg-transparent focus:ring-0 outline-none"
@@ -508,10 +644,18 @@ export default function ProductDetailsView({ productId }: { productId: number })
                 />
                 <button
                   className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                  onClick={() => setQuantity(Math.min(maxSelectableQuantity, selectedQuantity + 1))}
-                  disabled={!canAddToCart || selectedQuantity >= maxSelectableQuantity}
+                  onClick={() =>
+                    setQuantity(
+                      Math.min(maxSelectableQuantity, selectedQuantity + 1),
+                    )
+                  }
+                  disabled={
+                    !canAddToCart || selectedQuantity >= maxSelectableQuantity
+                  }
                 >
-                  <span className="material-symbols-outlined text-base">add</span>
+                  <span className="material-symbols-outlined text-base">
+                    add
+                  </span>
                 </button>
               </div>
               <p className="mt-2 text-xs text-slate-500">
@@ -558,21 +702,29 @@ export default function ProductDetailsView({ productId }: { productId: number })
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100 pt-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-[#ff6a00]">
-                <span className="material-symbols-outlined">local_shipping</span>
+                <span className="material-symbols-outlined">
+                  local_shipping
+                </span>
               </div>
-              <span className="text-xs font-semibold">Miễn phí vận chuyển đơn từ 499k</span>
+              <span className="text-xs font-semibold">
+                Miễn phí vận chuyển đơn từ 499k
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-[#ff6a00]">
                 <span className="material-symbols-outlined">cached</span>
               </div>
-              <span className="text-xs font-semibold">Đổi trả miễn phí 7 ngày</span>
+              <span className="text-xs font-semibold">
+                Đổi trả miễn phí 7 ngày
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-[#ff6a00]">
                 <span className="material-symbols-outlined">verified_user</span>
               </div>
-              <span className="text-xs font-semibold">Bảo hành chính hãng 12 tháng</span>
+              <span className="text-xs font-semibold">
+                Bảo hành chính hãng 12 tháng
+              </span>
             </div>
           </div>
         </div>
@@ -613,27 +765,37 @@ export default function ProductDetailsView({ productId }: { productId: number })
         </div>
 
         {activeTab === "description" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 flow-root">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="relative z-0 lg:col-span-3 prose max-w-none text-slate-600 leading-relaxed flow-root">
               {safeDescriptionHtml ? (
                 <div
-                  className="ql-editor p-0 overflow-hidden break-words"
+                  className="ql-editor p-0 overflow-hidden wrap-break-word"
                   dangerouslySetInnerHTML={{ __html: safeDescriptionHtml }}
                 />
               ) : (
                 <p className="mb-4">
-                  Sản phẩm đang được cập nhật mô tả chi tiết. Hãy quay lại sau để xem thêm thông tin về chất liệu, tính năng và lợi ích cho bé.
+                  Sản phẩm đang được cập nhật mô tả chi tiết. Hãy quay lại sau
+                  để xem thêm thông tin về chất liệu, tính năng và lợi ích cho
+                  bé.
                 </p>
               )}
               <div className="clear-both" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div className="rounded-xl border border-slate-100 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Ngày ra mắt</p>
-                  <p className="text-sm text-slate-500">{formatDateTime(product.launchDate)}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Ngày ra mắt
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {formatDateTime(product.launchDate)}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-slate-100 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Cập nhật gần nhất</p>
-                  <p className="text-sm text-slate-500">{formatDateTime(product.updatedAt)}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Cập nhật gần nhất
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {formatDateTime(product.updatedAt)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -646,9 +808,14 @@ export default function ProductDetailsView({ productId }: { productId: number })
               <h3 className="text-lg font-bold mb-4">Thông số cơ bản</h3>
               <div className="space-y-4">
                 {specs.map((item) => (
-                  <div key={item.label} className="flex justify-between border-b border-slate-200 pb-2 text-sm">
+                  <div
+                    key={item.label}
+                    className="flex justify-between border-b border-slate-200 pb-2 text-sm"
+                  >
                     <span className="text-slate-500">{item.label}</span>
-                    <span className="font-semibold text-slate-900 text-right">{item.value}</span>
+                    <span className="font-semibold text-slate-900 text-right">
+                      {item.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -662,11 +829,15 @@ export default function ProductDetailsView({ productId }: { productId: number })
             <div className="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8">
               <div className="flex flex-col md:flex-row gap-8 mb-8 border-b border-slate-100 pb-8">
                 <div className="flex flex-col items-center justify-center md:w-1/4">
-                  <div className="text-5xl font-black text-[#ff6a00] mb-2">{averageRating.toFixed(1)}</div>
+                  <div className="text-5xl font-black text-[#ff6a00] mb-2">
+                    {averageRating.toFixed(1)}
+                  </div>
                   <div className="flex items-center text-[#ff6a00] mb-2">
                     {renderRatingStars(averageRating)}
                   </div>
-                  <div className="text-sm text-slate-500">{reviewCount} đánh giá</div>
+                  <div className="text-sm text-slate-500">
+                    {reviewCount} đánh giá
+                  </div>
                 </div>
                 <div className="md:w-3/4 flex flex-wrap gap-3 items-center">
                   {[
@@ -709,13 +880,18 @@ export default function ProductDetailsView({ productId }: { productId: number })
                     meta: "05/10/2023 09:15 | Phân loại: Đồ chơi lắp ráp",
                   },
                 ].map((review) => (
-                  <div key={review.name} className="flex gap-4 border-b border-slate-100 pb-8 last:border-0 last:pb-0">
+                  <div
+                    key={review.name}
+                    className="flex gap-4 border-b border-slate-100 pb-8 last:border-0 last:pb-0"
+                  >
                     <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-sm">{review.name}</span>
                         <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                          <span className="material-symbols-outlined text-[10px]">
+                            check_circle
+                          </span>
                           Đã mua hàng
                         </span>
                       </div>
@@ -724,14 +900,21 @@ export default function ProductDetailsView({ productId }: { productId: number })
                           <span
                             key={index}
                             className="material-symbols-outlined text-sm"
-                            style={{ fontVariationSettings: index < review.rating ? "'FILL' 1" : "'FILL' 0" }}
+                            style={{
+                              fontVariationSettings:
+                                index < review.rating ? "'FILL' 1" : "'FILL' 0",
+                            }}
                           >
                             star
                           </span>
                         ))}
                       </div>
-                      <p className="text-sm text-slate-600 mb-4">{review.content}</p>
-                      <div className="text-xs text-slate-400">{review.meta}</div>
+                      <p className="text-sm text-slate-600 mb-4">
+                        {review.content}
+                      </p>
+                      <div className="text-xs text-slate-400">
+                        {review.meta}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -744,8 +927,14 @@ export default function ProductDetailsView({ productId }: { productId: number })
       <section className="relative mt-24 mb-16 flow-root lg:mt-28">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-black">Sản phẩm tương tự</h2>
-          <Link href="/products" className="text-[#ff6a00] font-bold flex items-center gap-1 hover:gap-2 transition-all">
-            Xem tất cả <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          <Link
+            href="/products"
+            className="text-[#ff6a00] font-bold flex items-center gap-1 hover:gap-2 transition-all"
+          >
+            Xem tất cả{" "}
+            <span className="material-symbols-outlined text-sm">
+              arrow_forward
+            </span>
           </Link>
         </div>
         {similarProducts.length === 0 ? (
@@ -759,10 +948,12 @@ export default function ProductDetailsView({ productId }: { productId: number })
                 className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all group"
               >
                 <div className="aspect-square relative overflow-hidden">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  <Image
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                     src={item.mainImageUrl || FALLBACK_IMAGE}
                     alt={item.productName}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                   />
                 </div>
                 <div className="p-4">
@@ -776,11 +967,12 @@ export default function ProductDetailsView({ productId }: { productId: number })
                           <span className="text-lg font-black text-[#ff6a00]">
                             {formatCurrency(item.discountedPrice)}
                           </span>
-                          {item.discountPercent != null && item.discountPercent > 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
-                              -{item.discountPercent}%
-                            </span>
-                          )}
+                          {item.discountPercent != null &&
+                            item.discountPercent > 0 && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
+                                -{item.discountPercent}%
+                              </span>
+                            )}
                         </div>
                         <span className="text-xs text-slate-400 line-through block">
                           {formatCurrency(item.price)}
@@ -798,7 +990,6 @@ export default function ProductDetailsView({ productId }: { productId: number })
           </div>
         )}
       </section>
-
     </div>
   );
 }

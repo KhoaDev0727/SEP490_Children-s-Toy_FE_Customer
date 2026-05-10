@@ -1,179 +1,381 @@
 "use client";
-import { useState, useEffect } from "react";
 
-interface FlashItem {
-  name: string;
-  salePrice: string;
-  originalPrice: string;
-  soldPercent: number;
-  img: string;
-  almostOut?: boolean;
-}
+import Image from "next/image";
+import Link from "next/link";
+import { memo, useCallback } from "react";
+import { useFlashSale } from "@/features/home/hooks/useFlashSale";
+import {
+  FlashSaleTimeSlot,
+  FlashSaleProduct,
+} from "@/features/home/types/flash-sale";
 
-const flashItems: FlashItem[] = [
-  {
-    name: "Tai nghe Studio Wireless",
-    salePrice: "850.000đ",
-    originalPrice: "1.700.000đ",
-    soldPercent: 65,
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVixBbhZTlJXW5qjgFOj1Or8O6QlnuihUzbxbdwBDcnexMM7nd4LS9EDhNf6kHLaDLw0eNHqX9PqROaAiNv73UyZA5TmOTlsulmPPAuyf8x88q8e9QpZXZfZubU2OPXn5LN7I-hULL9u0kZgh7jMZ-q3QtdgNS3gCuGTw-jjRW9RwV5TuoepJtR0XbTDkw7vDHcCGek6Nr8bxVkihY9SKObGTxCgxkLEuPcIuk5p9rNHmHDRwRLAKP4QbLmMW5DnjvrMpLo2yEZTM",
-  },
-  {
-    name: "Bàn phím cơ RGB Pro",
-    salePrice: "1.290.000đ",
-    originalPrice: "2.150.000đ",
-    soldPercent: 42,
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAX4cksixDYIG1ynxHVMo66aqdOGgcztuon4_GSxcFmcwq51bozRc6o5NCQQ4Ot6Gu4eJGi2aPMdvykkDmMzaFHq6CnJ9vncuNFONsTFFP5UA3mEivn7YsnsIHaqUEfkOjB19F7xj2-AphOh6PxID1rD6mOsyT1Jg2ls9n6HTCBAleC-XCfyA7lInFOeM4gBW2t4ccEOcx7LWQVibpZ0EP3mJxx9-gQw4NdetTZjV68EH8S1XORSELcfDPxB0uZue2DJYlvTLJz00Q",
-  },
-  {
-    name: "Máy lọc không khí AirPure",
-    salePrice: "2.450.000đ",
-    originalPrice: "4.900.000đ",
-    soldPercent: 88,
-    almostOut: true,
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAZXcJsZlfDu3I5P34AlnI8tEBaCIrtLZcKMo0TFCmnv-65kxmcESqKFte7crFmX8aFxdZJohfl0aqKB9GyJB9An9aCyQeT27qpqwNBwxshLd44hMD6Drf7bLrZ5nsYehdWQe-wP7k4tAoE4wh8YmDvQBfAikcgsfT0zaeM5HVlw1FtL9OzNWV_9B6lmGRt2NsH1iTrCQEf99fjaSEpItlDlV2PetiN7h3thTcWrijmxoAHyfLyxlRuVkwldN7atM7wA9-vVSyEoU",
-  },
-  {
-    name: "Smartwatch Sport X1",
-    salePrice: "590.000đ",
-    originalPrice: "950.000đ",
-    soldPercent: 25,
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBKAGsEAeEJEvSnt0jcM7JAdDA0owkRX0-NSQ0FVipUJqgeKof0cW8US-TuZG-X35dMHBeMnZuhQj-sjyFI9qw5JJH7hITU78GjPijkSL9nwqetRKXWerJm23NvSH0Fg5IkW5-OelkWcWsjsoZ6K9otTBZ86p8FxsbFYqJ6U2Y8_RfDW3c1sVaN6Gk19L-DOqxmhTiuqAjlxEhvxIE3PbESz3TM5A6MhjNlrG2QhTSGawiZ_IWfrnKJ2ZVCxHAue-rmsxF97NINLd4",
-  },
-  {
-    name: "Bình giữ nhiệt Vacuum",
-    salePrice: "320.000đ",
-    originalPrice: "580.000đ",
-    soldPercent: 55,
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCoIXVgZsiJL6dIZBXHWF0C9R7A76Zz9Okpm3Ol5W12L9L3tNKWqRvNdKDPtVYB93N95kvvKY5FuI625p9np7t7ZOUtEfEQsVWU66IY7AOOlikzpwYSoM6lRTZemZAz0Tx8Vowe2DSlI7GoiDMxr3qFo2cK0_z47NUeFWP9I86AK2vmijTMziV0r4jvwCF-md-KxZV_rOUUWr5ZpUt7hD4PFWdq5iVOwjzyOsi3KLq9Sk-QaLsapCIbxzyQuakmktTElMHchfadsMw",
-  },
-];
+// ============================================================
+// Helpers
+// ============================================================
 
-function useCountdown(initialSeconds: number) {
-  const [seconds, setSeconds] = useState(initialSeconds);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return { h, m, s };
-}
+const toLocal = (utcStr: string) => {
+  if (!utcStr) return new Date();
+  if (!utcStr.endsWith("Z") && !utcStr.includes("+") && utcStr.includes("T")) {
+    return new Date(utcStr + "Z");
+  }
+  return new Date(utcStr);
+};
 
-function TimeBlock({ value }: { value: number }) {
+const formatShortTimeRange = (startAt: string, endAt: string) => {
+  const start = toLocal(startAt);
+  const end = toLocal(endAt);
+  const startH = start.getHours();
+  const endH = end.getHours();
+  // const dd = String(start.getDate()).padStart(2, "0");
+  // const mm = String(start.getMonth() + 1).padStart(2, "0");
+  return `${startH}-${endH}h`;
+};
+
+const formatShortDate = (dateKey: string) => {
+  const parts = dateKey.split("-");
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}`;
+  }
+  return dateKey;
+};
+
+// ============================================================
+// Sub-components
+// ============================================================
+
+const TimeBlock = memo(function TimeBlock({ value }: { value: number }) {
   return (
-    <div
-      className="px-2 py-1 rounded font-mono font-bold text-lg text-white"
-      style={{ backgroundColor: "#1e293b" }}
-    >
+    <div className="px-1.5 sm:px-2 py-1 rounded-md bg-[#0f172a] text-white font-bold text-sm sm:text-base min-w-[2rem] sm:min-w-[2.5rem] text-center shadow-sm tracking-widest">
       {String(value).padStart(2, "0")}
+    </div>
+  );
+});
+
+function TabSkeleton() {
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="h-9 w-24 sm:w-32 rounded-lg animate-pulse bg-gray-200 flex-shrink-0"
+        />
+      ))}
     </div>
   );
 }
 
-export default function FlashSale() {
-  const { h, m, s } = useCountdown(2 * 3600 + 15 * 60 + 30);
+function ProductSkeleton() {
+  return (
+    <div className="bg-white rounded-xl p-3 flex flex-col gap-3 h-full border border-gray-100 shadow-sm">
+      <div className="aspect-square rounded-lg animate-pulse bg-gray-200" />
+      <div className="h-4 w-3/4 rounded animate-pulse bg-gray-200" />
+      <div className="h-4 w-1/2 rounded animate-pulse bg-gray-200" />
+      <div className="mt-auto pt-3">
+        <div className="h-4 w-full rounded-full animate-pulse bg-gray-200 mb-3" />
+        <div className="h-9 w-full rounded-lg animate-pulse bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
+// ── Product Card ─────────────────────────────────────────────
+
+const ProductCard = memo(function ProductCard({
+  product,
+  index,
+}: {
+  product: FlashSaleProduct;
+  index: number;
+}) {
+  const soldPct =
+    product.saleQuantity > 0
+      ? Math.round((product.soldQuantity / product.saleQuantity) * 100)
+      : 0;
+  const almostOut = soldPct >= 80;
+
+  const formatVND = (price: number) => price.toLocaleString("vi-VN") + "đ";
 
   return (
-    <section
-      className="rounded-3xl p-6 sm:p-8 shadow-sm"
-      style={{ border: "2px solid rgba(255, 106, 0, 0.2)", backgroundColor: "#fff" }}
+    <Link
+      href={`/products/${product.productId}`}
+      className={`bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-[#ff6a00]/30 shadow-sm hover:shadow-md transition-all p-3 flex flex-col relative h-full group ${index === 4 ? "hidden lg:flex" : ""}`}
     >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-3xl font-bold" style={{ color: "#ff6a00", fontSize: 30 }}>
-            bolt
-          </span>
-          <h3 className="text-2xl sm:text-3xl font-black tracking-tighter" style={{ color: "#ff6a00" }}>
-            FLASH SALE
-          </h3>
-          <div className="hidden sm:block h-8 w-px bg-slate-200 mx-2" />
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-slate-500 uppercase">Kết thúc sau:</p>
-            <div className="flex gap-1 items-center">
-              <TimeBlock value={h} />
-              <span className="font-bold text-slate-900">:</span>
-              <TimeBlock value={m} />
-              <span className="font-bold text-slate-900">:</span>
-              <TimeBlock value={s} />
-            </div>
+      {/* Image */}
+      <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
+        {product.mainImageUrl ? (
+          <Image
+            src={product.mainImageUrl}
+            alt={product.productName}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-50">
+            <span className="material-symbols-outlined text-[48px] text-slate-300">
+              image_not_supported
+            </span>
           </div>
-        </div>
-        <a
-          href="#"
-          className="text-slate-500 font-semibold flex items-center gap-1 transition-colors hover:text-[#ff6a00]"
-        >
-          Xem tất cả
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
-        </a>
+        )}
       </div>
 
-      {/* Items grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-        {flashItems.map((item, i) => (
+      {/* Name */}
+      <h4 className="font-semibold text-gray-800 text-xs sm:text-sm mb-2 line-clamp-2 leading-tight">
+        {product.productName}
+      </h4>
+
+      {/* Price */}
+      <div className="flex items-end gap-2 mb-2">
+        <span className="font-bold text-base sm:text-lg text-[#ff6a00] leading-none">
+          {formatVND(product.salePrice)}
+        </span>
+        {product.originalPrice > product.salePrice && (
+          <span className="text-gray-400 text-xs line-through">
+            {formatVND(product.originalPrice)}
+          </span>
+        )}
+      </div>
+
+      {/* Progress & Button */}
+      <div className="mt-auto pt-2">
+        <div className="w-full bg-[#ffeddb] h-4 rounded-full relative overflow-hidden flex items-center mb-3">
           <div
-            key={item.name}
-            className={`group relative flex flex-col ${i === 4 ? "hidden lg:flex" : ""}`}
-          >
-            <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
-              <img
-                src={item.img}
-                alt={item.name}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div
-                className="absolute top-2 left-2 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1"
-                style={{ backgroundColor: "#ff6a00" }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>bolt</span>
-                FLASH SALE
-              </div>
-            </div>
-            <h4 className="font-medium text-slate-900 text-sm mb-1 overflow-hidden" style={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>
-              {item.name}
-            </h4>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-bold text-lg" style={{ color: "#ff6a00" }}>{item.salePrice}</span>
-              <span className="text-slate-400 text-xs line-through">{item.originalPrice}</span>
-            </div>
-            <div className="mt-auto">
-              <div className="w-full bg-slate-100 h-4 rounded-full relative overflow-hidden mb-3">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    width: `${item.soldPercent}%`,
-                    background: "linear-gradient(to right, #fb923c, #ff6a00)",
-                  }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-10">
-                  {item.almostOut ? `Sắp cháy hàng (${item.soldPercent}%)` : `Đã bán ${item.soldPercent}%`}
-                </span>
-              </div>
-              <button
-                className="w-full py-2 rounded-lg font-bold text-sm transition-all border"
-                style={{
-                  color: "#ff6a00",
-                  backgroundColor: "rgba(255, 106, 0, 0.08)",
-                  borderColor: "rgba(255, 106, 0, 0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#ff6a00";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 106, 0, 0.08)";
-                  e.currentTarget.style.color = "#ff6a00";
-                }}
-              >
-                Mua Ngay
-              </button>
-            </div>
+            className="absolute inset-y-0 left-0 bg-[#ff6a00] rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(soldPct, 100)}%` }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white z-10 drop-shadow-sm">
+            {almostOut
+              ? `SẮP HẾT (${product.soldQuantity}/${product.saleQuantity})`
+              : `ĐÃ BÁN ${product.soldQuantity}/${product.saleQuantity}`}
           </div>
-        ))}
+        </div>
+        <div className="w-full py-2 rounded-lg border border-[#ff6a00] text-[#ff6a00] font-bold text-xs sm:text-sm hover:bg-[#fff7ed] transition-colors uppercase text-center">
+          Mua Ngay
+        </div>
+      </div>
+    </Link>
+  );
+});
+
+// ── Time Slot Pill ───────────────────────────────────────────
+
+const TimeSlotPill = memo(function TimeSlotPill({
+  slot,
+  isSelected,
+  status,
+  timeRange,
+  onSelect,
+}: {
+  slot: FlashSaleTimeSlot;
+  isSelected: boolean;
+  status: "active" | "upcoming" | "expired";
+  timeRange: string;
+  onSelect: (id: number) => void;
+}) {
+  const handleClick = useCallback(() => {
+    if (status !== "expired") onSelect(slot.timeSlotId);
+  }, [slot.timeSlotId, status, onSelect]);
+
+  const isDisabled = status === "expired";
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isDisabled}
+      title={isDisabled ? "Khung giờ đã kết thúc" : undefined}
+      className={`flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap transition-all border relative
+        ${
+          isSelected
+            ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-md -translate-y-0.5"
+            : isDisabled
+              ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed"
+              : "bg-white text-gray-600 border-gray-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+        }
+      `}
+    >
+      {status === "active" && !isSelected && (
+        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white bg-[#22c55e]" />
+      )}
+      {timeRange}
+    </button>
+  );
+});
+
+// ============================================================
+// Main Component
+// ============================================================
+
+export default function FlashSale() {
+  const {
+    promotions,
+    isLoading,
+    error,
+    selectedPromotionId,
+    selectedDate,
+    selectedSlotId,
+    availableDates,
+    timeSlotsForDate,
+    productsForSlot,
+    countdown,
+    countdownLabel,
+    selectPromotion,
+    selectDate,
+    selectSlot,
+    getSlotRuntimeStatus,
+  } = useFlashSale();
+
+  if (error) return null;
+  if (!isLoading && promotions.length === 0) return null;
+
+  return (
+    <section className="py-8 sm:py-12">
+      <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-gray-200 p-4 sm:p-6 lg:p-8">
+        {/* ── Header Row ────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 gap-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#ff6a00] text-[32px] sm:text-[40px] drop-shadow-sm">
+              bolt
+            </span>
+            <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-gray-900">
+              Flash Sale
+            </h2>
+
+            <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
+
+            <span className="text-gray-500 font-bold text-xs sm:text-sm uppercase hidden sm:block">
+              {countdownLabel}
+            </span>
+
+            {countdown ? (
+              <div className="flex items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
+                <TimeBlock value={countdown.d} />
+                <span className="text-gray-800 font-bold">:</span>
+                <TimeBlock value={countdown.h} />
+                <span className="text-gray-800 font-bold">:</span>
+                <TimeBlock value={countdown.m} />
+                <span className="text-gray-800 font-bold">:</span>
+                <TimeBlock value={countdown.s} />
+              </div>
+            ) : isLoading ? (
+              <div className="flex gap-1 ml-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-8 h-8 sm:w-10 sm:h-9 bg-gray-200 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* ── Promotion Tabs ────────────────────────────────── */}
+        {isLoading ? (
+          <TabSkeleton />
+        ) : promotions.length > 1 ? (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 pb-1">
+            {promotions.map((promo) => {
+              const isActive = promo.promotionId === selectedPromotionId;
+              return (
+                <button
+                  key={promo.promotionId}
+                  onClick={() => selectPromotion(promo.promotionId)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-colors
+                    ${
+                      isActive
+                        ? "bg-[#ff6a00] text-white shadow-sm"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }
+                  `}
+                >
+                  {promo.promotionName}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {/* ── Dates & Time Slots ────────────────────────────── */}
+        <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mb-6 items-start lg:items-center">
+          {/* Dates */}
+          {!isLoading && availableDates.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 lg:pb-0 w-full lg:w-auto">
+              {availableDates.map((dateKey) => {
+                const isSelected = dateKey === selectedDate;
+                return (
+                  <button
+                    key={dateKey}
+                    onClick={() => selectDate(dateKey)}
+                    className={`flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-sm whitespace-nowrap transition-all border
+                      ${
+                        isSelected
+                          ? "border-[#ff6a00] text-[#ff6a00] bg-orange-50 shadow-sm"
+                          : "border-gray-200 text-gray-500 hover:border-[#ff6a00]/50 hover:text-[#ff6a00]"
+                      }
+                    `}
+                  >
+                    {formatShortDate(dateKey)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {!isLoading &&
+            availableDates.length > 0 &&
+            timeSlotsForDate.length > 0 && (
+              <div className="hidden lg:block w-px h-6 bg-gray-200"></div>
+            )}
+
+          {/* Time Slots */}
+          {!isLoading && timeSlotsForDate.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1 w-full lg:w-auto">
+              {timeSlotsForDate.map((slot) => {
+                const status = getSlotRuntimeStatus(slot);
+                return (
+                  <TimeSlotPill
+                    key={slot.timeSlotId}
+                    slot={slot}
+                    isSelected={slot.timeSlotId === selectedSlotId}
+                    status={status}
+                    timeRange={formatShortTimeRange(slot.startAt, slot.endAt)}
+                    onSelect={selectSlot}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Product Grid ──────────────────────────────────── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+          {isLoading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className={i === 4 ? "hidden lg:block" : ""}>
+                  <ProductSkeleton />
+                </div>
+              ))
+            : productsForSlot.length > 0
+              ? productsForSlot
+                  .slice(0, 5)
+                  .map((product, i) => (
+                    <ProductCard
+                      key={product.slotProductId}
+                      product={product}
+                      index={i}
+                    />
+                  ))
+              : !isLoading && (
+                  <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
+                    <span className="material-symbols-outlined text-5xl text-gray-300 mb-2 block">
+                      inventory_2
+                    </span>
+                    <p className="text-gray-500 font-medium">
+                      Chưa có sản phẩm nào cho khung giờ này
+                    </p>
+                  </div>
+                )}
+        </div>
       </div>
     </section>
   );
