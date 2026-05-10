@@ -13,6 +13,7 @@ export interface BlogListItem {
   blogCategoryId: number;
   blogCategoryName: string;
   blogTitle: string;
+  blogContent?: string;
   blogThumbnail: string | null;
   status: string;
   isHidden: boolean;
@@ -29,6 +30,36 @@ export interface BlogListItem {
 export interface BlogDetail extends BlogListItem {
   blogContent: string;
   reason: string | null;
+}
+
+export interface BlogReviewReply {
+  replyBlogId: number;
+  reviewBlogId: number;
+  accountId: number;
+  accountName: string;
+  accountImageUrl: string | null;
+  parentReplyId: number | null;
+  replyToAccountId: number | null;
+  replyToAccountName: string | null;
+  comment: string;
+  status: "Visible" | "Hidden";
+  createdAt: string;
+  updatedAt: string | null;
+  replies: BlogReviewReply[];
+}
+
+export interface BlogReview {
+  reviewBlogId: number;
+  blogPostId: number;
+  blogTitle: string;
+  accountId: number;
+  accountName: string;
+  accountImageUrl: string | null;
+  comment: string;
+  status: "Visible" | "Hidden";
+  createdAt: string;
+  updatedAt: string | null;
+  replies: BlogReviewReply[];
 }
 
 export interface BlogQueryParams {

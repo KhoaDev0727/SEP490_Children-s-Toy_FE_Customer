@@ -26,8 +26,12 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
     <div className={`border rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start gap-4 transition-all ${address.isDefault ? "border-[#e2bfb0]" : "border-[#e2bfb0]/50"}`}>
       <div className="flex-1">
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-bold text-[#261812] border-r border-[#e2bfb0] pr-4">{address.name}</span>
-          <span className="text-[#5a4136] text-sm">{address.phone}</span>
+          {address.name && (
+            <span className="font-bold text-[#261812] border-r border-[#e2bfb0] pr-4">
+              {address.name}
+            </span>
+          )}
+          <span className="text-[#5a4136] text-sm">{address.phone || "No phone number"}</span>
         </div>
         <p className="text-[#5a4136] text-sm mb-1">{address.street}</p>
         <p className="text-[#5a4136] text-sm mb-2">

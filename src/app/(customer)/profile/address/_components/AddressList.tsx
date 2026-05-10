@@ -128,7 +128,15 @@ export default function AddressList() {
 
       <div className="flex flex-col p-6 gap-4">
         {addresses.length === 0 ? (
-          <p className="text-sm text-[#5a4136]">You do not have any addresses yet.</p>
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-white rounded-xl border border-dashed border-[#e2bfb0]">
+            <div className="w-16 h-16 bg-[#e2bfb0]/20 rounded-full flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-[#a14000] text-3xl">location_off</span>
+            </div>
+            <h3 className="text-lg font-semibold text-[#261812] mb-1">No addresses found</h3>
+            <p className="text-sm text-[#5a4136] max-w-[250px]">
+              You haven't added any shipping addresses yet. Add one to make checkout faster!
+            </p>
+          </div>
         ) : (
           addresses.map((address) => (
             <AddressCard

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BlogListItem } from "@/features/blog/types/blog";
+import { buildBlogPreview } from "@/features/blog/utils/blog-preview";
 
 interface CategoryItem {
   key: string;
@@ -32,15 +33,6 @@ export default function FilterSidebar({
 }: FilterSidebarProps) {
   const router = useRouter();
   const [selectedFeaturedId, setSelectedFeaturedId] = useState<number | null>(null);
-
-  const getShortDescription = (title: string) => {
-    const words = title.trim().split(/\s+/).filter(Boolean);
-    if (words.length >= 5) {
-      const sliced = words.slice(0, 7).join(" ");
-      return `${sliced}${words.length > 15 ? "..." : ""}`;
-    }
-    return "Quick highlights from this featured post.";
-  };
 
   return (
     <aside className="bg-[#f5f5f5] rounded-2xl p-5 border border-[#e8dbd3] sticky top-24 self-start h-max">
@@ -114,7 +106,7 @@ export default function FilterSidebar({
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
+                <div className="relative w-24 min-w-24 aspect-[4/3] rounded-lg overflow-hidden bg-transparent flex-shrink-0 flex items-center justify-center">
                 <Image
                   src={blog.blogThumbnail ?? "/assets/images/d.jpg"}
                   alt={blog.blogTitle}
@@ -125,7 +117,7 @@ export default function FilterSidebar({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-slate-900 line-clamp-2">{blog.blogTitle}</p>
-                  <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{getShortDescription(blog.blogTitle)}</p>
+                  <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{buildBlogPreview(blog.blogContent, 90)}</p>
                   <p className="text-xs text-slate-500 mt-2">
                     {new Intl.DateTimeFormat("en-GB", {
                       day: "numeric",

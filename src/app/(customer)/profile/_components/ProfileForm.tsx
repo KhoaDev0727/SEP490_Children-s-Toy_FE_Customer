@@ -1,285 +1,436 @@
 "use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useAuthContext } from "@/context/AuthContext";
-import { useRef, useState } from "react";
+import { profileApi } from "@/features/profile/services/profile-api";
+import type { CustomerProfile } from "@/features/profile/types/profile";
 import toast from "react-hot-toast";
 
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
-const MONTHS = [
-  "Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
-  "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12",
-];
-const YEARS = Array.from({ length: 60 }, (_, i) => 2010 - i);
+const SEX_OPTIONS = [
+  { id: 1, label: "Nam" },
+  { id: 2, label: "Nữ" },
+  { id: 3, label: "Khác" },
+] as const;
 
-type Gender = "male" | "female" | "other";
+const getSexLabelById = (id: number | null | undefined) => {
+  if (id == null) return "";
+  return SEX_OPTIONS.find((option) => option.id === id)?.label ?? "";
+};
+
+const formatDob = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const formatDobForDateInput = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDobDateInputToIso = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date.toISOString();
+};
+const toDateInput = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeNullable = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+};
 
 export default function ProfileForm() {
-  const { account } = useAuthContext();
+  const { account, updateAccount } = useAuthContext();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [sexes, setSexes] = useState<Array<{ id: number; label: string }>>([]);
 
-  const [name, setName] = useState(account?.accountName ?? "");
-  const [gender, setGender] = useState<Gender>("male");
-  const [day, setDay] = useState("15");
-  const [month, setMonth] = useState("Tháng 10");
-  const [year, setYear] = useState("1990");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    account?.imageUrl ?? null
-  );
+  const [accountName, setAccountName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [dobInput, setDobInput] = useState("");
+  const [sexId, setSexId] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [savedProfile, setSavedProfile] = useState<Partial<CustomerProfile>>({});
+  const [provider, setProvider] = useState("");
+  const hasShownLoadErrorRef = useRef(false);
 
-  const fileRef = useRef<HTMLInputElement>(null);
+  const initials = useMemo(() => {
+    const source = accountName || account?.accountName || "U";
+    return source
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }, [account?.accountName, accountName]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  useEffect(() => {
+    let cancelled = false;
+
+    const applyProfile = (profile: Partial<CustomerProfile>) => {
+      if (cancelled) return;
+
+      setAccountName(profile.accountName ?? account?.accountName ?? "");
+      setEmail(profile.email ?? account?.email ?? "");
+      setPhoneNumber(profile.phoneNumber ?? account?.phoneNumber ?? "");
+      setAvatarUrl(profile.imageUrl ?? account?.imageUrl ?? "");
+      setDobInput(toDateInput(profile.dob ?? account?.dob ?? null));
+      setProvider((profile.provider ?? account?.provider ?? "Email").trim() || "Email");
+      setSexId(
+        profile.sexId != null
+          ? String(profile.sexId)
+          : account?.sexId != null
+            ? String(account.sexId)
+            : "",
+      );
+      setSavedProfile({
+        accountName: profile.accountName ?? account?.accountName ?? "",
+        email: profile.email ?? account?.email ?? "",
+        imageUrl: profile.imageUrl ?? account?.imageUrl ?? "",
+        phoneNumber: profile.phoneNumber ?? account?.phoneNumber ?? null,
+        dob: profile.dob ?? account?.dob ?? null,
+        sexId: profile.sexId ?? account?.sexId ?? null,
+      });
+
+      updateAccount({
+        accountName: profile.accountName ?? account?.accountName ?? "",
+        email: profile.email ?? account?.email ?? "",
+        imageUrl: profile.imageUrl ?? account?.imageUrl ?? "",
+        phoneNumber: profile.phoneNumber ?? account?.phoneNumber ?? null,
+        dob: profile.dob ?? account?.dob ?? null,
+        sexId: profile.sexId ?? account?.sexId ?? null,
+        sexName: profile.sexName ?? account?.sexName ?? null,
+        provider: profile.provider ?? account?.provider ?? null,
+      });
+    };
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const profile = await profileApi.getMyProfile();
+
+        applyProfile(profile);
+      } catch {
+        applyProfile({
+          accountName: account?.accountName ?? "",
+          email: account?.email ?? "",
+          imageUrl: account?.imageUrl ?? null,
+          phoneNumber: account?.phoneNumber ?? null,
+          dob: account?.dob ?? null,
+          sexId: account?.sexId ?? null,
+          provider: account?.provider ?? null,
+        });
+        if (!hasShownLoadErrorRef.current) {
+          toast.error("Unable to load profile from server.");
+          hasShownLoadErrorRef.current = true;
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditing) return;
+    const file = event.target.files?.[0];
     if (!file) return;
+
     if (file.size > 1024 * 1024) {
-      toast.error("File vượt quá 1 MB.");
+      toast.error("File exceeds 1 MB.");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setAvatarPreview(url);
+
+    try {
+      setIsUploading(true);
+      const uploaded = await profileApi.uploadAvatar(file);
+      setAvatarUrl(uploaded.url);
+      toast.success("Avatar uploaded successfully.");
+    } catch {
+      toast.error("Unable to upload avatar.");
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
   };
 
-  const handleSave = () => {
-    toast.success("Đã lưu thay đổi!");
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const dobIso = parseDobDateInputToIso(dobInput);
+      if (dobInput.trim() && !dobIso) {
+        toast.error("Date of birth is invalid.");
+        return;
+      }
+
+      const payload = {
+        accountName: normalizeNullable(accountName),
+        phoneNumber: normalizeNullable(phoneNumber),
+        imageUrl: normalizeNullable(avatarUrl),
+        dob: dobIso,
+        sexId: sexId ? Number(sexId) : null,
+      };
+
+      const updated = await profileApi.updateMyProfile(payload);
+
+      setAccountName(updated.accountName ?? accountName);
+      setEmail(updated.email ?? email);
+      setPhoneNumber(updated.phoneNumber ?? "");
+      setAvatarUrl(updated.imageUrl ?? "");
+      setDobInput(formatDobForDateInput(updated.dob));
+      setSexId(updated.sexId != null ? String(updated.sexId) : "");
+      setIsEditing(false);
+      setSavedProfile(updated);
+
+      updateAccount({
+        accountName: updated.accountName ?? accountName,
+        email: updated.email ?? email,
+        imageUrl: updated.imageUrl ?? null,
+        phoneNumber: updated.phoneNumber ?? null,
+        dob: updated.dob ?? null,
+        sexId: updated.sexId ?? null,
+        sexName: updated.sexName ?? null,
+        provider: updated.provider ?? account?.provider ?? null,
+      });
+
+      toast.success("Profile updated successfully.");
+    } catch {
+      toast.error("Unable to save profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const initials = (account?.accountName ?? "U")
-    .split(" ")
-    .map((w: string) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  const AvatarBlock = ({ size = 128 }: { size?: number }) => (
-    <div
-      className="rounded-full overflow-hidden border-2 border-slate-200 flex-shrink-0"
-      style={{ width: size, height: size }}
-    >
-      {avatarPreview ? (
-        <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-      ) : (
-        <div
-          className="w-full h-full flex items-center justify-center text-white font-bold"
-          style={{
-            background: "linear-gradient(135deg, #ff6a00, #ff9a3c)",
-            fontSize: size * 0.28,
-          }}
-        >
-          {initials}
-        </div>
-      )}
-    </div>
-  );
+  const handleCancelEdit = () => {
+    setAccountName(savedProfile.accountName ?? "");
+    setEmail(savedProfile.email ?? "");
+    setPhoneNumber(savedProfile.phoneNumber ?? "");
+    setAvatarUrl(savedProfile.imageUrl ?? "");
+    setDobInput(formatDobForDateInput(savedProfile.dob ?? null));
+    setSexId(savedProfile.sexId != null ? String(savedProfile.sexId) : "");
+    setIsEditing(false);
+  };
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-200/60 bg-white">
-        <h1 className="text-2xl font-bold text-slate-900">Hồ sơ của tôi</h1>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-3xl shadow-[0_14px_40px_rgba(15,23,42,0.08)] border border-slate-200/80 overflow-hidden">
+      <div className="px-6 md:px-8 py-6 border-b border-slate-200/70 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/70">
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-slate-900">My Profile</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage your personal information and avatar.</p>
       </div>
 
-      {/* Body */}
-      <div className="p-6">
-        <div className="flex flex-col md:flex-row gap-8">
+      <div className="p-6 md:p-8">
+        {isLoading ? (
+          <div className="text-sm text-slate-500">Loading profile...</div>
+        ) : (
+          <div className="flex flex-col gap-8">
+            <div className="relative flex flex-col md:flex-row gap-5 md:gap-7 md:items-center p-5 md:p-6 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-orange-100/40 blur-2xl pointer-events-none" />
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-[3px] border-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] z-10">
+                {avatarUrl ? (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={avatarUrl}
+                      alt={accountName || "Avatar"}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center text-white text-2xl font-bold"
+                    style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+                  >
+                    {initials}
+                  </div>
+                )}
+              </div>
+              {isEditing ? (
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={handleAvatarChange}
+                    disabled={isUploading}
+                    className="block text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-2 file:font-semibold file:text-orange-600 hover:file:bg-orange-100"
+                  />
+                  <p className="text-xs text-slate-400">Max size 1MB, format JPG/PNG.</p>
+                </div>
+              ) : null}
+            </div>
 
-          {/* Avatar — desktop */}
-          <div className="hidden md:flex flex-col items-center gap-4 border-r border-slate-200/60 pr-8">
-            <AvatarBlock size={128} />
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".jpg,.jpeg,.png"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              Chọn ảnh
-            </button>
-            <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-              Dung lượng file tối đa 1 MB
-              <br />
-              Định dạng: .JPEG, .PNG
-            </p>
-          </div>
-
-          {/* Avatar — mobile */}
-          <div className="flex flex-col items-center gap-3 md:hidden mb-4">
-            <AvatarBlock size={96} />
-            <input
-              type="file"
-              accept=".jpg,.jpeg,.png"
-              className="hidden"
-              id="avatar-mobile"
-              onChange={handleFileChange}
-            />
-            <label
-              htmlFor="avatar-mobile"
-              className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              Chọn ảnh
-            </label>
-          </div>
-
-          {/* Form fields */}
-          <div className="flex-grow flex flex-col gap-6">
-
-            {/* Name */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4">
-              <label className="col-span-1 text-right text-sm text-slate-500 font-medium">
-                Họ và tên
-              </label>
-              <div className="col-span-2 md:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+              <label className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Account Name</span>
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-lg text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:border-[#ff6a00]"
+                  value={accountName}
+                  onChange={(event) => setAccountName(event.target.value)}
+                  readOnly={!isEditing}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
                   style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
                 />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4">
-              <label className="col-span-1 text-right text-sm text-slate-500 font-medium">
-                Email
               </label>
-              <div className="col-span-2 md:col-span-3 flex items-center gap-2">
-                <p className="text-sm text-slate-900">
-                  {account?.email
-                    ? account.email.replace(/^(.{3}).*(@.*)$/, "$1***$2")
-                    : "ngu***@gmail.com"}
-                </p>
-                <button
-                  className="text-sm font-semibold underline ml-2 transition-colors"
-                  style={{ color: "#ff6a00" }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.color = "#a14000")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.color = "#ff6a00")
-                  }
-                >
-                  Thay đổi
-                </button>
-              </div>
-            </div>
 
-            {/* Phone */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4">
-              <label className="col-span-1 text-right text-sm text-slate-500 font-medium">
-                Số điện thoại
+              <label className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  readOnly
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                />
               </label>
-              <div className="col-span-2 md:col-span-3 flex items-center gap-2">
-                <p className="text-sm text-slate-900">*********89</p>
-                <button
-                  className="text-sm font-semibold underline ml-2 transition-colors"
-                  style={{ color: "#ff6a00" }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.color = "#a14000")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.color = "#ff6a00")
-                  }
-                >
-                  Thay đổi
-                </button>
-              </div>
-            </div>
 
-            {/* Gender */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4">
-              <label className="col-span-1 text-right text-sm text-slate-500 font-medium">
-                Giới tính
+              <label className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Phone Number</span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  placeholder="Enter phone number"
+                  readOnly={!isEditing}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
+                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
+                />
               </label>
-              <div className="col-span-2 md:col-span-3 flex gap-6">
-                {(["male", "female", "other"] as Gender[]).map((g) => (
-                  <label key={g} className="flex items-center gap-2 cursor-pointer">
+
+              <div className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Sex</span>
+                {isEditing ? (
+                  <div className="mt-1.5 min-h-12 px-4 py-2 border border-slate-200 rounded-2xl bg-white flex items-center gap-5">
+                    {SEX_OPTIONS.map((option) => (
+                      <label key={option.id} className="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="radio"
+                          name="sex"
+                          value={String(option.id)}
+                          checked={sexId === String(option.id)}
+                          onChange={(event) => setSexId(event.target.value)}
+                          className="h-4 w-4 text-orange-500 border-slate-300 focus:ring-orange-500"
+                        />
+                        <span className="text-sm text-slate-700">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    readOnly
+                    value={getSexLabelById(sexId ? Number(sexId) : null)}
+                    className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                  />
+                )}
+              </div>
+
+              <label className="text-sm text-slate-700">
+                <span className="font-semibold tracking-[0.01em]">Date of birth</span>
+                <div className="relative mt-1.5">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="material-symbols-outlined text-[20px] leading-none">calendar_month</span>
+                  </span>
+                  {isEditing ? (
                     <input
-                      type="radio"
-                      name="gender"
-                      value={g}
-                      checked={gender === g}
-                      onChange={() => setGender(g)}
-                      className="w-4 h-4 border-slate-300"
-                      style={{ accentColor: "#ff6a00" }}
+                      type="date"
+                      value={dobInput}
+                      onChange={(event) => setDobInput(event.target.value)}
+                      max={new Date().toISOString().split("T")[0]}
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white"
+                      style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
                     />
-                    <span className="text-sm text-slate-900">
-                      {g === "male" ? "Nam" : g === "female" ? "Nữ" : "Khác"}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* DOB */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4">
-              <label className="col-span-1 text-right text-sm text-slate-500 font-medium">
-                Ngày sinh
+                  ) : (
+                    <input
+                      type="text"
+                      readOnly
+                      value={formatDob(parseDobDateInputToIso(dobInput))}
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                      placeholder="dd/MM/yyyy"
+                    />
+                  )}
+                </div>
               </label>
-              <div className="col-span-2 md:col-span-3 flex gap-2">
-                {/* Day */}
-                <select
-                  value={day}
-                  onChange={(e) => setDay(e.target.value)}
-                  className="flex-1 p-3 border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:ring-2 focus:border-[#ff6a00] bg-white"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
-                >
-                  <option value="">Ngày</option>
-                  {DAYS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-                {/* Month */}
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  className="flex-1 p-3 border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:ring-2 focus:border-[#ff6a00] bg-white"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
-                >
-                  <option value="">Tháng</option>
-                  {MONTHS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                {/* Year */}
-                <select
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className="flex-1 p-3 border border-slate-200 rounded-lg text-sm text-slate-900 outline-none focus:ring-2 focus:border-[#ff6a00] bg-white"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
-                >
-                  <option value="">Năm</option>
-                  {YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
-            {/* Save button */}
-            <div className="grid grid-cols-3 md:grid-cols-4 items-center gap-4 mt-2">
-              <div className="col-span-1" />
-              <div className="col-span-2 md:col-span-3">
+            <div className="pt-2">
+              {!isEditing ? (
                 <button
-                  onClick={handleSave}
-                  className="px-8 py-3 text-white text-sm font-bold rounded-lg transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: "#ff6a00" }}
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                  style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
                 >
-                  Lưu Thay Đổi
+                  Edit Profile
                 </button>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                    style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="h-12 px-7 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
-
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

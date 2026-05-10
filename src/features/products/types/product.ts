@@ -12,6 +12,11 @@ export interface ProductList {
   productId: number;
   productName: string;
   price: number;
+  discountedPrice?: number | null;
+  discountPercent?: number | null;
+  promotionType?: string | null;
+  promotionSoldQuantity?: number | null;
+  promotionSaleQuantity?: number | null;
   quantity: number;
   productStatus: string;
   status: string;
@@ -27,6 +32,11 @@ export interface ProductDetail {
   productId: number;
   productName: string;
   price: number;
+  discountedPrice?: number | null;
+  discountPercent?: number | null;
+  promotionType?: string | null;
+  promotionSoldQuantity?: number | null;
+  promotionSaleQuantity?: number | null;
   quantity: number;
   productStatus: string;
   launchDate?: string | null;
