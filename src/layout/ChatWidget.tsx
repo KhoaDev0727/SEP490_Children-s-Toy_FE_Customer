@@ -28,12 +28,13 @@ export default function ChatWidget() {
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
-    const userMsg: Message = { id: Date.now(), from: "user", text };
+    const now = new Date().getTime();
+    const userMsg: Message = { id: now, from: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTimeout(() => {
       const botReply: Message = {
-        id: Date.now() + 1,
+        id: now + 1,
         from: "bot",
         text: "Cảm ơn bạn đã liên hệ! Chúng tôi sẽ hỗ trợ bạn ngay.",
       };
