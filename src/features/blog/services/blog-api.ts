@@ -5,6 +5,7 @@ import {
   BlogReviewReply,
   BlogListItem,
   BlogQueryParams,
+  ReactionSummary,
   BrandListItem,
   BrandQueryParams,
   PaginatedResponse,
@@ -41,6 +42,34 @@ export const customerBlogApi = {
       `/blogs/reviews/${reviewBlogId}/replies`,
       payload,
     );
+  },
+
+  reactToBlog: async (blogPostId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/${blogPostId}/reactions`, { reactionCode });
+  },
+
+  removeBlogReaction: async (blogPostId: number): Promise<boolean> => {
+    return axiosClient.delete<boolean>(`/blogs/${blogPostId}/reactions`);
+  },
+
+  getBlogReactionSummary: async (blogPostId: number): Promise<ReactionSummary> => {
+    return axiosClient.get<ReactionSummary>(`/blogs/${blogPostId}/reactions/summary`);
+  },
+
+  reactToReview: async (reviewBlogId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/reviews/${reviewBlogId}/reactions`, { reactionCode });
+  },
+
+  removeReviewReaction: async (reviewBlogId: number): Promise<boolean> => {
+    return axiosClient.delete<boolean>(`/blogs/reviews/${reviewBlogId}/reactions`);
+  },
+
+  reactToReply: async (replyBlogId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/reviews/replies/${replyBlogId}/reactions`, { reactionCode });
+  },
+
+  removeReplyReaction: async (replyBlogId: number): Promise<boolean> => {
+    return axiosClient.delete<boolean>(`/blogs/reviews/replies/${replyBlogId}/reactions`);
   },
 
   searchBrands: async (
