@@ -749,6 +749,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           pageSize: PAGE_SIZE,
           ...getSortConfig(sort),
           ...filters,
+          status: "Active",
         });
         if (!active) return;
         setData(result);
