@@ -35,6 +35,11 @@ export interface BlogDetail extends BlogListItem {
   reason: string | null;
 }
 
+export interface BlogCategoryItem {
+  blogCategoryId: number;
+  blogCategoryName: string;
+}
+
 export interface BlogReviewReply {
   replyBlogId: number;
   reviewBlogId: number;
