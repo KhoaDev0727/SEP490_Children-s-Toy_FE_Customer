@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import type { AxiosError } from "axios";
 import { useAuthContext } from "@/context/AuthContext";
 import { profileApi } from "@/features/profile/services/profile-api";
 import type { CustomerProfile } from "@/features/profile/types/profile";
@@ -75,6 +76,41 @@ const normalizeNullable = (value: string) => {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
 };
+const PHONE_NUMBER_REGEX = /^\d{10}$/;
+
+type ApiErrorResponse = {
+  code?: string;
+  message?: string;
+  errors?: Record<string, string[]>;
+  Code?: string;
+  Message?: string;
+  Errors?: Record<string, string[]>;
+};
+
+const isPhoneAlreadyExistsError = (error: AxiosError<ApiErrorResponse>) => {
+  const code = (error.response?.data?.code ?? error.response?.data?.Code ?? "").toUpperCase();
+  const message = (error.response?.data?.message ?? error.response?.data?.Message ?? "").toLowerCase();
+  const errors = error.response?.data?.errors ?? error.response?.data?.Errors;
+  const errorKeys = errors ? Object.keys(errors).map((key) => key.toLowerCase()) : [];
+
+  if (
+    code.includes("PHONE") ||
+    code.includes("DUPLICATE") ||
+    code.includes("ALREADY_EXISTS") ||
+    code.includes("CONFLICT")
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes("phone") && (message.includes("exist") || message.includes("already")) ||
+    message.includes("so dien thoai") && message.includes("ton tai")
+  ) {
+    return true;
+  }
+
+  return errorKeys.some((key) => key.includes("phone"));
+};
 
 export default function ProfileForm() {
   const { account, updateAccount } = useAuthContext();
@@ -92,6 +128,8 @@ export default function ProfileForm() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [savedProfile, setSavedProfile] = useState<Partial<CustomerProfile>>({});
   const [provider, setProvider] = useState("");
+  const [isPhoneInvalidModalOpen, setIsPhoneInvalidModalOpen] = useState(false);
+  const [isPhoneExistsModalOpen, setIsPhoneExistsModalOpen] = useState(false);
   const hasShownLoadErrorRef = useRef(false);
 
   const initials = useMemo(() => {
@@ -209,10 +247,15 @@ export default function ProfileForm() {
         toast.error("Date of birth is invalid.");
         return;
       }
+      const normalizedPhoneNumber = normalizeNullable(phoneNumber);
+      if (normalizedPhoneNumber && !PHONE_NUMBER_REGEX.test(normalizedPhoneNumber)) {
+        setIsPhoneInvalidModalOpen(true);
+        return;
+      }
 
       const payload = {
         accountName: normalizeNullable(accountName),
-        phoneNumber: normalizeNullable(phoneNumber),
+        phoneNumber: normalizedPhoneNumber,
         imageUrl: normalizeNullable(avatarUrl),
         dob: dobIso,
         sexId: sexId ? Number(sexId) : null,
@@ -241,7 +284,12 @@ export default function ProfileForm() {
       });
 
       toast.success("Profile updated successfully.");
-    } catch {
+    } catch (rawError) {
+      const error = rawError as AxiosError<ApiErrorResponse>;
+      if (isPhoneAlreadyExistsError(error)) {
+        setIsPhoneExistsModalOpen(true);
+        return;
+      }
       toast.error("Unable to save profile.");
     } finally {
       setIsSaving(false);
@@ -259,13 +307,13 @@ export default function ProfileForm() {
   };
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-3xl shadow-[0_14px_40px_rgba(15,23,42,0.08)] border border-slate-200/80 overflow-hidden">
-      <div className="px-6 md:px-8 py-6 border-b border-slate-200/70 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/70">
-        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-slate-900">My Profile</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage your personal information and avatar.</p>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
+      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
+        <h1 className="text-2xl font-bold text-[#261812]">My Profile</h1>
+        <p className="mt-1 text-sm text-[#5a4136]">Manage your personal information and avatar.</p>
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-6">
         {isLoading ? (
           <div className="text-sm text-slate-500">Loading profile...</div>
         ) : (
@@ -432,6 +480,57 @@ export default function ProfileForm() {
           </div>
         )}
       </div>
+
+      {isPhoneInvalidModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsPhoneInvalidModalOpen(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-[#fff1eb] flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[#ff6a00] text-2xl">warning</span>
+            </div>
+            <h3 className="text-lg font-bold text-[#261812] mb-2">Invalid phone number</h3>
+            <p className="text-sm text-[#5a4136] mb-6">
+              Phone number must contain exactly 10 digits. Please check and try again.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPhoneInvalidModalOpen(false)}
+              className="w-full py-2.5 rounded-full bg-[#ff6a00] text-white text-sm font-semibold hover:brightness-95 transition"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isPhoneExistsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsPhoneExistsModalOpen(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-[#fff1eb] flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[#ff6a00] text-2xl">warning</span>
+            </div>
+            <h3 className="text-lg font-bold text-[#261812] mb-2">Phone number already exists</h3>
+            <p className="text-sm text-[#5a4136] mb-6">
+              This phone number is already used by another account. Please use a different one.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPhoneExistsModalOpen(false)}
+              className="w-full py-2.5 rounded-full bg-[#ff6a00] text-white text-sm font-semibold hover:brightness-95 transition"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
