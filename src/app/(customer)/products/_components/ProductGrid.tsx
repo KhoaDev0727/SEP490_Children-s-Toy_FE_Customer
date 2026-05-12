@@ -650,11 +650,6 @@ function ProductCard({
             </button>
           )}
 
-          {!isComingSoon && (
-            <p className="mt-2 text-[11px] text-slate-500">
-              In cart: {quantityInCart} | Can add: {remainingStock}
-            </p>
-          )}
         </div>
       </div>
     </div>
@@ -749,6 +744,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           pageSize: PAGE_SIZE,
           ...getSortConfig(sort),
           ...filters,
+          status: "Active",
         });
         if (!active) return;
         setData(result);

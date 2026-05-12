@@ -10,12 +10,15 @@ interface ArticleHeaderProps {
       name: string;
     };
   };
+  showTitle?: boolean;
 }
 
-export default function ArticleHeader({ post }: ArticleHeaderProps) {
+export default function ArticleHeader({ post, showTitle = true }: ArticleHeaderProps) {
   return (
     <header className="relative z-10 flex flex-col gap-6">
-      <h1 className="font-extrabold text-[28px] sm:text-[34px] leading-[1.2] text-[#261812] tracking-tight">{post.title}</h1>
+      {showTitle && (
+        <h1 className="font-extrabold text-[28px] sm:text-[34px] leading-[1.2] text-[#261812] tracking-tight">{post.title}</h1>
+      )}
 
       <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border-2 border-[#f3cbb9] shadow-md bg-[#f8fafc]">
         {post.isFeatured && (

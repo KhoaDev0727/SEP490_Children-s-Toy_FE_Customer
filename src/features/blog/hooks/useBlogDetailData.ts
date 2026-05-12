@@ -144,6 +144,10 @@ export const useBlogDetailData = (blogPostId: number) => {
   return {
     post,
     reviews,
+    reloadPost: async () => {
+      const detail = await customerBlogApi.getBlogById(blogPostId);
+      setPost(detail);
+    },
     reloadReviews: async () => {
       const blogReviews = await customerBlogApi.getBlogReviews(blogPostId);
       setReviews(blogReviews.filter((item) => item.status === "Visible"));
