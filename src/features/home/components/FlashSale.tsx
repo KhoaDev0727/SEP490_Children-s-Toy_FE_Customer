@@ -43,9 +43,19 @@ const formatShortDate = (dateKey: string) => {
 // Sub-components
 // ============================================================
 
-const TimeBlock = memo(function TimeBlock({ value }: { value: number }) {
+const TimeBlock = memo(function TimeBlock({
+  value,
+  isLive,
+}: {
+  value: number;
+  isLive?: boolean;
+}) {
   return (
-    <div className="px-1.5 sm:px-2 py-1 rounded-md bg-[#0f172a] text-white font-bold text-sm sm:text-base min-w-[2rem] sm:min-w-[2.5rem] text-center shadow-sm tracking-widest">
+    <div
+      className={`px-1.5 sm:px-2 py-1 rounded-md text-white font-bold text-sm sm:text-base min-w-8 sm:min-w-10 text-center shadow-sm tracking-widest transition-colors ${
+        isLive ? "bg-rose-600" : "bg-[#0f172a]"
+      }`}
+    >
       {String(value).padStart(2, "0")}
     </div>
   );
@@ -83,9 +93,11 @@ function ProductSkeleton() {
 const ProductCard = memo(function ProductCard({
   product,
   index,
+  isUpcoming,
 }: {
   product: FlashSaleProduct;
   index: number;
+  isUpcoming: boolean;
 }) {
   const soldPct =
     product.saleQuantity > 0
@@ -95,10 +107,30 @@ const ProductCard = memo(function ProductCard({
 
   const formatVND = (price: number) => price.toLocaleString("vi-VN") + "đ";
 
+  const maskVND = (price: number) => {
+    const s = price.toString();
+    if (s.length >= 7) {
+      return `${s[0]}.${s[1]}xx.xxxđ`;
+    } else if (s.length === 6) {
+      return `${s[0]}xx.xxxđ`;
+    } else if (s.length === 5) {
+      return `${s[0]}x.xxxđ`;
+    } else {
+      return "xxxđ";
+    }
+  };
+
   return (
     <Link
-      href={`/products/${product.productId}`}
-      className={`bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-[#ff6a00]/30 shadow-sm hover:shadow-md transition-all p-3 flex flex-col relative h-full group ${index === 4 ? "hidden lg:flex" : ""}`}
+      href={isUpcoming ? "#" : `/products/${product.productId}`}
+      className={`bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all p-3 flex flex-col relative h-full group ${
+        index === 4 ? "hidden lg:flex" : ""
+      } ${
+        isUpcoming
+          ? "cursor-default opacity-90"
+          : "hover:border-[#ff6a00]/30 hover:shadow-md cursor-pointer"
+      }`}
+      onClick={(e) => isUpcoming && e.preventDefault()}
     >
       {/* Image */}
       <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
@@ -108,7 +140,9 @@ const ProductCard = memo(function ProductCard({
             alt={product.productName}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={`object-cover transition-transform duration-300 ${
+              !isUpcoming && "group-hover:scale-105"
+            }`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-50">
@@ -127,30 +161,38 @@ const ProductCard = memo(function ProductCard({
       {/* Price */}
       <div className="flex items-end gap-2 mb-2">
         <span className="font-bold text-base sm:text-lg text-[#ff6a00] leading-none">
-          {formatVND(product.salePrice)}
+          {isUpcoming ? maskVND(product.salePrice) : formatVND(product.salePrice)}
         </span>
         {product.originalPrice > product.salePrice && (
           <span className="text-gray-400 text-xs line-through">
-            {formatVND(product.originalPrice)}
+            {isUpcoming ? maskVND(product.originalPrice) : formatVND(product.originalPrice)}
           </span>
         )}
       </div>
 
       {/* Progress & Button */}
       <div className="mt-auto pt-2">
-        <div className="w-full bg-[#ffeddb] h-4 rounded-full relative overflow-hidden flex items-center mb-3">
-          <div
-            className="absolute inset-y-0 left-0 bg-[#ff6a00] rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${Math.min(soldPct, 100)}%` }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white z-10 drop-shadow-sm">
-            {almostOut
-              ? `SẮP HẾT (${product.soldQuantity}/${product.saleQuantity})`
-              : `ĐÃ BÁN ${product.soldQuantity}/${product.saleQuantity}`}
+        {!isUpcoming && (
+          <div className="w-full bg-[#ffeddb] h-4 rounded-full relative overflow-hidden flex items-center mb-3">
+            <div
+              className="absolute inset-y-0 left-0 bg-[#ff6a00] rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${Math.min(soldPct, 100)}%` }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white z-10 drop-shadow-sm">
+              {almostOut
+                ? `SẮP HẾT (${product.soldQuantity}/${product.saleQuantity})`
+                : `ĐÃ BÁN ${product.soldQuantity}/${product.saleQuantity}`}
+            </div>
           </div>
-        </div>
-        <div className="w-full py-2 rounded-lg border border-[#ff6a00] text-[#ff6a00] font-bold text-xs sm:text-sm hover:bg-[#fff7ed] transition-colors uppercase text-center">
-          Mua Ngay
+        )}
+        <div
+          className={`w-full py-2 rounded-lg font-bold text-xs sm:text-sm uppercase text-center border transition-colors ${
+            isUpcoming
+              ? "bg-gray-100 text-gray-400 border-gray-100"
+              : "border-[#ff6a00] text-[#ff6a00] hover:bg-[#fff7ed]"
+          }`}
+        >
+          {isUpcoming ? "Sắp diễn ra" : "Mua Ngay"}
         </div>
       </div>
     </Link>
@@ -193,8 +235,11 @@ const TimeSlotPill = memo(function TimeSlotPill({
         }
       `}
     >
-      {status === "active" && !isSelected && (
-        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white bg-[#22c55e]" />
+      {status === "active" && (
+        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 border-2 border-white bg-rose-500 animate-breath"></span>
+        </span>
       )}
       {timeRange}
     </button>
@@ -222,7 +267,11 @@ export default function FlashSale() {
     selectDate,
     selectSlot,
     getSlotRuntimeStatus,
+    selectedSlot,
   } = useFlashSale();
+
+  const isLive =
+    !!selectedSlot && getSlotRuntimeStatus(selectedSlot) === "active";
 
   if (error) return null;
   if (!isLoading && promotions.length === 0) return null;
@@ -248,13 +297,19 @@ export default function FlashSale() {
 
             {countdown ? (
               <div className="flex items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
-                <TimeBlock value={countdown.d} />
+                {isLive && (
+                  <div className="relative flex h-3 w-3 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 animate-breath"></span>
+                  </div>
+                )}
+                <TimeBlock value={countdown.d} isLive={isLive} />
                 <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.h} />
+                <TimeBlock value={countdown.h} isLive={isLive} />
                 <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.m} />
+                <TimeBlock value={countdown.m} isLive={isLive} />
                 <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.s} />
+                <TimeBlock value={countdown.s} isLive={isLive} />
               </div>
             ) : isLoading ? (
               <div className="flex gap-1 ml-2">
@@ -269,26 +324,27 @@ export default function FlashSale() {
           </div>
         </div>
 
-        {/* ── Promotion Tabs ────────────────────────────────── */}
+        {/* ── Promotion Tabs (Shopee Style) ─────────────────── */}
         {isLoading ? (
           <TabSkeleton />
-        ) : promotions.length > 1 ? (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 pb-1">
+        ) : promotions.length > 0 ? (
+          <div className="flex items-center gap-8 border-b border-gray-100 mb-6 overflow-x-auto scrollbar-hide">
             {promotions.map((promo) => {
               const isActive = promo.promotionId === selectedPromotionId;
               return (
                 <button
                   key={promo.promotionId}
                   onClick={() => selectPromotion(promo.promotionId)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-colors
-                    ${
-                      isActive
-                        ? "bg-[#ff6a00] text-white shadow-sm"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }
-                  `}
+                  className={`relative py-3 px-1 text-sm sm:text-base font-bold whitespace-nowrap transition-all ${
+                    isActive
+                      ? "text-rose-600"
+                      : "text-gray-500 hover:text-rose-500"
+                  }`}
                 >
                   {promo.promotionName}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-600 rounded-full" />
+                  )}
                 </button>
               );
             })}
@@ -329,7 +385,7 @@ export default function FlashSale() {
 
           {/* Time Slots */}
           {!isLoading && timeSlotsForDate.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1 w-full lg:w-auto">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2.5 w-full lg:w-auto">
               {timeSlotsForDate.map((slot) => {
                 const status = getSlotRuntimeStatus(slot);
                 return (
@@ -363,6 +419,7 @@ export default function FlashSale() {
                       key={product.slotProductId}
                       product={product}
                       index={i}
+                      isUpcoming={selectedSlot ? getSlotRuntimeStatus(selectedSlot) === "upcoming" : false}
                     />
                   ))
               : !isLoading && (
