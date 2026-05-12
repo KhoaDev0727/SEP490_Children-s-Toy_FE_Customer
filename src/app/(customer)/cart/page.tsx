@@ -21,9 +21,8 @@ const isReadOnlyItemStatus = (status: string): boolean => {
 
 export default function CartPage() {
   const { isAuthenticated, isHydrated } = useAuthContext();
-  const { cart, isLoading, isConnected, updateQuantity, removeItem, clearCart } = useCart();
+  const { cart, isLoading, updateQuantity, removeItem } = useCart();
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
-  const [isClearing, setIsClearing] = useState(false);
 
   const items = cart?.items ?? [];
 
@@ -34,8 +33,24 @@ export default function CartPage() {
     );
   }, [cart, items]);
 
+  const handleRemoveItem = async (cartItemId: number) => {
+    try {
+      setPendingItemId(cartItemId);
+      await removeItem(cartItemId);
+      toast.success("Item removed from cart.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to remove item.";
+      toast.error(message);
+    } finally {
+      setPendingItemId(null);
+    }
+  };
+
   const handleUpdateQuantity = async (cartItemId: number, nextQuantity: number, stock: number) => {
-    if (nextQuantity < 1) return;
+    if (nextQuantity <= 0) {
+      await handleRemoveItem(cartItemId);
+      return;
+    }
     if (stock <= 0) {
       toast.error("Product is out of stock.");
       return;
@@ -53,32 +68,6 @@ export default function CartPage() {
       toast.error(message);
     } finally {
       setPendingItemId(null);
-    }
-  };
-
-  const handleRemoveItem = async (cartItemId: number) => {
-    try {
-      setPendingItemId(cartItemId);
-      await removeItem(cartItemId);
-      toast.success("Item removed from cart.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to remove item.";
-      toast.error(message);
-    } finally {
-      setPendingItemId(null);
-    }
-  };
-
-  const handleClearCart = async () => {
-    try {
-      setIsClearing(true);
-      await clearCart();
-      toast.success("Cart cleared successfully.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to clear cart.";
-      toast.error(message);
-    } finally {
-      setIsClearing(false);
     }
   };
 
@@ -107,14 +96,6 @@ export default function CartPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-black tracking-tight text-slate-900">Shopping Cart</h1>
-        <button
-          type="button"
-          onClick={handleClearCart}
-          disabled={isClearing || items.length === 0}
-          className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-        >
-          {isClearing ? "Clearing..." : "Clear Cart"}
-        </button>
       </div>
 
       {items.length === 0 ? (
@@ -197,7 +178,7 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity - 1, item.stockQuantity)}
-                              disabled={busy || isReadOnlyItem || item.quantity <= 1}
+                              disabled={busy || isReadOnlyItem || item.quantity <= 0}
                               className="flex h-full w-10 items-center justify-center rounded-l-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-sm">remove</span>
@@ -231,12 +212,6 @@ export default function CartPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:h-fit">
             <h2 className="text-2xl font-extrabold text-slate-900">Order Summary</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Realtime updated by SignalR
-              <span className={`ml-2 font-semibold ${isConnected ? "text-emerald-600" : "text-amber-600"}`}>
-                {isConnected ? "(Connected)" : "(Disconnected)"}
-              </span>
-            </p>
 
             <div className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4">
               <div className="flex items-center justify-between text-sm">
