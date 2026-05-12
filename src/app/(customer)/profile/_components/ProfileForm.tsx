@@ -22,9 +22,9 @@ const formatDob = (value: string | null | undefined) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
   return `${day}/${month}/${year}`;
 };
 
@@ -32,9 +32,9 @@ const formatDobForDateInput = (value: string | null | undefined) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -65,9 +65,9 @@ const toDateInput = (value: string | null | undefined) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
   return `${year}-${month}-${day}`;
 };
 
@@ -232,7 +232,7 @@ export default function ProfileForm() {
       updateAccount({
         accountName: updated.accountName ?? accountName,
         email: updated.email ?? email,
-        imageUrl: updated.imageUrl ?? null,
+        imageUrl: updated.imageUrl ?? undefined,
         phoneNumber: updated.phoneNumber ?? null,
         dob: updated.dob ?? null,
         sexId: updated.sexId ?? null,

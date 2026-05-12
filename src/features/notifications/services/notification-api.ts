@@ -46,4 +46,10 @@ export const notificationApi = {
   recordClick: async (deliveryId: number) => {
     return await axiosClient.post<void>(`/notifications/${deliveryId}/click`);
   },
+  deleteNotification: async (deliveryId: number) => {
+    return await axiosClient.delete<void>(`/notifications/${deliveryId}`);
+  },
+  deleteAllReadNotifications: async () => {
+    return await axiosClient.delete<void>("/notifications/read");
+  },
 };

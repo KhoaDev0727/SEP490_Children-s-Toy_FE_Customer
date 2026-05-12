@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
 import { notificationApi, Delivery } from "@/features/notifications/services/notification-api";
+import { formatTimeAgo } from "@/utils/date-utils";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const getIconMeta = (type: string) => {
   switch (type) {
@@ -16,19 +18,6 @@ const getIconMeta = (type: string) => {
   }
 };
 
-function timeAgo(dateStr: string) {
-  const date = new Date(dateStr + "Z"); // append Z to treat as UTC since server returns UTC without Z
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "Vừa xong";
-  if (min < 60) return `${min} phút trước`;
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return `${hours} giờ trước`;
-  const days = Math.floor(hours / 24);
-  return `${days} ngày trước`;
-}
-
 export default function NotificationPopup() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Delivery[]>([]);
@@ -36,6 +25,12 @@ export default function NotificationPopup() {
   const ref = useRef<HTMLDivElement>(null);
   const { unreadCount, refreshUnread } = useNotificationRealtime();
   const router = useRouter();
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const loadItems = useCallback(async () => {
     try {
@@ -104,6 +99,30 @@ export default function NotificationPopup() {
     }
   };
 
+  const handleDelete = (id: number, type: string) => {
+    const doDelete = async () => {
+      try {
+        await notificationApi.deleteNotification(id);
+        setItems((prev) => prev.filter((n) => n.deliveryId !== id));
+        void refreshUnread();
+      } catch (e) {
+        console.error(e);
+      }
+      setConfirmModal((prev) => ({ ...prev, show: false }));
+    };
+
+    if (type === "SYSTEM") {
+      setConfirmModal({
+        show: true,
+        title: "Xác nhận xóa",
+        message: "Đây là thông báo hệ thống quan trọng. Bạn có chắc chắn muốn xóa?",
+        onConfirm: doDelete,
+      });
+    } else {
+      void doDelete();
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
       {/* Bell button */}
@@ -160,7 +179,7 @@ export default function NotificationPopup() {
                 <li
                   key={n.deliveryId}
                   onClick={() => markOne(n.deliveryId)}
-                  className={`flex gap-3 px-4 py-3.5 cursor-pointer transition-colors
+                  className={`flex gap-3 px-4 py-3.5 cursor-pointer transition-colors group
                     ${!isUnread ? "opacity-60 hover:opacity-80" : "bg-primary/[0.03] hover:bg-primary/[0.06]"}
                   `}
                 >
@@ -175,13 +194,25 @@ export default function NotificationPopup() {
                       <span className="font-bold block">{n.title}</span>
                       <span className="opacity-90">{n.message}</span>
                     </p>
-                    <span className="text-[10px] text-slate-400 mt-1 block">{timeAgo(n.createdAt)}</span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">{formatTimeAgo(n.createdAt)}</span>
                   </div>
 
-                  {/* Unread dot */}
-                  {isUnread && (
-                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                  )}
+                  {/* Actions */}
+                  <div className="flex flex-col items-end gap-2 shrink-0 self-start mt-1">
+                    {isUnread && (
+                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleDelete(n.deliveryId, n.notificationType);
+                      }}
+                      className="p-1 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Xóa thông báo"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -197,6 +228,16 @@ export default function NotificationPopup() {
           </Link>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, show: false }))}
+        confirmText="Xóa"
+        type="danger"
+      />
     </div>
   );
 }
