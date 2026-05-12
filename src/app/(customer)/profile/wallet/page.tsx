@@ -1,113 +1,274 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import ProfileSidebar from "../_components/ProfileSidebar";
+import { walletApi } from "@/features/wallet/services/wallet-api";
+import {
+  changeWalletPinSchema,
+  createWalletSchema,
+  resetForgotWalletPinSchema,
+  verifyForgotWalletPinOtpSchema,
+  verifyWalletPinSchema,
+} from "@/features/wallet/types/wallet.schema";
+import type { ApiErrorResponse, WalletDto } from "@/features/wallet/types/wallet";
+import WalletActivationState from "./_components/WalletActivationState";
+import WalletBreadcrumb from "./_components/WalletBreadcrumb";
+import WalletOverview from "./_components/WalletOverview";
+import WalletPinModal from "./_components/WalletPinModal";
+import {
+  DEFAULT_PIN_VISIBILITY,
+  getValidationErrorMessage,
+  mapWalletTransactionToUi,
+  type PinModalMode,
+  type PinVisibilityField,
+  type UiTransaction,
+} from "./_components/wallet-shared";
 
-const benefits = [
-  {
-    icon: "touch_app",
-    title: "One-tap payment",
-    description: "Fast, seamless checkout without entering your PIN repeatedly.",
-  },
-  {
-    icon: "savings",
-    title: "10% cashback",
-    description: "Earn rewards and receive wallet cashback on every order.",
-  },
-  {
-    icon: "security",
-    title: "Full protection",
-    description: "International security standards for every transaction.",
-  },
-];
-
-type Transaction = {
-  id: number;
-  icon: string;
-  title: string;
-  time: string;
-  amount: number;
-  status: "Successful" | "Pending";
-  kind: "credit" | "debit" | "refund";
-};
-
-const transactions: Transaction[] = [
-  {
-    id: 1,
-    icon: "shopping_bag",
-    title: "Order payment #ORD-8921",
-    time: "10:30 AM, 15/10/2024",
-    amount: -250000,
-    status: "Successful",
-    kind: "debit",
-  },
-  {
-    id: 2,
-    icon: "savings",
-    title: "Top up from bank account",
-    time: "09:15 AM, 14/10/2024",
-    amount: 5000000,
-    status: "Successful",
-    kind: "credit",
-  },
-  {
-    id: 3,
-    icon: "currency_exchange",
-    title: "Order refund #ORD-7734",
-    time: "04:45 PM, 12/10/2024",
-    amount: 125000,
-    status: "Successful",
-    kind: "refund",
-  },
-];
-
-const currentBalance = 12450000;
-
-function formatVnd(value: number) {
-  const absValue = Math.abs(value);
-  const formatted = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 0,
-  }).format(absValue);
-  return `${value < 0 ? "-" : "+"}${formatted} ₫`;
-}
-
-function formatBalance(value: number) {
-  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)} ₫`;
-}
-
-function getTransactionIconStyles(kind: Transaction["kind"]) {
-  if (kind === "debit") return "bg-red-100 text-red-600";
-  if (kind === "refund") return "bg-blue-100 text-blue-600";
-  return "bg-green-100 text-green-600";
+function getApiError(error: unknown) {
+  const err = error as { response?: { status?: number; data?: ApiErrorResponse } };
+  return {
+    status: err?.response?.status,
+    code: err?.response?.data?.code ?? err?.response?.data?.Code,
+    message: err?.response?.data?.message ?? err?.response?.data?.Message,
+  };
 }
 
 export default function WalletPage() {
-  const [isWalletActivated, setIsWalletActivated] = useState(false);
+  const [wallet, setWallet] = useState<WalletDto | null>(null);
+  const [transactions, setTransactions] = useState<UiTransaction[]>([]);
+  const [isWalletLoading, setIsWalletLoading] = useState(true);
+  const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
+
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<PinModalMode>("activate");
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [oldPin, setOldPin] = useState("");
+  const [newChangePin, setNewChangePin] = useState("");
+  const [confirmChangePin, setConfirmChangePin] = useState("");
+  const [isSubmittingPin, setIsSubmittingPin] = useState(false);
+  const [isSendingForgotOtp, setIsSendingForgotOtp] = useState(false);
+  const [isForgotPinFlow, setIsForgotPinFlow] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmNewPin, setConfirmNewPin] = useState("");
+  const [isResettingPin, setIsResettingPin] = useState(false);
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
+  const [pinVisibility, setPinVisibility] = useState<Record<PinVisibilityField, boolean>>(
+    () => ({ ...DEFAULT_PIN_VISIBILITY }),
+  );
+
+  const isWalletActivated = wallet !== null;
+  const currentBalance = wallet?.balance ?? 0;
 
   const totalCredit = useMemo(
     () =>
       transactions
         .filter((transaction) => transaction.amount > 0)
         .reduce((sum, transaction) => sum + transaction.amount, 0),
-    [],
+    [transactions],
   );
+
+  const loadWalletData = useCallback(async () => {
+    setIsWalletLoading(true);
+
+    try {
+      const walletResponse = await walletApi.getMyWallet();
+      setWallet(walletResponse);
+
+      setIsTransactionsLoading(true);
+      try {
+        const transactionResponse = await walletApi.getTransactions(1, 10);
+        setTransactions(transactionResponse.items.map(mapWalletTransactionToUi));
+      } catch (transactionError) {
+        const transactionApiError = getApiError(transactionError);
+        setTransactions([]);
+        toast.error(transactionApiError.message ?? "Unable to load transaction history.");
+      } finally {
+        setIsTransactionsLoading(false);
+      }
+    } catch (error) {
+      const apiError = getApiError(error);
+      if (apiError.status === 404 || apiError.code === "NOT_FOUND") {
+        setWallet(null);
+        setTransactions([]);
+      } else {
+        toast.error(apiError.message ?? "Unable to load wallet information.");
+      }
+    } finally {
+      setIsWalletLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadWalletData();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadWalletData]);
+
+  const resetPinModalFields = () => {
+    setPin("");
+    setConfirmPin("");
+    setOldPin("");
+    setNewChangePin("");
+    setConfirmChangePin("");
+    setOtpCode("");
+    setNewPin("");
+    setConfirmNewPin("");
+    setIsForgotPinFlow(false);
+    setPinVisibility({ ...DEFAULT_PIN_VISIBILITY });
+  };
+
+  const openPinModal = (mode: PinModalMode) => {
+    setPinModalMode(mode);
+    resetPinModalFields();
+    setIsPinModalOpen(true);
+  };
+
+  const closePinModal = (force = false) => {
+    if (!force && (isSubmittingPin || isSendingForgotOtp || isResettingPin)) return;
+    setIsPinModalOpen(false);
+    resetPinModalFields();
+  };
+
+  const togglePinVisibility = (field: PinVisibilityField) => {
+    setPinVisibility((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleSubmitPinModal = async () => {
+    if (pinModalMode === "changePin") {
+      const changePinValidation = changeWalletPinSchema.safeParse({
+        oldPin,
+        newPin: newChangePin,
+        confirmNewPin: confirmChangePin,
+      });
+      if (!changePinValidation.success) {
+        toast.error(getValidationErrorMessage(changePinValidation.error));
+        return;
+      }
+
+      setIsSubmittingPin(true);
+      try {
+        await walletApi.changePin(changePinValidation.data);
+        toast.success("Wallet PIN changed successfully.");
+        closePinModal();
+      } catch (error: unknown) {
+        const apiError = getApiError(error);
+        toast.error(apiError.message ?? "Unable to change PIN. Please try again.");
+      } finally {
+        setIsSubmittingPin(false);
+      }
+      return;
+    }
+
+    const activationValidation =
+      pinModalMode === "activate" ? createWalletSchema.safeParse({ pin, confirmPin }) : null;
+    const topUpValidation =
+      pinModalMode === "topup"
+        ? verifyWalletPinSchema.safeParse({ pin, actionType: "TOP_UP" })
+        : null;
+    const viewBalanceValidation =
+      pinModalMode === "viewBalance"
+        ? verifyWalletPinSchema.safeParse({ pin, actionType: "VIEW_BALANCE" })
+        : null;
+
+    if (activationValidation && !activationValidation.success) {
+      toast.error(getValidationErrorMessage(activationValidation.error));
+      return;
+    }
+
+    if (topUpValidation && !topUpValidation.success) {
+      toast.error(getValidationErrorMessage(topUpValidation.error));
+      return;
+    }
+
+    if (viewBalanceValidation && !viewBalanceValidation.success) {
+      toast.error(getValidationErrorMessage(viewBalanceValidation.error));
+      return;
+    }
+
+    setIsSubmittingPin(true);
+    try {
+      if (pinModalMode === "activate") {
+        const createdWallet = await walletApi.createWallet(activationValidation!.data);
+        setWallet(createdWallet);
+        setTransactions([]);
+        toast.success("Wallet activated successfully.");
+      } else if (pinModalMode === "topup") {
+        await walletApi.verifyPin(topUpValidation!.data);
+        toast.success("PIN verified successfully. You can continue top-up.");
+      } else {
+        await walletApi.verifyPin(viewBalanceValidation!.data);
+        setIsBalanceVisible(true);
+        toast.success("PIN verified successfully. Balance is now visible.");
+      }
+      closePinModal();
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      if (pinModalMode === "activate" && apiError.code === "CONFLICT") {
+        await loadWalletData();
+        toast.success("You already have a wallet. Switched to wallet management mode.");
+        closePinModal();
+        return;
+      }
+      toast.error(apiError.message ?? "Operation failed. Please try again.");
+    } finally {
+      setIsSubmittingPin(false);
+    }
+  };
+
+  const handleSendForgotPinOtp = async () => {
+    if (pinModalMode === "activate") return;
+
+    setIsSendingForgotOtp(true);
+    try {
+      await walletApi.sendForgotPinOtp();
+      setIsForgotPinFlow(true);
+      setOtpCode("");
+      setNewPin("");
+      setConfirmNewPin("");
+      toast.success("A 6-digit OTP has been sent to your email.");
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      toast.error(apiError.message ?? "Unable to send OTP. Please try again.");
+    } finally {
+      setIsSendingForgotOtp(false);
+    }
+  };
+
+  const handleResetPinWithOtp = async () => {
+    const otpValidation = verifyForgotWalletPinOtpSchema.safeParse({ otpCode });
+    if (!otpValidation.success) {
+      toast.error(getValidationErrorMessage(otpValidation.error));
+      return;
+    }
+
+    const resetValidation = resetForgotWalletPinSchema.safeParse({ newPin, confirmNewPin });
+    if (!resetValidation.success) {
+      toast.error(getValidationErrorMessage(resetValidation.error));
+      return;
+    }
+
+    setIsResettingPin(true);
+    try {
+      await walletApi.verifyForgotPinOtp(otpValidation.data);
+      await walletApi.resetForgotPin(resetValidation.data);
+      toast.success("PIN reset successfully. Please use your new PIN.");
+      closePinModal(true);
+      await loadWalletData();
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      toast.error(apiError.message ?? "Unable to reset PIN. Please try again.");
+    } finally {
+      setIsResettingPin(false);
+    }
+  };
 
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div className="col-span-full mb-2">
-        <nav className="flex items-center gap-2 text-sm text-[#5a4136]">
-          <Link href="/" className="hover:text-[#a14000] transition-colors">
-            Home
-          </Link>
-          <span className="material-symbols-outlined text-[14px] opacity-50">chevron_right</span>
-          <Link href="/profile" className="hover:text-[#a14000] transition-colors">
-            Account
-          </Link>
-          <span className="material-symbols-outlined text-[14px] opacity-50">chevron_right</span>
-          <span className="text-[#a14000] font-medium">Wallet</span>
-        </nav>
-      </div>
+      <WalletBreadcrumb />
 
       <ProfileSidebar />
 
@@ -116,123 +277,60 @@ export default function WalletPage() {
           <h1 className="text-2xl font-bold text-[#261812]">Wallet Management</h1>
         </div>
 
-        {!isWalletActivated ? (
-          <div className="px-6 py-12 md:py-16 flex flex-col items-center text-center">
-            <div className="w-32 h-32 rounded-full bg-[#a14000]/10 flex items-center justify-center mb-6">
-              <span className="material-symbols-outlined text-[64px] text-[#a14000]">
-                account_balance_wallet
-              </span>
-            </div>
-            <h2 className="text-3xl font-bold text-[#261812] mb-3">Activate ShopX Wallet</h2>
-            <p className="text-sm text-[#5a4136] max-w-[560px] mb-8">
-              Experience lightning-fast, secure payments and unlock exclusive rewards with ShopX
-              Wallet.
-            </p>
-
-            <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 mb-8 text-left">
-              {benefits.map((benefit) => (
-                <div
-                  key={benefit.title}
-                  className="bg-[#fff8f6] border border-[#e2bfb0]/40 rounded-xl p-4 min-h-[148px]"
-                >
-                  <span className="material-symbols-outlined text-[#a14000] mb-2">{benefit.icon}</span>
-                  <h3 className="text-base font-semibold text-[#261812] mb-1">{benefit.title}</h3>
-                  <p className="text-xs text-[#5a4136] leading-relaxed">{benefit.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsWalletActivated(true)}
-              className="bg-[#a14000] hover:bg-[#8a3600] text-white px-8 py-3 rounded-xl font-semibold text-lg transition-colors flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[20px]">add_circle</span>
-              Activate Wallet Now
-            </button>
-          </div>
+        {isWalletLoading ? (
+          <div className="px-6 py-20 text-center text-[#5a4136] text-sm">Loading wallet information...</div>
+        ) : !isWalletActivated ? (
+          <WalletActivationState onActivate={() => openPinModal("activate")} />
         ) : (
-          <div>
-            <div className="p-6">
-              <div className="bg-gradient-to-r from-[#a14000] to-[#ff6a00] rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-                <div className="relative z-10">
-                  <p className="text-sm text-white/85 mb-1">Available Balance</p>
-                  <h2 className="text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
-                    {formatBalance(currentBalance)}
-                  </h2>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      className="bg-white text-[#a14000] px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#fff3eb] transition-colors flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                      Top Up
-                    </button>
-                    <button
-                      type="button"
-                      className="bg-white/15 border border-white/30 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/20 transition-colors flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">account_balance</span>
-                      Withdraw
-                    </button>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-[160px] text-white/10 select-none pointer-events-none">
-                  account_balance_wallet
-                </span>
-              </div>
-              <p className="mt-3 text-xs text-[#5a4136]">
-                Total incoming transactions:{" "}
-                <span className="font-semibold text-emerald-700">{formatVnd(totalCredit)}</span>
-              </p>
-            </div>
-
-            <div className="px-6 py-4 border-t border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-              <h3 className="text-xl font-bold text-[#261812]">Transaction History</h3>
-              <button
-                type="button"
-                className="text-[#a14000] hover:text-[#ff6a00] text-sm font-semibold transition-colors flex items-center gap-1"
-              >
-                View all
-                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-              </button>
-            </div>
-
-            <div className="flex flex-col">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center gap-4 p-6 bg-white hover:bg-[#fff8f6] transition-colors border-b border-[#e2bfb0]/20 last:border-b-0"
-                >
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${getTransactionIconStyles(transaction.kind)}`}
-                  >
-                    <span className="material-symbols-outlined">{transaction.icon}</span>
-                  </div>
-                  <div className="flex-grow pl-2 min-w-0">
-                    <h4 className="text-sm md:text-base font-semibold text-[#261812] mb-1 truncate">
-                      {transaction.title}
-                    </h4>
-                    <span className="text-xs text-[#565e74]">{transaction.time}</span>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p
-                      className={`text-lg font-bold mb-1 ${
-                        transaction.amount >= 0 ? "text-emerald-600" : "text-red-500"
-                      }`}
-                    >
-                      {formatVnd(transaction.amount)}
-                    </p>
-                    <span className="text-[12px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded">
-                      {transaction.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <WalletOverview
+            isBalanceVisible={isBalanceVisible}
+            currentBalance={currentBalance}
+            totalCredit={totalCredit}
+            transactions={transactions}
+            isTransactionsLoading={isTransactionsLoading}
+            onTopUp={() => openPinModal("topup")}
+            onToggleBalanceVisibility={() => {
+              if (isBalanceVisible) {
+                setIsBalanceVisible(false);
+                return;
+              }
+              openPinModal("viewBalance");
+            }}
+            onChangePin={() => openPinModal("changePin")}
+          />
         )}
       </section>
+
+      <WalletPinModal
+        isOpen={isPinModalOpen}
+        pinModalMode={pinModalMode}
+        isForgotPinFlow={isForgotPinFlow}
+        pin={pin}
+        confirmPin={confirmPin}
+        oldPin={oldPin}
+        newChangePin={newChangePin}
+        confirmChangePin={confirmChangePin}
+        otpCode={otpCode}
+        newPin={newPin}
+        confirmNewPin={confirmNewPin}
+        pinVisibility={pinVisibility}
+        isSubmittingPin={isSubmittingPin}
+        isSendingForgotOtp={isSendingForgotOtp}
+        isResettingPin={isResettingPin}
+        onClose={() => closePinModal()}
+        onSubmitPinModal={handleSubmitPinModal}
+        onSendForgotPinOtp={handleSendForgotPinOtp}
+        onResetPinWithOtp={handleResetPinWithOtp}
+        onTogglePinVisibility={togglePinVisibility}
+        onPinChange={setPin}
+        onConfirmPinChange={setConfirmPin}
+        onOldPinChange={setOldPin}
+        onNewChangePinChange={setNewChangePin}
+        onConfirmChangePinChange={setConfirmChangePin}
+        onOtpCodeChange={setOtpCode}
+        onNewPinChange={setNewPin}
+        onConfirmNewPinChange={setConfirmNewPin}
+      />
     </main>
   );
 }
