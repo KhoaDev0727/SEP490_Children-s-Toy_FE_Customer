@@ -235,13 +235,12 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              disabled={!canCheckout}
-              className="mt-6 w-full rounded-xl bg-[#ff6a00] py-3 text-sm font-bold text-white hover:bg-[#e05e00] disabled:opacity-60"
+            <Link
+              href="/checkout"
+              className={`mt-6 block w-full text-center rounded-xl bg-[#ff6a00] py-3 text-sm font-bold text-white hover:bg-[#e05e00] ${!canCheckout ? "pointer-events-none opacity-60" : ""}`}
             >
               Proceed to Checkout
-            </button>
+            </Link>
           </div>
         </div>
       )}
