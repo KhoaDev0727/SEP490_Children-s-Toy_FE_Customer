@@ -1,6 +1,7 @@
 import axiosClient from "@/configs/axios-client";
 import {
   BlogDetail,
+  BlogCategoryItem,
   BlogReview,
   BlogReviewReply,
   BlogListItem,
@@ -20,6 +21,10 @@ export const customerBlogApi = {
 
   getBlogById: async (blogPostId: number): Promise<BlogDetail> => {
     return axiosClient.get<BlogDetail>(`/blogs/${blogPostId}`);
+  },
+
+  getBlogCategories: async (): Promise<BlogCategoryItem[]> => {
+    return axiosClient.get<BlogCategoryItem[]>("/blogs/categories");
   },
 
   getBlogReviews: async (blogPostId: number): Promise<BlogReview[]> => {
