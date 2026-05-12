@@ -128,8 +128,7 @@ export default function ProfileForm() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [savedProfile, setSavedProfile] = useState<Partial<CustomerProfile>>({});
   const [provider, setProvider] = useState("");
-  const [isPhoneInvalidModalOpen, setIsPhoneInvalidModalOpen] = useState(false);
-  const [isPhoneExistsModalOpen, setIsPhoneExistsModalOpen] = useState(false);
+  const [phoneNumberError, setPhoneNumberError] = useState<string | null>(null);
   const hasShownLoadErrorRef = useRef(false);
 
   const initials = useMemo(() => {
@@ -249,9 +248,10 @@ export default function ProfileForm() {
       }
       const normalizedPhoneNumber = normalizeNullable(phoneNumber);
       if (normalizedPhoneNumber && !PHONE_NUMBER_REGEX.test(normalizedPhoneNumber)) {
-        setIsPhoneInvalidModalOpen(true);
+        setPhoneNumberError("Phone number must contain exactly 10 digits.");
         return;
       }
+      setPhoneNumberError(null);
 
       const payload = {
         accountName: normalizeNullable(accountName),
@@ -287,7 +287,7 @@ export default function ProfileForm() {
     } catch (rawError) {
       const error = rawError as AxiosError<ApiErrorResponse>;
       if (isPhoneAlreadyExistsError(error)) {
-        setIsPhoneExistsModalOpen(true);
+        setPhoneNumberError("This phone number is already used by another account.");
         return;
       }
       toast.error("Unable to save profile.");
@@ -303,6 +303,7 @@ export default function ProfileForm() {
     setAvatarUrl(savedProfile.imageUrl ?? "");
     setDobInput(formatDobForDateInput(savedProfile.dob ?? null));
     setSexId(savedProfile.sexId != null ? String(savedProfile.sexId) : "");
+    setPhoneNumberError(null);
     setIsEditing(false);
   };
 
@@ -382,12 +383,18 @@ export default function ProfileForm() {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  onChange={(event) => {
+                    setPhoneNumber(event.target.value);
+                    setPhoneNumberError(null);
+                  }}
                   placeholder="Enter phone number"
                   readOnly={!isEditing}
                   className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
                   style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
                 />
+                {phoneNumberError && isEditing ? (
+                  <p className="mt-1.5 text-sm text-red-600">{phoneNumberError}</p>
+                ) : null}
               </label>
 
               <div className="text-sm text-slate-700">
@@ -481,55 +488,6 @@ export default function ProfileForm() {
         )}
       </div>
 
-      {isPhoneInvalidModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setIsPhoneInvalidModalOpen(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#fff1eb] flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-[#ff6a00] text-2xl">warning</span>
-            </div>
-            <h3 className="text-lg font-bold text-[#261812] mb-2">Invalid phone number</h3>
-            <p className="text-sm text-[#5a4136] mb-6">
-              Phone number must contain exactly 10 digits. Please check and try again.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsPhoneInvalidModalOpen(false)}
-              className="w-full py-2.5 rounded-full bg-[#ff6a00] text-white text-sm font-semibold hover:brightness-95 transition"
-            >
-              Understood
-            </button>
-          </div>
-        </div>
-      )}
-
-      {isPhoneExistsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setIsPhoneExistsModalOpen(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#fff1eb] flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-[#ff6a00] text-2xl">warning</span>
-            </div>
-            <h3 className="text-lg font-bold text-[#261812] mb-2">Phone number already exists</h3>
-            <p className="text-sm text-[#5a4136] mb-6">
-              This phone number is already used by another account. Please use a different one.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsPhoneExistsModalOpen(false)}
-              className="w-full py-2.5 rounded-full bg-[#ff6a00] text-white text-sm font-semibold hover:brightness-95 transition"
-            >
-              Understood
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
