@@ -188,6 +188,7 @@ export default function ProductDetailsView({
         const result = await productApi.getProducts({
           pageNumber: 1,
           pageSize: 8,
+          status: "Active",
         });
         if (!active) return;
         const items = result.items

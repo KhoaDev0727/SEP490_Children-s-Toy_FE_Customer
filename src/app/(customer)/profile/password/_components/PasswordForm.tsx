@@ -107,19 +107,30 @@ export default function PasswordForm() {
 
     if (!form.currentPassword.trim()) {
       nextErrors.currentPassword = "Current password is required.";
-    }
-    if (!form.newPassword.trim()) {
-      nextErrors.newPassword = "New password is required.";
-    }
-    if (!form.confirmNewPassword.trim()) {
-      nextErrors.confirmNewPassword = "Confirm new password is required.";
-    }
-    if (form.newPassword && form.confirmNewPassword && form.newPassword !== form.confirmNewPassword) {
-      nextErrors.confirmNewPassword = "Confirm new password does not match new password.";
+      setErrors(nextErrors);
+      return false;
     }
 
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    if (!form.newPassword.trim()) {
+      nextErrors.newPassword = "New password is required.";
+      setErrors(nextErrors);
+      return false;
+    }
+
+    if (!form.confirmNewPassword.trim()) {
+      nextErrors.confirmNewPassword = "Confirm new password is required.";
+      setErrors(nextErrors);
+      return false;
+    }
+
+    if (form.newPassword !== form.confirmNewPassword) {
+      nextErrors.confirmNewPassword = "Confirm new password does not match new password.";
+      setErrors(nextErrors);
+      return false;
+    }
+
+    setErrors({});
+    return true;
   };
 
   const mapServerErrors = (error: AxiosError<ApiErrorResponse>) => {
@@ -203,13 +214,13 @@ export default function PasswordForm() {
   };
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-3xl shadow-[0_14px_40px_rgba(15,23,42,0.08)] border border-slate-200/80 overflow-hidden">
-      <div className="px-6 md:px-8 py-6 border-b border-slate-200/70 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/70">
-        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-slate-900">Change Password</h1>
-        <p className="mt-1 text-sm text-slate-500">Update your password to keep your account secure.</p>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
+      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
+        <h1 className="text-2xl font-bold text-[#261812]">Change Password</h1>
+        <p className="mt-1 text-sm text-[#5a4136]">Update your password to keep your account secure.</p>
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-6">
         {isLoadingProfile ? (
           <div className="text-sm text-slate-500">Loading...</div>
         ) : (
