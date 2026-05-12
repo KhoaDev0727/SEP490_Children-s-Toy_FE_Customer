@@ -1,6 +1,10 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "@/features/auth/services/auth-api";
+import {
+  AUTH_ERROR_ACCOUNT_INACTIVE,
+  resolveAuthOperationErrorMessage,
+} from "@/features/auth/utils/auth-api-error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -50,14 +54,21 @@ export default function ForgotPasswordForm() {
 
   const onSendOtp = async (data: ForgotFormValues) => {
     setIsSending(true);
+    forgotForm.clearErrors("email");
     try {
       await authApi.forgotPassword(data);
       setEmail(data.email);
       setStep("reset");
       toast.success("Mã OTP đã được gửi đến email của bạn.");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message ?? "Không thể gửi OTP. Vui lòng thử lại.");
+      const { message, code } = resolveAuthOperationErrorMessage(
+        error,
+        "Không thể gửi OTP. Vui lòng thử lại.",
+      );
+      if (code === AUTH_ERROR_ACCOUNT_INACTIVE) {
+        forgotForm.setError("email", { type: "server", message });
+      }
+      toast.error(message);
     } finally {
       setIsSending(false);
     }
@@ -70,8 +81,11 @@ export default function ForgotPasswordForm() {
       toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
       router.push("/login");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message ?? "Đặt lại mật khẩu thất bại. Vui lòng thử lại.");
+      const { message } = resolveAuthOperationErrorMessage(
+        error,
+        "Đặt lại mật khẩu thất bại. Vui lòng thử lại.",
+      );
+      toast.error(message);
     } finally {
       setIsResetting(false);
     }
@@ -79,28 +93,28 @@ export default function ForgotPasswordForm() {
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      <div className="w-full max-w-md sm:pt-10 mx-auto mb-5 px-6 lg:px-0">
+      <div className="w-full max-w-lg sm:pt-10 mx-auto mb-6 px-6 lg:px-0">
         <Link
           href="/login"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700"
+          className="inline-flex items-center text-base text-gray-500 transition-colors hover:text-gray-700"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
             <path d="M15 18l-6-6 6-6" />
           </svg>
           Quay lại đăng nhập
         </Link>
       </div>
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6 lg:px-0">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto px-6 lg:px-0">
         <div>
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-7">
+              <span className="text-3xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
             </div>
-            <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
+            <h1 className="mb-3 font-semibold text-gray-800 text-4xl tracking-tight">
               Quên mật khẩu
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-base text-gray-500 leading-relaxed max-w-prose">
               {step === "email"
                 ? "Nhập email để nhận mã OTP đặt lại mật khẩu."
                 : `Nhập mã OTP đã gửi đến ${email} và mật khẩu mới.`}
@@ -109,20 +123,20 @@ export default function ForgotPasswordForm() {
 
           {step === "email" && (
             <form onSubmit={forgotForm.handleSubmit(onSendOtp)} noValidate>
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="fp-email">
+                  <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="fp-email">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="fp-email"
                     type="email"
                     placeholder="example@email.com"
-                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...forgotForm.register("email")}
                   />
                   {forgotForm.formState.errors.email && (
-                    <p className="mt-1.5 text-xs text-red-500">
+                    <p className="mt-2 text-sm text-red-500">
                       {forgotForm.formState.errors.email.message}
                     </p>
                   )}
@@ -131,7 +145,7 @@ export default function ForgotPasswordForm() {
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
+                  className="flex w-full items-center justify-center rounded-lg px-4 py-3.5 text-base font-medium text-white transition disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
                 >
                   {isSending ? "Đang gửi..." : "Gửi mã OTP"}
@@ -142,9 +156,9 @@ export default function ForgotPasswordForm() {
 
           {step === "reset" && (
             <form onSubmit={resetForm.handleSubmit(onResetPassword)} noValidate>
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="otp-code">
+                  <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="otp-code">
                     Mã OTP <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -152,18 +166,18 @@ export default function ForgotPasswordForm() {
                     type="text"
                     placeholder="Nhập mã 6 chữ số"
                     maxLength={6}
-                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...resetForm.register("otpCode")}
                   />
                   {resetForm.formState.errors.otpCode && (
-                    <p className="mt-1.5 text-xs text-red-500">
+                    <p className="mt-2 text-sm text-red-500">
                       {resetForm.formState.errors.otpCode.message}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="new-pass">
+                  <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="new-pass">
                     Mật khẩu mới <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -171,7 +185,7 @@ export default function ForgotPasswordForm() {
                       id="new-pass"
                       type={showPassword ? "text" : "password"}
                       placeholder="Tối thiểu 8 ký tự"
-                      className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 pr-12 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                       {...resetForm.register("newPassword")}
                     />
                     <button
@@ -193,14 +207,14 @@ export default function ForgotPasswordForm() {
                     </button>
                   </div>
                   {resetForm.formState.errors.newPassword && (
-                    <p className="mt-1.5 text-xs text-red-500">
+                    <p className="mt-2 text-sm text-red-500">
                       {resetForm.formState.errors.newPassword.message}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="confirm-pass">
+                  <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="confirm-pass">
                     Xác nhận mật khẩu mới <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -208,7 +222,7 @@ export default function ForgotPasswordForm() {
                       id="confirm-pass"
                       type={showConfirm ? "text" : "password"}
                       placeholder="Nhập lại mật khẩu mới"
-                      className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 pr-12 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                       {...resetForm.register("confirmPassword")}
                     />
                     <button
@@ -230,7 +244,7 @@ export default function ForgotPasswordForm() {
                     </button>
                   </div>
                   {resetForm.formState.errors.confirmPassword && (
-                    <p className="mt-1.5 text-xs text-red-500">
+                    <p className="mt-2 text-sm text-red-500">
                       {resetForm.formState.errors.confirmPassword.message}
                     </p>
                   )}
@@ -239,7 +253,7 @@ export default function ForgotPasswordForm() {
                 <button
                   type="submit"
                   disabled={isResetting}
-                  className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
+                  className="flex w-full items-center justify-center rounded-lg px-4 py-3.5 text-base font-medium text-white transition disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
                 >
                   {isResetting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
@@ -248,7 +262,7 @@ export default function ForgotPasswordForm() {
                 <button
                   type="button"
                   onClick={() => setStep("email")}
-                  className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors py-1"
+                  className="w-full text-base text-gray-500 hover:text-gray-700 transition-colors py-1.5"
                 >
                   Gửi lại OTP
                 </button>

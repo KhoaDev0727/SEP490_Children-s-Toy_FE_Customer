@@ -19,6 +19,12 @@ export interface ForgotPasswordRequest {
   email: string;
 }
 
+/** Payload lỗi từ API Auth (camelCase do ASP.NET). */
+export interface AuthApiErrorBody {
+  code?: string;
+  message?: string;
+}
+
 export interface ResetPasswordRequest {
   email: string;
   otpCode: string;
