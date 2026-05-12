@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { customerBlogApi } from "@/features/blog/services/blog-api";
 import { BlogReview, BlogReviewReply } from "@/features/blog/types/blog";
@@ -106,6 +107,42 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
     }
   };
 
+  const handleReactReview = async (reviewBlogId: number, reactionCode: "like" | "love" | "haha") => {
+    if (!isAuthenticated) {
+      toast.error("Please login before reacting.");
+      return;
+    }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await customerBlogApi.reactToReview(reviewBlogId, reactionCode);
+      await onReload();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to react.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReactReply = async (replyBlogId: number, reactionCode: "like" | "love" | "haha") => {
+    if (!isAuthenticated) {
+      toast.error("Please login before reacting.");
+      return;
+    }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await customerBlogApi.reactToReply(replyBlogId, reactionCode);
+      await onReload();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to react.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderReply = (reviewBlogId: number, reply: BlogReviewReply, depth: number) => (
     <div key={reply.replyBlogId} className={`mt-3 ${getReplyIndentClass(depth >= 2 ? 2 : depth)}`}>
       <div className={`flex gap-3 ${getReplyThreadClass(depth)}`}>
@@ -119,6 +156,33 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
             {reply.replyToAccountName ? <span className="font-medium text-[#7f4a2a]">@{reply.replyToAccountName} </span> : null}
             {reply.comment}
           </p>
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            {(
+              [
+                { code: "like" as const, icon: "👍" },
+                { code: "love" as const, icon: "❤️" },
+                { code: "haha" as const, icon: "😂" },
+              ] as const
+            ).map((item) => {
+              const code = item.code;
+              const count = code === "like" ? reply.likeCount : code === "love" ? reply.loveCount : reply.hahaCount;
+              const active = (reply.currentUserReaction ?? "").toLowerCase() === code;
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => handleReactReply(reply.replyBlogId, code)}
+                  disabled={isSubmitting}
+                  className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                    active ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]" : "border-[#f1ddd2] text-[#8e7164]"
+                  }`}
+                >
+                  <span className="text-sm mr-1">{item.icon}</span>
+                  <span>{count}</span>
+                </button>
+              );
+            })}
+          </div>
           {isAuthenticated && (
             <button
               type="button"
@@ -173,6 +237,33 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                 )}
               </div>
               <p className="text-sm text-[#5a4136] mt-2">{comment.comment}</p>
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                {(
+                  [
+                    { code: "like" as const, icon: "👍" },
+                    { code: "love" as const, icon: "❤️" },
+                    { code: "haha" as const, icon: "😂" },
+                  ] as const
+                ).map((item) => {
+                  const code = item.code;
+                  const count = code === "like" ? comment.likeCount : code === "love" ? comment.loveCount : comment.hahaCount;
+                  const active = (comment.currentUserReaction ?? "").toLowerCase() === code;
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => handleReactReview(comment.reviewBlogId, code)}
+                      disabled={isSubmitting}
+                      className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                        active ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]" : "border-[#f1ddd2] text-[#8e7164]"
+                      }`}
+                    >
+                      <span className="text-sm mr-1">{item.icon}</span>
+                      <span>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
               {isAuthenticated && (
                 <button
                   type="button"

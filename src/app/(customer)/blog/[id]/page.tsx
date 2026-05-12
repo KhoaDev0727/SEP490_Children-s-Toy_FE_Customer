@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import toast from "react-hot-toast";
 import ArticleHeader from "./_components/ArticleHeader";
 import ArticleBody from "./_components/ArticleBody";
 import CommentSection from "./_components/CommentSection";
 import BlogSidebar from "./_components/BlogSidebar";
 import Breadcrumb from "./_components/Breadcrumb";
 import { useBlogDetailData } from "@/features/blog/hooks/useBlogDetailData";
+import { useAuthContext } from "@/context/AuthContext";
+import { customerBlogApi } from "@/features/blog/services/blog-api";
 
 const toDisplayDate = (value: string | null) => {
   if (!value) {
@@ -47,7 +50,9 @@ const resolveBlogImage = (image: string | null) => {
 export default function BlogDetailPage() {
   const params = useParams<{ id: string }>();
   const blogPostId = Number(params.id);
-  const { post, reviews, reloadReviews, featuredBlogs, newBlogs, isLoading, error } = useBlogDetailData(blogPostId);
+  const { post, reviews, reloadPost, reloadReviews, featuredBlogs, newBlogs, isLoading, error } = useBlogDetailData(blogPostId);
+  const { isAuthenticated } = useAuthContext();
+  const [isReacting, setIsReacting] = useState(false);
 
   const viewModel = useMemo(() => {
     if (!post) {
@@ -65,6 +70,25 @@ export default function BlogDetailPage() {
       content: post.blogContent,
     };
   }, [post]);
+
+  const handleReactBlog = async (reactionCode: "like" | "love" | "haha") => {
+    if (!isAuthenticated) {
+      toast.error("Please login before reacting.");
+      return;
+    }
+
+    if (isReacting) return;
+    setIsReacting(true);
+    try {
+      await customerBlogApi.reactToBlog(blogPostId, reactionCode);
+      await reloadPost();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to react.";
+      toast.error(message);
+    } finally {
+      setIsReacting(false);
+    }
+  };
 
   if (isLoading) {
     return <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-10 text-sm text-slate-500">Loading blog detail...</div>;
@@ -88,8 +112,40 @@ export default function BlogDetailPage() {
 
       <main className="max-w-[1280px] mx-auto px-4 sm:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
         <article className="lg:col-span-8 flex flex-col gap-10">
-          <ArticleHeader post={viewModel} />
-          <ArticleBody content={viewModel.content} />
+          <h1 className="font-extrabold text-[32px] sm:text-[44px] leading-[1.15] text-[#261812] tracking-tight">
+            {viewModel.title}
+          </h1>
+          <div className="rounded-2xl border border-[#f1ddd2] bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+            <ArticleHeader post={viewModel} showTitle={false} />
+            <div className="mt-5">
+              <ArticleBody content={viewModel.content} />
+            </div>
+            <div className="mt-6 flex items-center gap-2 flex-wrap">
+              {[
+                { code: "like" as const, icon: "👍", count: post?.likeCount ?? 0 },
+                { code: "love" as const, icon: "❤️", count: post?.loveCount ?? 0 },
+                { code: "haha" as const, icon: "😂", count: post?.hahaCount ?? 0 },
+              ].map((item) => {
+                const active = (post?.currentUserReaction ?? "").toLowerCase() === item.code;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() => handleReactBlog(item.code)}
+                    disabled={isReacting}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]"
+                        : "border-[#f1ddd2] text-[#7f4a2a] hover:border-[#c2410c]"
+                    }`}
+                  >
+                    <span className="text-sm mr-1">{item.icon}</span>
+                    <span>{item.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <CommentSection blogPostId={blogPostId} comments={reviews} onReload={reloadReviews} />
         </article>
 

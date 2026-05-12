@@ -19,8 +19,11 @@ export interface BlogListItem {
   isHidden: boolean;
   isFeatured: boolean;
   likeCount: number;
+  loveCount: number;
+  hahaCount: number;
   commentCount: number;
   totalInteraction: number;
+  currentUserReaction?: string | null;
   blogAt: string | null;
   author: string;
   createdAt: string;
@@ -30,6 +33,11 @@ export interface BlogListItem {
 export interface BlogDetail extends BlogListItem {
   blogContent: string;
   reason: string | null;
+}
+
+export interface BlogCategoryItem {
+  blogCategoryId: number;
+  blogCategoryName: string;
 }
 
 export interface BlogReviewReply {
@@ -43,6 +51,10 @@ export interface BlogReviewReply {
   replyToAccountName: string | null;
   comment: string;
   status: "Visible" | "Hidden";
+  likeCount: number;
+  loveCount: number;
+  hahaCount: number;
+  currentUserReaction?: string | null;
   createdAt: string;
   updatedAt: string | null;
   replies: BlogReviewReply[];
@@ -57,9 +69,21 @@ export interface BlogReview {
   accountImageUrl: string | null;
   comment: string;
   status: "Visible" | "Hidden";
+  likeCount: number;
+  loveCount: number;
+  hahaCount: number;
+  currentUserReaction?: string | null;
   createdAt: string;
   updatedAt: string | null;
   replies: BlogReviewReply[];
+}
+
+export interface ReactionSummary {
+  likeCount: number;
+  loveCount: number;
+  hahaCount: number;
+  totalCount: number;
+  currentUserReaction?: string | null;
 }
 
 export interface BlogQueryParams {

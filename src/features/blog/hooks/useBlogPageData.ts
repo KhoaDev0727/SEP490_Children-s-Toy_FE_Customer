@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { customerBlogApi } from "../services/blog-api";
-import { BlogListItem } from "../types/blog";
+import { BlogCategoryItem, BlogListItem } from "../types/blog";
 
-const CATEGORY_OPTIONS = [
-  { key: "all", label: "All Blog", categoryId: null },
-  { key: "news", label: "Tin tức & Khuyến mãi", categoryId: 1 },
-  { key: "parenting", label: "Kiến thức nuôi dạy trẻ", categoryId: 2 },
-  { key: "review", label: "Review sản phẩm", categoryId: 3 },
-] as const;
+interface CategoryOption {
+  key: string;
+  label: string;
+  categoryId: number | null;
+}
 
 const PAGE_SIZE = 9;
 
@@ -86,14 +85,50 @@ const enrichBlogsWithContent = async (blogs: BlogListItem[]) => {
 };
 
 export const useBlogPageData = () => {
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([
+    { key: "all", label: "All Blog", categoryId: null },
+  ]);
   const [allBlogs, setAllBlogs] = useState<BlogListItem[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
   const [searchedBlogs, setSearchedBlogs] = useState<BlogListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeCategoryKey, setActiveCategoryKey] = useState<(typeof CATEGORY_OPTIONS)[number]["key"]>("all");
+  const [activeCategoryKey, setActiveCategoryKey] = useState<string>("all");
   const [pageNumber, setPageNumber] = useState(1);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchCategories = async () => {
+      try {
+        const categories: BlogCategoryItem[] = await customerBlogApi.getBlogCategories();
+        if (isCancelled) {
+          return;
+        }
+
+        const nextOptions: CategoryOption[] = [
+          { key: "all", label: "All Blog", categoryId: null },
+          ...categories.map((category) => ({
+            key: `category-${category.blogCategoryId}`,
+            label: category.blogCategoryName,
+            categoryId: category.blogCategoryId,
+          })),
+        ];
+
+        setCategoryOptions(nextOptions);
+      } catch {
+        if (!isCancelled) {
+          setCategoryOptions([{ key: "all", label: "All Blog", categoryId: null }]);
+        }
+      }
+    };
+
+    void fetchCategories();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -185,17 +220,17 @@ export const useBlogPageData = () => {
       byCategory.set(blog.blogCategoryId, (byCategory.get(blog.blogCategoryId) ?? 0) + 1);
     }
 
-    return CATEGORY_OPTIONS.map((option) => ({
+    return categoryOptions.map((option) => ({
       key: option.key,
       label: option.label,
       count: option.categoryId === null ? total : byCategory.get(option.categoryId) ?? 0,
       categoryId: option.categoryId,
     }));
-  }, [allBlogs]);
+  }, [allBlogs, categoryOptions]);
 
   const filteredBlogs = useMemo(() => {
     const sourceBlogs = submittedKeyword.trim() ? searchedBlogs : allBlogs;
-    const activeCategory = CATEGORY_OPTIONS.find((item) => item.key === activeCategoryKey);
+    const activeCategory = categoryOptions.find((item) => item.key === activeCategoryKey);
     if (!activeCategory || activeCategory.categoryId === null) {
       return [...sourceBlogs].sort((a, b) => getPublishedDateValue(b) - getPublishedDateValue(a));
     }
@@ -203,7 +238,7 @@ export const useBlogPageData = () => {
     return sourceBlogs
       .filter((item) => item.blogCategoryId === activeCategory.categoryId)
       .sort((a, b) => getPublishedDateValue(b) - getPublishedDateValue(a));
-  }, [activeCategoryKey, allBlogs, searchedBlogs, submittedKeyword]);
+  }, [activeCategoryKey, allBlogs, categoryOptions, searchedBlogs, submittedKeyword]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(filteredBlogs.length / PAGE_SIZE));
@@ -214,7 +249,7 @@ export const useBlogPageData = () => {
     return filteredBlogs.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filteredBlogs, pageNumber]);
 
-  const handleSelectCategory = (key: (typeof CATEGORY_OPTIONS)[number]["key"]) => {
+  const handleSelectCategory = (key: string) => {
     setActiveCategoryKey(key);
     setPageNumber(1);
   };
