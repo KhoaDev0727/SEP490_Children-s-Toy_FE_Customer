@@ -11,8 +11,8 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
-  password: z.string().min(1, "Mật khẩu là bắt buộc"),
+  email: z.string().min(1, "Email is required").email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -36,15 +36,15 @@ export default function LoginForm() {
     try {
       const response = await authApi.login(data);
       if (response.account.roleId !== CUSTOMER_ROLE_ID) {
-        toast.error("Tài khoản không hợp lệ.");
+        toast.error("Invalid account.");
         return;
       }
       setAuth(response.account, response.accessToken);
-      toast.success(`Chào mừng, ${response.account.accountName}!`);
+      toast.success(`Welcome, ${response.account.accountName}!`);
       router.push("/");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message ?? "Đăng nhập thất bại. Vui lòng thử lại.");
+      toast.error(err?.response?.data?.message ?? "Sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +60,7 @@ export default function LoginForm() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          Về trang chủ
+          Back to home
         </Link>
       </div>
 
@@ -71,10 +71,10 @@ export default function LoginForm() {
               <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
             </div>
             <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
-              Đăng nhập
+              Sign in
             </h1>
             <p className="text-sm text-gray-500">
-              Nhập thông tin đăng nhập để tiếp tục mua sắm.
+              Enter your credentials to continue shopping.
             </p>
           </div>
 
@@ -98,13 +98,13 @@ export default function LoginForm() {
 
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="password">
-                  Mật khẩu <span className="text-red-500">*</span>
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Nhập mật khẩu"
+                    placeholder="Enter your password"
                     className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...register("password")}
                   />
@@ -137,7 +137,7 @@ export default function LoginForm() {
                   className="text-sm transition-colors hover:underline"
                   style={{ color: "#ff6a00" }}
                 >
-                  Quên mật khẩu?
+                  Forgot password?
                 </Link>
               </div>
 
@@ -147,7 +147,7 @@ export default function LoginForm() {
                 className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
               >
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+                {isLoading ? "Signing in..." : "Sign in"}
               </button>
 
               <div className="relative flex items-center justify-center my-3">
@@ -155,7 +155,7 @@ export default function LoginForm() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative bg-white px-4 text-xs text-gray-500">
-                  Hoặc đăng nhập bằng
+                  Or sign in with
                 </div>
               </div>
 
@@ -165,9 +165,9 @@ export default function LoginForm() {
 
           <div className="mt-6 pb-6">
             <p className="text-sm text-center text-gray-600">
-              Chưa có tài khoản?{" "}
+              Don't have an account?{" "}
               <Link href="/register" className="font-medium hover:underline" style={{ color: "#ff6a00" }}>
-                Đăng ký ngay
+                Sign up
               </Link>
             </p>
           </div>

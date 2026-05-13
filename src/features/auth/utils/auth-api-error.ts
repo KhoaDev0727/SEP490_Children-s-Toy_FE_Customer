@@ -4,9 +4,9 @@ import type { AuthApiErrorBody } from "../types/auth";
 
 export const AUTH_ERROR_ACCOUNT_INACTIVE = "ACCOUNT_INACTIVE";
 
-/** Thông báo tiếng Việt khi tài khoản bị vô hiệu hóa (đồng bộ nghiệp vụ với đăng nhập). */
+/** English message when account is deactivated (sync with login behavior). */
 export const ACCOUNT_INACTIVE_VI_MESSAGE =
-  "Tài khoản đã bị vô hiệu hóa. Không thể đặt lại mật khẩu. Vui lòng liên hệ hỗ trợ.";
+  "Your account has been deactivated. You cannot reset the password. Please contact support.";
 
 export function getAuthApiErrorPayload(error: unknown): AuthApiErrorBody | undefined {
   if (!isAxiosError(error)) {
