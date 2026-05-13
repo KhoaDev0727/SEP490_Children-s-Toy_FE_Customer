@@ -11,23 +11,23 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 
 const registerSchema = z.object({
-  accountName: z.string().min(1, "Tên tài khoản là bắt buộc").max(100, "Tối đa 100 ký tự"),
-  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
+  accountName: z.string().min(1, "Account name is required").max(100, "Max 100 characters"),
+  email: z.string().min(1, "Email is required").email("Invalid email"),
   password: z
     .string()
-    .min(8, "Tối thiểu 8 ký tự")
-    .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-    .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-    .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
-    .regex(/[^a-zA-Z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
-  confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
+    .min(8, "At least 8 characters")
+    .regex(/[A-Z]/, "Must include at least one uppercase letter")
+    .regex(/[a-z]/, "Must include at least one lowercase letter")
+    .regex(/[0-9]/, "Must include at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Must include at least one special character"),
+  confirmPassword: z.string().min(1, "Confirm password is required"),
   otpCode: z
     .string()
-    .min(1, "Mã OTP là bắt buộc")
-    .length(6, "Mã OTP gồm 6 chữ số")
-    .regex(/^\d{6}$/, "Mã OTP chỉ gồm chữ số"),
+    .min(1, "OTP code is required")
+    .length(6, "OTP code must be 6 digits")
+    .regex(/^\d{6}$/, "OTP code must contain only digits"),
 }).refine((d) => d.password === d.confirmPassword, {
-  message: "Mật khẩu không khớp",
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
@@ -55,17 +55,17 @@ export default function RegisterForm() {
 
   const handleSendOtp = async () => {
     if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-      toast.error("Vui lòng nhập email hợp lệ trước.");
+      toast.error("Please enter a valid email first.");
       return;
     }
     setIsSendingOtp(true);
     try {
       await authApi.sendRegisterOtp({ email: emailValue });
       setOtpSent(true);
-      toast.success("Mã OTP đã được gửi đến email của bạn.");
+      toast.success("OTP has been sent to your email.");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message ?? "Không thể gửi OTP. Vui lòng thử lại.");
+      toast.error(err?.response?.data?.message ?? "Unable to send OTP. Please try again.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -81,10 +81,10 @@ export default function RegisterForm() {
       });
       if (loginResponse.account.roleId === CUSTOMER_ROLE_ID) {
         setAuth(loginResponse.account, loginResponse.accessToken);
-        toast.success(`Chào mừng, ${loginResponse.account.accountName}! Đăng ký thành công.`);
+        toast.success(`Welcome, ${loginResponse.account.accountName}! Registration successful.`);
         router.push("/");
       } else {
-        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+        toast.success("Registration successful! Please sign in.");
         router.push("/login");
       }
     } catch (error: unknown) {
@@ -92,13 +92,13 @@ export default function RegisterForm() {
       const code = err?.response?.data?.code;
       if (code === "OTP_EXPIRED") {
         setOtpSent(false);
-        toast.error("Mã OTP đã hết hạn. Vui lòng nhấn 'Gửi OTP' để nhận mã mới.");
+        toast.error("OTP has expired. Please click 'Send OTP' to get a new code.");
       } else if (code === "OTP_INVALID") {
-        toast.error("Mã OTP không chính xác. Vui lòng kiểm tra lại email.");
+        toast.error("Invalid OTP. Please check your email.");
       } else if (code === "CONFLICT") {
-        toast.error("Email này đã được đăng ký. Vui lòng dùng email khác.");
+        toast.error("This email is already registered. Please use another email.");
       } else {
-        toast.error(err?.response?.data?.message ?? "Đăng ký thất bại. Vui lòng thử lại.");
+        toast.error(err?.response?.data?.message ?? "Registration failed. Please try again.");
       }
     } finally {
       setIsRegistering(false);
@@ -115,7 +115,7 @@ export default function RegisterForm() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          Về trang chủ
+          Back to home
         </Link>
       </div>
 
@@ -126,10 +126,10 @@ export default function RegisterForm() {
               <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
             </div>
             <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
-              Tạo tài khoản
+              Create account
             </h1>
             <p className="text-sm text-gray-500">
-              Điền thông tin bên dưới để đăng ký tài khoản mới.
+              Fill in the details below to create a new account.
             </p>
           </div>
 
@@ -137,12 +137,12 @@ export default function RegisterForm() {
             <div className="space-y-5">
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="accountName">
-                  Tên tài khoản <span className="text-red-500">*</span>
+                  Account name <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="accountName"
                   type="text"
-                  placeholder="Nguyễn Văn A"
+                  placeholder="John Doe"
                   className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   {...register("accountName")}
                 />
@@ -174,7 +174,7 @@ export default function RegisterForm() {
                       background: otpSent ? "#ff6a00" : "transparent",
                     }}
                   >
-                    {isSendingOtp ? "Đang gửi..." : otpSent ? "Gửi lại" : "Gửi OTP"}
+                    {isSendingOtp ? "Sending..." : otpSent ? "Resend" : "Send OTP"}
                   </button>
                 </div>
                 {errors.email && (
@@ -184,12 +184,12 @@ export default function RegisterForm() {
 
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="otpCode">
-                  Mã OTP <span className="text-red-500">*</span>
+                  OTP code <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="otpCode"
                   type="text"
-                  placeholder="Nhập mã 6 chữ số từ email"
+                  placeholder="Enter the 6-digit code from your email"
                   maxLength={6}
                   className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   {...register("otpCode")}
@@ -201,13 +201,13 @@ export default function RegisterForm() {
 
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="reg-password">
-                  Mật khẩu <span className="text-red-500">*</span>
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     id="reg-password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Tối thiểu 8 ký tự"
+                    placeholder="At least 8 characters"
                     className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...register("password")}
                   />
@@ -236,13 +236,13 @@ export default function RegisterForm() {
 
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="confirmPassword">
-                  Xác nhận mật khẩu <span className="text-red-500">*</span>
+                  Confirm password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     id="confirmPassword"
                     type={showConfirm ? "text" : "password"}
-                    placeholder="Nhập lại mật khẩu"
+                    placeholder="Re-enter password"
                     className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-12 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...register("confirmPassword")}
                   />
@@ -275,7 +275,7 @@ export default function RegisterForm() {
                 className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
               >
-                {isRegistering ? "Đang tạo tài khoản..." : "Đăng ký"}
+                {isRegistering ? "Creating account..." : "Sign up"}
               </button>
 
               <div className="relative flex items-center justify-center my-3">
@@ -283,7 +283,7 @@ export default function RegisterForm() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative bg-white px-4 text-xs text-gray-500">
-                  Hoặc đăng ký bằng
+                  Or sign up with
                 </div>
               </div>
 
@@ -293,9 +293,9 @@ export default function RegisterForm() {
 
           <div className="mt-6 pb-6">
             <p className="text-sm text-center text-gray-600">
-              Đã có tài khoản?{" "}
+              Already have an account?{" "}
               <Link href="/login" className="font-medium hover:underline" style={{ color: "#ff6a00" }}>
-                Đăng nhập
+                Sign in
               </Link>
             </p>
           </div>
