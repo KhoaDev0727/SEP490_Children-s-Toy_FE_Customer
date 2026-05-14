@@ -46,8 +46,20 @@ export const resetForgotWalletPinSchema = z
     message: "Confirm new PIN does not match.",
   });
 
+const QUICK_TOP_UP_AMOUNTS = [2000, 20000, 50000, 100000, 200000, 500000] as const;
+
+export const createSePayTopUpQrSchema = z.object({
+  amount: z
+    .number({ required_error: "Top-up amount is required." })
+    .refine((amount) => QUICK_TOP_UP_AMOUNTS.includes(amount as (typeof QUICK_TOP_UP_AMOUNTS)[number]), {
+      message: "Top-up amount is not supported.",
+    }),
+  topUpToken: z.string().min(1, "Top-up token is required."),
+});
+
 export type CreateWalletFormValues = z.infer<typeof createWalletSchema>;
 export type VerifyWalletPinFormValues = z.infer<typeof verifyWalletPinSchema>;
 export type ChangeWalletPinFormValues = z.infer<typeof changeWalletPinSchema>;
 export type VerifyForgotWalletPinOtpFormValues = z.infer<typeof verifyForgotWalletPinOtpSchema>;
 export type ResetForgotWalletPinFormValues = z.infer<typeof resetForgotWalletPinSchema>;
+export type CreateSePayTopUpQrFormValues = z.infer<typeof createSePayTopUpQrSchema>;

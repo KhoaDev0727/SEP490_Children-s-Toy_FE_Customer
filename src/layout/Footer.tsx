@@ -13,7 +13,7 @@ export default function Footer() {
               <h2 className="text-lg font-bold text-slate-900">ShopX</h2>
             </div>
             <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-              Nền tảng mua sắm trực tuyến hàng đầu, mang lại trải nghiệm tuyệt vời và sản phẩm chất lượng nhất cho bạn.
+              A leading online shopping platform delivering great experiences and top-quality products.
             </p>
             <div className="flex gap-4">
               {["public", "share", "alternate_email"].map((icon) => (
@@ -38,9 +38,9 @@ export default function Footer() {
 
           {/* Shopping */}
           <div>
-            <h4 className="font-bold text-slate-900 mb-4">Mua Sắm</h4>
+            <h4 className="font-bold text-slate-900 mb-4">Shopping</h4>
             <ul className="space-y-2 text-sm text-slate-500">
-              {["Sản phẩm mới", "Sản phẩm bán chạy", "Bộ sưu tập nam", "Bộ sưu tập nữ"].map((item) => (
+              {["New arrivals", "Best sellers", "Men's collection", "Women's collection"].map((item) => (
                 <li key={item}>
                   <a
                     href="#"
@@ -55,9 +55,14 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="font-bold text-slate-900 mb-4">Hỗ Trợ</h4>
+            <h4 className="font-bold text-slate-900 mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-slate-500">
-              {["Trung tâm trợ giúp", "Chính sách vận chuyển", "Đổi trả & Hoàn tiền", "Theo dõi đơn hàng"].map((item) => (
+              {[
+                "Help center",
+                "Shipping policy",
+                "Returns & refunds",
+                "Order tracking",
+              ].map((item) => (
                 <li key={item}>
                   <a href="#" className="transition-colors hover:text-[#ff6a00]">{item}</a>
                 </li>
@@ -67,19 +72,19 @@ export default function Footer() {
 
           {/* Newsletter */}
           <div>
-            <h4 className="font-bold text-slate-900 mb-4">Đăng ký nhận tin</h4>
-            <p className="text-sm text-slate-500 mb-4">Nhận thông tin ưu đãi mới nhất từ chúng tôi.</p>
+            <h4 className="font-bold text-slate-900 mb-4">Newsletter</h4>
+            <p className="text-sm text-slate-500 mb-4">Get our latest offers and updates.</p>
             <div className="flex gap-2">
               <input
                 className="flex-1 px-4 py-2 bg-slate-100 border-none rounded-lg text-sm outline-none"
-                placeholder="Email của bạn"
+                placeholder="Your email"
                 type="email"
               />
               <button
                 className="text-white px-4 py-2 rounded-lg font-bold text-sm"
                 style={{ backgroundColor: "#ff6a00" }}
               >
-                Gửi
+                Subscribe
               </button>
             </div>
           </div>
@@ -87,9 +92,9 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-          <p>© 2024 ShopX. Tất cả quyền được bảo lưu.</p>
+          <p>© 2024 ShopX. All rights reserved.</p>
           <div className="flex gap-6">
-            {["Điều khoản", "Bảo mật", "Cookie"].map((item) => (
+            {["Terms", "Privacy", "Cookies"].map((item) => (
               <a key={item} href="#" className="hover:text-[#ff6a00] transition-colors">{item}</a>
             ))}
           </div>

@@ -1,9 +1,12 @@
 import axiosClient from "@/configs/axios-client";
 import type {
   ChangeWalletPinRequest,
+  CreateSePayTopUpQrRequest,
   CreateWalletRequest,
   PaginatedResponse,
   ResetForgotWalletPinRequest,
+  SePayTopUpQrResponse,
+  SePayTopUpStatusResponse,
   VerifyForgotWalletPinOtpRequest,
   VerifyWalletPinRequest,
   VerifyWalletPinResponse,
@@ -33,6 +36,19 @@ export const walletApi = {
     return axiosClient.post<VerifyWalletPinResponse, VerifyWalletPinRequest>(
       "/wallets/pin/verify",
       payload,
+    );
+  },
+
+  createSePayTopUpQr: async (payload: CreateSePayTopUpQrRequest): Promise<SePayTopUpQrResponse> => {
+    return axiosClient.post<SePayTopUpQrResponse, CreateSePayTopUpQrRequest>(
+      "/wallets/topup/sepay/qr",
+      payload,
+    );
+  },
+
+  getSePayTopUpStatus: async (attemptCode: string): Promise<SePayTopUpStatusResponse> => {
+    return axiosClient.get<SePayTopUpStatusResponse>(
+      `/wallets/topup/sepay/status/${encodeURIComponent(attemptCode)}`,
     );
   },
 

@@ -1,16 +1,32 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import FilterSidebar from "./_components/FilterSidebar";
 import ProductGrid from "./_components/ProductGrid";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductFilters, ProductLookups } from "@/features/products/types/product";
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<ProductFilters>({});
   const [lookups, setLookups] = useState<ProductLookups | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(true);
+  const searchTerm = searchParams.get("searchTerm")?.trim() ?? "";
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const nextTerm = searchTerm || undefined;
+      if (prev.searchTerm === nextTerm) {
+        return prev;
+      }
+      return {
+        ...prev,
+        searchTerm: nextTerm,
+      };
+    });
+  }, [searchTerm]);
 
   useEffect(() => {
     let active = true;
@@ -24,7 +40,7 @@ export default function ProductsPage() {
         setLookups(result);
       } catch {
         if (!active) return;
-        setLookupError("Không thể tải bộ lọc sản phẩm.");
+        setLookupError("Unable to load product filters.");
       } finally {
         if (active) setLookupLoading(false);
       }
@@ -41,12 +57,12 @@ export default function ProductsPage() {
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
         <Link href="/" className="hover:text-[#ff6a00] transition-colors">
-          Trang chủ
+          Home
         </Link>
         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
           chevron_right
         </span>
-        <span className="text-slate-900 font-medium">Danh sách đồ chơi</span>
+        <span className="text-slate-900 font-medium">Products</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-8">
