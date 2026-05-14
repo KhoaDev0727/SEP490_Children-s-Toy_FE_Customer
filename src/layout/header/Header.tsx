@@ -77,7 +77,7 @@ function UserDropdown() {
     }
     clearAuth();
     setOpen(false);
-    toast.success("Đã đăng xuất.");
+    toast.success("Logged out.");
     router.push("/");
   };
 
@@ -168,7 +168,7 @@ function UserDropdown() {
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 package_2
               </span>
-              Đơn hàng
+              Orders
             </a>
             <a
               href="#"
@@ -177,7 +177,7 @@ function UserDropdown() {
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 account_balance_wallet
               </span>
-              Ví
+              Wallet
             </a>
             <Link
               href="/profile"
@@ -186,7 +186,7 @@ function UserDropdown() {
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 manage_accounts
               </span>
-              Tài khoản
+              Account
             </Link>
           </div>
 
@@ -198,7 +198,7 @@ function UserDropdown() {
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 logout
               </span>
-              Đăng xuất
+              Sign out
             </button>
           </div>
         </div>

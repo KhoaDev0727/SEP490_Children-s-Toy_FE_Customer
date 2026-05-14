@@ -14,7 +14,7 @@ export default async function ProductDetailsPage({
   if (Number.isNaN(productId) || productId <= 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center text-slate-500">
-        Mã sản phẩm không hợp lệ.
+        Invalid product ID.
       </div>
     );
   }
