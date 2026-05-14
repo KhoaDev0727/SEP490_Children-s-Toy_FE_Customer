@@ -16,27 +16,27 @@ export const customerBlogApi = {
   getPublishedBlogs: async (
     params: BlogQueryParams,
   ): Promise<PaginatedResponse<BlogListItem>> => {
-    return axiosClient.get<PaginatedResponse<BlogListItem>>("/blogs/search", { params });
+    return axiosClient.get<PaginatedResponse<BlogListItem>>("/customer/blogs", { params });
   },
 
   getBlogById: async (blogPostId: number): Promise<BlogDetail> => {
-    return axiosClient.get<BlogDetail>(`/blogs/${blogPostId}`);
+    return axiosClient.get<BlogDetail>(`/customer/blogs/${blogPostId}`);
   },
 
   getBlogCategories: async (): Promise<BlogCategoryItem[]> => {
-    return axiosClient.get<BlogCategoryItem[]>("/blogs/categories");
+    return axiosClient.get<BlogCategoryItem[]>("/customer/blog-categories");
   },
 
   getBlogReviews: async (blogPostId: number): Promise<BlogReview[]> => {
-    return axiosClient.get<BlogReview[]>(`/blogs/${blogPostId}/reviews`);
+    return axiosClient.get<BlogReview[]>(`/customer/blogs/${blogPostId}/reviews`);
   },
 
   createBlogReview: async (blogPostId: number, comment: string): Promise<BlogReview> => {
-    return axiosClient.post<BlogReview, { comment: string }>(`/blogs/${blogPostId}/reviews`, { comment });
+    return axiosClient.post<BlogReview, { comment: string }>(`/customer/blogs/${blogPostId}/reviews`, { comment });
   },
 
   removeBlogReview: async (reviewBlogId: number): Promise<boolean> => {
-    return axiosClient.delete<boolean>(`/blogs/reviews/${reviewBlogId}`);
+    return axiosClient.delete<boolean>(`/customer/blog-reviews/${reviewBlogId}`);
   },
 
   createBlogReviewReply: async (
@@ -44,37 +44,37 @@ export const customerBlogApi = {
     payload: { comment: string; parentReplyId?: number | null; replyToAccountId?: number | null },
   ): Promise<BlogReviewReply> => {
     return axiosClient.post<BlogReviewReply, { comment: string; parentReplyId?: number | null; replyToAccountId?: number | null }>(
-      `/blogs/reviews/${reviewBlogId}/replies`,
+      `/customer/blog-reviews/${reviewBlogId}/replies`,
       payload,
     );
   },
 
   reactToBlog: async (blogPostId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
-    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/${blogPostId}/reactions`, { reactionCode });
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/customer/blogs/${blogPostId}/reactions`, { reactionCode });
   },
 
   removeBlogReaction: async (blogPostId: number): Promise<boolean> => {
-    return axiosClient.delete<boolean>(`/blogs/${blogPostId}/reactions`);
+    return axiosClient.delete<boolean>(`/customer/blogs/${blogPostId}/reactions`);
   },
 
   getBlogReactionSummary: async (blogPostId: number): Promise<ReactionSummary> => {
-    return axiosClient.get<ReactionSummary>(`/blogs/${blogPostId}/reactions/summary`);
+    return axiosClient.get<ReactionSummary>(`/customer/blogs/${blogPostId}/reactions/summary`);
   },
 
   reactToReview: async (reviewBlogId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
-    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/reviews/${reviewBlogId}/reactions`, { reactionCode });
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/customer/blog-reviews/${reviewBlogId}/reactions`, { reactionCode });
   },
 
   removeReviewReaction: async (reviewBlogId: number): Promise<boolean> => {
-    return axiosClient.delete<boolean>(`/blogs/reviews/${reviewBlogId}/reactions`);
+    return axiosClient.delete<boolean>(`/customer/blog-reviews/${reviewBlogId}/reactions`);
   },
 
   reactToReply: async (replyBlogId: number, reactionCode: "like" | "love" | "haha"): Promise<ReactionSummary> => {
-    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/blogs/reviews/replies/${replyBlogId}/reactions`, { reactionCode });
+    return axiosClient.post<ReactionSummary, { reactionCode: string }>(`/customer/blog-review-replies/${replyBlogId}/reactions`, { reactionCode });
   },
 
   removeReplyReaction: async (replyBlogId: number): Promise<boolean> => {
-    return axiosClient.delete<boolean>(`/blogs/reviews/replies/${replyBlogId}/reactions`);
+    return axiosClient.delete<boolean>(`/customer/blog-review-replies/${replyBlogId}/reactions`);
   },
 
   searchBrands: async (

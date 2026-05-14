@@ -9,6 +9,7 @@ interface NotificationListProps {
   activeTab: NotificationCategory;
   onMarkAllRead: () => void;
   onMarkRead: (id: string) => void;
+  onDelete: (id: string, type: string) => void;
 }
 
 const PAGE_SIZE = 4;
@@ -18,6 +19,7 @@ export default function NotificationList({
   activeTab,
   onMarkAllRead,
   onMarkRead,
+  onDelete,
 }: NotificationListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -43,6 +45,7 @@ export default function NotificationList({
               key={notif.id}
               notification={notif}
               onRead={() => onMarkRead(notif.id)}
+              onDelete={() => onDelete(notif.id, notif.category.toUpperCase())}
             />
           ))}
         </ul>
@@ -73,9 +76,11 @@ export default function NotificationList({
 function NotificationItem({
   notification: n,
   onRead,
+  onDelete,
 }: {
   notification: Notification;
   onRead: () => void;
+  onDelete: () => void;
 }) {
   return (
     <li
@@ -143,6 +148,18 @@ function NotificationItem({
           />
         </div>
       )}
+
+      {/* Delete Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="absolute top-4 right-4 p-2 text-[#8e7164] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+        title="Xóa thông báo"
+      >
+        <span className="material-symbols-outlined text-[20px]">delete</span>
+      </button>
     </li>
   );
 }

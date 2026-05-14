@@ -10,6 +10,8 @@ import NotificationList from "./_components/NotificationList";
 import { NotificationCategory, Notification } from "./_components/types";
 import { notificationApi } from "@/features/notifications/services/notification-api";
 import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
+import { formatFullDateTime } from "@/utils/date-utils";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 const mapCategory = (type: string): NotificationCategory => {
   if (type === "ORDER") return "order";
@@ -27,16 +29,17 @@ const getIconMeta = (type: string) => {
   }
 };
 
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr + "Z");
-  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")} - ${date.toLocaleDateString("vi-VN")}`;
-}
-
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<NotificationCategory>("all");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { unreadCount, refreshUnread } = useNotificationRealtime();
   const router = useRouter();
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const loadItems = useCallback(async () => {
     try {
@@ -49,7 +52,7 @@ export default function NotificationsPage() {
           read: n.status !== "Unread",
           title: n.title,
           description: n.message,
-          timestamp: formatDate(n.createdAt),
+          timestamp: formatFullDateTime(n.createdAt),
           icon: meta.icon,
           iconBg: meta.iconBg,
           iconColor: meta.iconColor,
@@ -88,6 +91,48 @@ export default function NotificationsPage() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleDelete = (id: string, type: string) => {
+    const doDelete = async () => {
+      try {
+        await notificationApi.deleteNotification(Number(id));
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        void refreshUnread();
+      } catch (e) {
+        console.error(e);
+      }
+      setConfirmModal((prev) => ({ ...prev, show: false }));
+    };
+
+    if (type === "SYSTEM") {
+      setConfirmModal({
+        show: true,
+        title: "Xác nhận xóa",
+        message: "Đây là thông báo hệ thống quan trọng. Bạn có chắc chắn muốn xóa?",
+        onConfirm: doDelete,
+      });
+    } else {
+      void doDelete();
+    }
+  };
+
+  const handleDeleteAllRead = () => {
+    setConfirmModal({
+      show: true,
+      title: "Xác nhận xóa tất cả",
+      message: "Bạn có chắc chắn muốn xóa tất cả thông báo đã đọc?",
+      onConfirm: async () => {
+        try {
+          await notificationApi.deleteAllReadNotifications();
+          void loadItems();
+          void refreshUnread();
+        } catch (e) {
+          console.error(e);
+        }
+        setConfirmModal((prev) => ({ ...prev, show: false }));
+      },
+    });
   };
 
   const handleMarkRead = async (id: string) => {
@@ -152,13 +197,22 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
           <h1 className="text-xl font-bold text-[#261812]">Thông báo của tôi</h1>
-          <button
-            onClick={handleMarkAllRead}
-            disabled={counts.all === 0}
-            className="text-sm text-[#a14000] hover:text-[#ff6a00] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Đánh dấu tất cả đã đọc
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleMarkAllRead}
+              disabled={counts.all === 0}
+              className="text-sm text-[#a14000] hover:text-[#ff6a00] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Đánh dấu tất cả đã đọc
+            </button>
+            <div className="w-[1px] h-4 bg-[#e2bfb0]/30" />
+            <button
+              onClick={handleDeleteAllRead}
+              className="text-sm text-red-500 hover:text-red-600 font-semibold transition-colors"
+            >
+              Xóa tất cả đã đọc
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -174,9 +228,19 @@ export default function NotificationsPage() {
           activeTab={activeTab}
           onMarkAllRead={handleMarkAllRead}
           onMarkRead={handleMarkRead}
+          onDelete={handleDelete}
         />
       </section>
 
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, show: false }))}
+        confirmText="Xác nhận"
+        type="danger"
+      />
     </main>
   );
 }
