@@ -24,7 +24,7 @@ export default function ProductsPage() {
         setLookups(result);
       } catch {
         if (!active) return;
-        setLookupError("Không thể tải bộ lọc sản phẩm.");
+        setLookupError("Unable to load product filters.");
       } finally {
         if (active) setLookupLoading(false);
       }
@@ -41,12 +41,12 @@ export default function ProductsPage() {
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
         <Link href="/" className="hover:text-[#ff6a00] transition-colors">
-          Trang chủ
+          Home
         </Link>
         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
           chevron_right
         </span>
-        <span className="text-slate-900 font-medium">Danh sách đồ chơi</span>
+        <span className="text-slate-900 font-medium">Products</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-8">
