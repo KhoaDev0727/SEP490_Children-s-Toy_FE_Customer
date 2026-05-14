@@ -184,7 +184,22 @@ export function useFlashSale(): UseFlashSaleReturn {
         if (cancelled) return;
 
         const nowTs = new Date();
-        const validData = data.filter((p) => toLocal(p.endDate) >= nowTs);
+        const validData = data
+          .map((p) => ({
+            ...p,
+            // Loại bỏ hẳn những slot trống khỏi mảng time slots
+            promotionTimeSlots:
+              p.promotionTimeSlots?.filter(
+                (ts) =>
+                  ts.promotionProductSlots &&
+                  ts.promotionProductSlots.length > 0
+              ) || [],
+          }))
+          .filter((p) => {
+            if (toLocal(p.endDate) < nowTs) return false;
+            // Giữ lại promotion nếu sau khi lọc, nó vẫn còn ít nhất 1 slot
+            return p.promotionTimeSlots.length > 0;
+          });
 
         setPromotions(validData);
 
@@ -320,6 +335,8 @@ export function useFlashSale(): UseFlashSaleReturn {
     } else if (status === "upcoming") {
       target = toLocal(selectedSlot.startAt);
       countdownLabel = "Bắt đầu sau:";
+    } else {
+      countdownLabel = "Đã kết thúc";
     }
 
     if (target) {

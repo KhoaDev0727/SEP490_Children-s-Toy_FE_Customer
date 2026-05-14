@@ -460,10 +460,10 @@ import { followApi } from "@/features/products/services/follow-api";
 const PAGE_SIZE = 20;
 
 const SORT_OPTIONS = [
-  { label: "Pho bien nhat", value: "popular" },
-  { label: "Moi nhat", value: "createdAt_desc" },
-  { label: "Gia: Thap den Cao", value: "price_asc" },
-  { label: "Gia: Cao den Thap", value: "price_desc" },
+  { label: "Most popular", value: "popular" },
+  { label: "Newest", value: "createdAt_desc" },
+  { label: "Price: Low to High", value: "price_asc" },
+  { label: "Price: High to Low", value: "price_desc" },
 ];
 
 const FALLBACK_IMAGE = "https://placehold.co/600x600/png?text=Toy";
@@ -515,16 +515,16 @@ function ProductCard({
   isFollowed: boolean;
   isFollowUpdating: boolean;
 }) {
-  // Kiểm tra trạng thái Sắp ra mắt (Đảm bảo chuỗi "ComingSoon" khớp với dữ liệu từ backend của bạn)
+  // Check the coming-soon status ("ComingSoon" must match backend data)
   const isComingSoon = product.productStatus === "ComingSoon";
   const inStock = product.quantity > 0 && product.productStatus === "Active";
   const remainingStock = inStock ? Math.max(product.quantity - quantityInCart, 0) : 0;
   const canAddToCart = inStock && remainingStock > 0;
   
-  // Xác định nhãn hiển thị
+  // Determine the display label
   let statusLabel = "";
   if (isComingSoon) {
-    statusLabel = "Sắp ra mắt";
+    statusLabel = "Coming soon";
   } else if (!inStock) {
     statusLabel = "Out of stock";
   } else if (remainingStock > 0) {
@@ -533,7 +533,7 @@ function ProductCard({
     statusLabel = "Max in cart";
   }
 
-  // Xác định màu sắc nhãn
+  // Determine the badge color
   const badgeColor = isComingSoon
     ? "bg-blue-500 text-white"
     : !inStock
@@ -634,7 +634,13 @@ function ProductCard({
               <span className="material-symbols-outlined text-[18px]">
                 {isFollowed ? "notifications_active" : "notifications"}
               </span>
-              {isFollowUpdating ? "Processing..." : isFollowed ? "Đã theo dõi" : isComingSoon ? "Theo dõi" : "Báo khi có hàng"}
+              {isFollowUpdating
+                ? "Processing..."
+                : isFollowed
+                  ? "Following"
+                  : isComingSoon
+                    ? "Follow"
+                    : "Notify when in stock"}
             </button>
           ) : (
             <button
@@ -750,7 +756,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         setData(result);
       } catch {
         if (!active) return;
-        setError("Khong the tai danh sach san pham. Vui long thu lai sau.");
+        setError("Unable to load products. Please try again later.");
       } finally {
         if (active) setIsLoading(false);
       }
@@ -892,10 +898,10 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     }
   };
 
-  // Hàm xử lý khi người dùng bấm nút Theo dõi
+  // Handle follow button action
   const handleToggleFollow = async (productId: number) => {
     if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để theo dõi sản phẩm.");
+      toast.error("Please log in to follow products.");
       return;
     }
 
@@ -910,7 +916,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           next.delete(productId);
           return next;
         });
-        toast.success("Đã hủy theo dõi sản phẩm.");
+        toast.success("Unfollowed product.");
       } else {
         await followApi.followProduct(productId);
         setFollowedProductIds((prev) => {
@@ -918,10 +924,10 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           next.add(productId);
           return next;
         });
-        toast.success("Đã đăng ký nhận thông báo khi sản phẩm ra mắt!");
+        toast.success("You will be notified when the product launches!");
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không thể thực hiện thao tác.";
+      const message = error instanceof Error ? error.message : "Unable to complete the action.";
       toast.error(message);
     } finally {
       setUpdatingFollowProductId(null);
@@ -932,10 +938,10 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     <div className="flex-1">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 mb-6">
         <p className="text-slate-600 text-sm">
-          Hien thi <span className="font-bold text-slate-900">{totalCount}</span> san pham
+          Showing <span className="font-bold text-slate-900">{totalCount}</span> products
         </p>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500">Sap xep theo:</span>
+          <span className="text-sm text-slate-500">Sort by:</span>
           <select
             value={sort}
             onChange={(e) => {
@@ -953,12 +959,12 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         </div>
       </div>
 
-      {isLoading && <div className="py-16 text-center text-slate-500">Dang tai san pham...</div>}
+      {isLoading && <div className="py-16 text-center text-slate-500">Loading products...</div>}
 
       {!isLoading && error && <div className="py-16 text-center text-red-500">{error}</div>}
 
       {!isLoading && !error && data && data.items.length === 0 && (
-        <div className="py-16 text-center text-slate-500">Chua co san pham phu hop.</div>
+        <div className="py-16 text-center text-slate-500">No matching products found.</div>
       )}
 
       {!isLoading && !error && data && data.items.length > 0 && (

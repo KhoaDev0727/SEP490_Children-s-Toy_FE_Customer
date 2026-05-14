@@ -6,6 +6,7 @@ import AddEditChildModal from "./AddEditChildModal";
 import { childrenApi } from "@/features/profile/services/children-api";
 import { Child, CreateChildPayload, UpdateChildPayload } from "@/features/profile/types/children";
 import { toast } from "react-hot-toast";
+import type { AxiosError } from "axios";
 
 export default function ChildrenGrid() {
   const [children, setChildren] = useState<Child[]>([]);
@@ -25,7 +26,10 @@ export default function ChildrenGrid() {
       const data = await childrenApi.getMyChildren();
       setChildren(data);
     } catch (error) {
-      console.error("Failed to fetch children:", error);
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch children:", error);
+      }
       toast.error("Could not load children list");
     } finally {
       setIsLoading(false);
@@ -52,8 +56,12 @@ export default function ChildrenGrid() {
         toast.success("Added successfully");
       }
       fetchChildren();
-    } catch (error: any) {
-      const errorData = error.response?.data;
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<{
+        errors?: Record<string, string[]>;
+        message?: string;
+      }>;
+      const errorData = axiosError.response?.data;
       let message = "Something went wrong";
 
       if (errorData) {

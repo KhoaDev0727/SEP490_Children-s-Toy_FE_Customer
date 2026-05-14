@@ -18,7 +18,7 @@ function GoogleAuthButton({ mode }: GoogleAuthButtonProps) {
 
   const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     if (!credentialResponse.credential) {
-      toast.error("Không nhận được thông tin từ Google. Vui lòng thử lại.");
+      toast.error("Could not retrieve information from Google. Please try again.");
       return;
     }
 
@@ -28,13 +28,13 @@ function GoogleAuthButton({ mode }: GoogleAuthButtonProps) {
         response = await authApi.googleRegister({
           idToken: credentialResponse.credential,
         });
-        toast.success("Đăng ký thành công! Chào mừng bạn đến với ToyStore.");
+        toast.success("Registration successful! Welcome to ToyStore.");
       } else {
         response = await authApi.googleLogin({
           idToken: credentialResponse.credential,
           roleId: CUSTOMER_ROLE_ID,
         });
-        toast.success(`Chào mừng, ${response.account.accountName}!`);
+        toast.success(`Welcome, ${response.account.accountName}!`);
       }
 
       setAuth(response.account, response.accessToken);
@@ -45,29 +45,29 @@ function GoogleAuthButton({ mode }: GoogleAuthButtonProps) {
       const errorMessage = err?.response?.data?.message;
       
       if (mode === "register") {
-        // Đăng ký bằng Google
+        // Register with Google
         if (errorCode === "CONFLICT" || errorMessage?.toLowerCase().includes("already registered")) {
-          toast.error("Email này đã được đăng ký trong hệ thống. Vui lòng đăng nhập.");
+          toast.error("This email is already registered. Please sign in.");
         } else {
-          toast.error(errorMessage || "Đăng ký thất bại. Vui lòng thử lại.");
+          toast.error(errorMessage || "Registration failed. Please try again.");
         }
       } else {
-        // Đăng nhập bằng Google
+        // Sign in with Google
         if (errorCode === "ACCOUNT_NOT_FOUND" || errorMessage?.toLowerCase().includes("no account found")) {
-          toast.error("Tài khoản chưa tồn tại trong hệ thống. Vui lòng đăng ký trước.");
+          toast.error("Account not found. Please sign up first.");
         } else if (errorCode === "ACCOUNT_INACTIVE") {
-          toast.error("Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ hỗ trợ.");
+          toast.error("Your account has been deactivated. Please contact support.");
         } else if (errorCode === "ACCOUNT_DELETED") {
-          toast.error("Tài khoản đã bị xóa.");
+          toast.error("Your account has been deleted.");
         } else {
-          toast.error(errorMessage || "Đăng nhập thất bại. Vui lòng thử lại.");
+          toast.error(errorMessage || "Sign-in failed. Please try again.");
         }
       }
     }
   };
 
   const handleGoogleError = () => {
-    toast.error("Đăng nhập Google thất bại. Vui lòng thử lại.");
+    toast.error("Google sign-in failed. Please try again.");
   };
 
   return (
@@ -87,13 +87,13 @@ export default function GoogleAuthButtonWrapper(props: GoogleAuthButtonProps) {
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com") {
     return (
       <div className="w-full p-3 text-center text-sm text-gray-500 border border-gray-300 rounded-lg">
-        Google OAuth chưa được cấu hình. Vui lòng kiểm tra .env.local
+        Google OAuth is not configured. Please check .env.local
       </div>
     );
   }
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="en">
       <GoogleAuthButton {...props} />
     </GoogleOAuthProvider>
   );

@@ -8,6 +8,7 @@ import ArticleBody from "./_components/ArticleBody";
 import CommentSection from "./_components/CommentSection";
 import BlogSidebar from "./_components/BlogSidebar";
 import Breadcrumb from "./_components/Breadcrumb";
+import ReactionPicker from "./_components/ReactionPicker";
 import { useBlogDetailData } from "@/features/blog/hooks/useBlogDetailData";
 import { useAuthContext } from "@/context/AuthContext";
 import { customerBlogApi } from "@/features/blog/services/blog-api";
@@ -120,30 +121,15 @@ export default function BlogDetailPage() {
             <div className="mt-5">
               <ArticleBody content={viewModel.content} />
             </div>
-            <div className="mt-6 flex items-center gap-2 flex-wrap">
-              {[
-                { code: "like" as const, icon: "👍", count: post?.likeCount ?? 0 },
-                { code: "love" as const, icon: "❤️", count: post?.loveCount ?? 0 },
-                { code: "haha" as const, icon: "😂", count: post?.hahaCount ?? 0 },
-              ].map((item) => {
-                const active = (post?.currentUserReaction ?? "").toLowerCase() === item.code;
-                return (
-                  <button
-                    key={item.code}
-                    type="button"
-                    onClick={() => handleReactBlog(item.code)}
-                    disabled={isReacting}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      active
-                        ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]"
-                        : "border-[#f1ddd2] text-[#7f4a2a] hover:border-[#c2410c]"
-                    }`}
-                  >
-                    <span className="text-sm mr-1">{item.icon}</span>
-                    <span>{item.count}</span>
-                  </button>
-                );
-              })}
+            <div className="mt-6 flex items-center">
+              <ReactionPicker
+                currentReaction={post?.currentUserReaction}
+                likeCount={post?.likeCount ?? 0}
+                loveCount={post?.loveCount ?? 0}
+                hahaCount={post?.hahaCount ?? 0}
+                disabled={isReacting}
+                onSelect={handleReactBlog}
+              />
             </div>
           </div>
           <CommentSection blogPostId={blogPostId} comments={reviews} onReload={reloadReviews} />
