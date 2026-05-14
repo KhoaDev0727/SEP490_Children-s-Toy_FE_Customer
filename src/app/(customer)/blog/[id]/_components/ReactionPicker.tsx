@@ -99,9 +99,6 @@ export default function ReactionPicker({
                 title={item.label}
               >
                 {item.icon}
-                <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-full bg-[#261812] px-2 py-0.5 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
-                  {item.label}
-                </span>
               </button>
             ))}
           </div>
@@ -115,7 +112,6 @@ export default function ReactionPicker({
         className={`inline-flex items-center gap-1.5 rounded-full border border-[#f1ddd2] bg-white px-3 py-1.5 text-xs font-semibold transition hover:border-[#c2410c] disabled:opacity-50 ${activeTextColor}`}
       >
         <span className="text-sm leading-none">{active.icon}</span>
-        <span>{active.label}</span>
         <span className="text-[#8e7164]">{totalCount}</span>
       </button>
     </div>
