@@ -4,7 +4,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import AddressList from "./_components/AddressList";
 
 export const metadata = {
-  title: "Địa chỉ của tôi - ShopX",
+  title: "My Address - ShopX",
 };
 
 export default function AddressPage() {
@@ -13,8 +13,8 @@ export default function AddressPage() {
       <div className="col-span-full mb-2">
         <Breadcrumbs 
           items={[
-            { label: "Tài khoản", href: "/profile" },
-            { label: "Địa chỉ" }
+            { label: "Account", href: "/profile" },
+            { label: "Address" }
           ]} 
         />
       </div>

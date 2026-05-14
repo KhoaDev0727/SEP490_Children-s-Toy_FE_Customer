@@ -61,9 +61,9 @@ export default function VoucherList() {
   }, [vouchers]);
 
   const tabs = [
-    { value: "ALL", label: "Tất cả" },
-    { value: "ORDER_TOTAL", label: "Mã giảm giá" },
-    { value: "SHIPPING_FEE", label: "Mã vận chuyển" },
+    { value: "ALL", label: "All" },
+    { value: "ORDER_TOTAL", label: "Discount code" },
+    { value: "SHIPPING_FEE", label: "Shipping voucher" },
   ];
 
   return (
@@ -73,7 +73,7 @@ export default function VoucherList() {
           Kho Voucher
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Quản lý và sử dụng các mã giảm giá của bạn.
+          Manage and use your discount vouchers.
         </p>
       </div>
 
@@ -127,10 +127,10 @@ export default function VoucherList() {
                 </span>
               </div>
               <h3 className="text-lg font-semibold text-slate-900">
-                Không có voucher nào
+                No vouchers
               </h3>
               <p className="text-sm text-slate-500 mt-1 max-w-[250px]">
-                Bạn hiện chưa có voucher nào trong danh mục này.
+                You currently have no vouchers in this category.
               </p>
             </div>
           )}

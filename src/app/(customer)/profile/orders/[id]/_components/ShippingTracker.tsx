@@ -12,10 +12,10 @@ interface ShippingTrackerProps {
 }
 
 const STEPS = [
-  { icon: "receipt_long", label: "Đã đặt" },
-  { icon: "inventory_2", label: "Đóng gói" },
-  { icon: "local_shipping", label: "Đang giao" },
-  { icon: "check_circle", label: "Hoàn thành" },
+  { icon: "receipt_long", label: "Ordered" },
+  { icon: "inventory_2", label: "Packed" },
+  { icon: "local_shipping", label: "Delivering" },
+  { icon: "check_circle", label: "Completed" },
 ];
 
 const getActiveStep = (status?: string | null): number => {
@@ -100,14 +100,14 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
   const historyItems = sortedEvents.length
     ? sortedEvents.map((event, index) => ({
       highlight: index === 0,
-      title: event.description || `Trạng thái: ${event.status}`,
+      title: event.description || `Status: ${event.status}`,
       time: formatEventTime(event.time),
       desc: event.description ? null : undefined,
     }))
     : [
       {
         highlight: true,
-        title: isCancelled ? "Đơn hàng đã bị hủy" : isRefunded ? "Đơn hàng đã được hoàn tiền" : "Đang cập nhật trạng thái",
+        title: isCancelled ? "Order has been cancelled" : isRefunded ? "Order has been refunded" : "Updating status",
         time: "",
         desc: "",
       },
@@ -117,12 +117,12 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
     <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30">
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#e2bfb0]/20">
         <h2 className="text-lg font-bold text-[#261812]">
-          Trạng thái đơn hàng
+          Order status
         </h2>
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${isCancelled ? "bg-red-50 border-red-100" : isRefunded ? "bg-blue-50 border-blue-100" : "bg-emerald-50 border-emerald-100"}`}>
           <div className={`w-2 h-2 rounded-full ${isCancelled ? "bg-red-500" : isRefunded ? "bg-blue-500" : "bg-emerald-500"}`} />
           <span className={`text-xs font-bold uppercase tracking-wider ${isCancelled ? "text-red-600" : isRefunded ? "text-blue-600" : "text-emerald-600"}`}>
-            {isCancelled ? "Đã hủy" : isRefunded ? "Đã hoàn tiền" : STEPS[activeStep].label}
+            {isCancelled ? "Cancelled" : isRefunded ? "Refunded" : STEPS[activeStep].label}
           </span>
         </div>
       </div>
@@ -187,10 +187,10 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
             {isCancelled ? "cancel" : "currency_exchange"}
           </span>
           <p className="text-sm font-bold text-slate-600">
-            {isCancelled ? "Đơn hàng này đã được hủy" : "Đơn hàng đã được hoàn tiền"}
+            {isCancelled ? "This order has been cancelled" : "Order has been refunded"}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            {isCancelled ? "Mọi thắc mắc vui lòng liên hệ bộ phận hỗ trợ" : "Tiền đã được hoàn về ví của bạn"}
+            {isCancelled ? "If you have questions, please contact support" : "Refund has been returned to your wallet"}
           </p>
         </div>
       )}
@@ -237,7 +237,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
           onClick={() => setShowAll(!showAll)}
           className="text-sm text-emerald-600 font-semibold hover:underline w-full text-center mt-3"
         >
-          {showAll ? "Thu gọn" : "Xem toàn bộ lịch sử"}
+          {showAll ? "Collapse" : "View full history"}
         </button>
       )}
     </div>

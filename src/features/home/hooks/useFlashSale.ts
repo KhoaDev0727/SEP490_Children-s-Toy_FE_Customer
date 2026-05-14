@@ -223,7 +223,7 @@ export function useFlashSale(): UseFlashSaleReturn {
           }
         }
       } catch {
-        if (!cancelled) setError("Không thể tải Flash Sale. Vui lòng thử lại.");
+        if (!cancelled) setError("Unable to load Flash Sale. Please try again.");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -323,7 +323,7 @@ export function useFlashSale(): UseFlashSaleReturn {
 
   // ── Countdown ──────────────────────────────────────────────
   let countdown: { d: number; h: number; m: number; s: number } | null = null;
-  let countdownLabel = "Kết thúc sau:";
+  let countdownLabel = "Ends in:";
 
   if (selectedSlot) {
     const status = getSlotStatus(selectedSlot, now);
@@ -331,12 +331,12 @@ export function useFlashSale(): UseFlashSaleReturn {
 
     if (status === "active") {
       target = toLocal(selectedSlot.endAt);
-      countdownLabel = "Kết thúc sau:";
+      countdownLabel = "Ends in:";
     } else if (status === "upcoming") {
       target = toLocal(selectedSlot.startAt);
-      countdownLabel = "Bắt đầu sau:";
+      countdownLabel = "Starts in:";
     } else {
-      countdownLabel = "Đã kết thúc";
+      countdownLabel = "Ended";
     }
 
     if (target) {

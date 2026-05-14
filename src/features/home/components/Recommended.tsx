@@ -12,33 +12,33 @@ interface Product {
 const products: Product[] = [
   {
     id: 1,
-    category: "THỜI TRANG NỮ",
-    name: "Áo Khoác Dạ Cao Cấp",
-    price: "1.250.000đ",
-    originalPrice: "1.560.000đ",
+    category: "WOMEN'S FASHION",
+    name: "Premium wool coat",
+    price: "1.250.000 VND",
+    originalPrice: "1.560.000 VND",
     badge: "-20%",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDSvXBgjASMQbwm3AKatnkqRNRqY4pXNgJm7qcYzvJS8Sf0hPwpytSO8T8inw055KH3lHzVQYcTHhAqCazvz0e2tZBVfcHE-fmcjvrlnajV0BkY-VyTxzLTZgfqZ3_qTVnnPMNlSTBCtDD3OJdJZcK69QgD6x9C_YMkc2-Hqmr9skQxbdkOy5hv7-w-nZxATBKAOSyBnGiaqdkv7o5isCJvsLFitjgW8He3JmX_PRYmTb2o4FQqEeG8NjwZAQyZkkUcrQO6J9w5Kwo",
   },
   {
     id: 2,
-    category: "GIÀY DÉP",
+    category: "FOOTWEAR",
     name: "Sneaker Pro Run Max",
-    price: "2.100.000đ",
+    price: "2.100.000 VND",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAI9tSaUw6K7ClIxYKh2rAjEnkhY4R5BUkIR8jo5PRtCrlmAbcas8d2ElLKGNuMbgqZNXl-kdcVMrbFRDQVUUSUo_3rVi2SSaFGfUSbXOJ-W598GhxCnBveHbCjXNYJMRIOGd5iwkZRC9hgflI67QkGoNzg2zCD1b5D_bhn7SJ9Yc5Vw2f6-4udaYWUS6-Jg4GM6Iv0n3arr4C4P0z9JrU_Aaduj8QkC3hC1kIuv9hraZ1MF0ELfAmyAtmnxWsYu76NUenzkJ2hp-A",
   },
   {
     id: 3,
-    category: "PHỤ KIỆN",
+    category: "ACCESSORIES",
     name: "SmartWatch Horizon Gen 5",
-    price: "4.500.000đ",
-    badge: "MỚI",
+    price: "4.500.000 VND",
+    badge: "NEW",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAZXcJsZlfDu3I5P34AlnI8tEBaCIrtLZcKMo0TFCmnv-65kxmcESqKFte7crFmX8aFxdZJohfl0aqKB9GyJB9An9aCyQeT27qpqwNBwxshLd44hMD6Drf7bLrZ5nsYehdWQe-wP7k4tAoE4wh8YmDvQBfAikcgsfT0zaeM5HVlw1FtL9OzNWV_9B6lmGRt2NsH1iTrCQEf99fjaSEpItlDlV2PetiN7h3thTcWrijmxoAHyfLyxlRuVkwldN7atM7wA9-vVSyEoU",
   },
   {
     id: 4,
-    category: "PHỤ KIỆN",
-    name: "Túi Da Minimalist",
-    price: "890.000đ",
+    category: "ACCESSORIES",
+    name: "Minimalist leather bag",
+    price: "890.000 VND",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAbG3NQqomnCNoJtG9xZwEINgXClgForE_MWejsbd4zFj-vNh6hsj1XRKHbCy_vwQANxLgcVDixsOhs3sv8g4ZPXZErcwlwyN8qr4Cg2ep2d-BZMwtD8x8RK2R6-zK9DsKHvuzzFt5FiJQDI18F6pQbyrtaTxYsMYcJxI-0sPQVcCrxxNzGayVW0CPU2T4CPwq_IbNQEqqwXbf8alIsiqAoXnLXV-Oz9dsxE5OGcVEpdHai8TU7a25rJSKIuOuuuTVjltHPZT2jA60",
   },
 ];
@@ -47,9 +47,9 @@ export default function Recommended() {
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-slate-900">Gợi ý cho bạn</h3>
+        <h3 className="text-2xl font-bold text-slate-900">Suggestions for you</h3>
         <a href="#" className="font-semibold text-sm hover:underline" style={{ color: "#ff6a00" }}>
-          Xem tất cả
+          View all
         </a>
       </div>
 
@@ -104,7 +104,7 @@ export default function Recommended() {
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add_shopping_cart</span>
-                Thêm vào giỏ
+                Add to cart
               </button>
             </div>
           </div>

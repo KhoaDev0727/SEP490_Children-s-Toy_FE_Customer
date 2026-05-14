@@ -32,23 +32,23 @@ const STATUS_CONFIG: Record<
   { label: string; className: string }
 > = {
   delivering: {
-    label: "ĐANG GIAO",
+    label: "DELIVERING",
     className: "text-primary-container",
   },
   completed: {
-    label: "HOÀN THÀNH",
+    label: "COMPLETED",
     className: "text-secondary",
   },
   pending: {
-    label: "CHỜ THANH TOÁN",
+    label: "PENDING PAYMENT",
     className: "text-yellow-600",
   },
   shipping: {
-    label: "VẬN CHUYỂN",
+    label: "SHIPPING",
     className: "text-blue-600",
   },
   cancelled: {
-    label: "ĐÃ HỦY",
+    label: "CANCELLED",
     className: "text-error",
   },
 };
@@ -57,11 +57,11 @@ const ACTION_BUTTONS: Record<
   OrderStatus,
   { secondary: string; primary: string }
 > = {
-  delivering: { secondary: "Liên hệ người bán", primary: "Theo dõi đơn hàng" },
-  completed: { secondary: "Đánh giá", primary: "Mua lại" },
-  pending: { secondary: "Hủy đơn", primary: "Thanh toán ngay" },
-  shipping: { secondary: "Liên hệ người bán", primary: "Theo dõi đơn hàng" },
-  cancelled: { secondary: "Xem chi tiết", primary: "Mua lại" },
+  delivering: { secondary: "Contact seller", primary: "Track order" },
+  completed: { secondary: "Review", primary: "Buy again" },
+  pending: { secondary: "Cancel order", primary: "Pay now" },
+  shipping: { secondary: "Contact seller", primary: "Track order" },
+  cancelled: { secondary: "View details", primary: "Buy again" },
 };
 
 function formatPrice(price: number): string {
@@ -75,7 +75,7 @@ interface OrderCardProps {
 export default function OrderCard({ order }: OrderCardProps) {
   const { label, className } = STATUS_CONFIG[order.status];
   const actions = ACTION_BUTTONS[order.status];
-  const classification = order.item.categoryName || order.item.variant || "Đang cập nhật";
+  const classification = order.item.categoryName || order.item.variant || "Updating";
 
   return (
     <div className="border border-[#e2bfb0]/30 rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -87,12 +87,12 @@ export default function OrderCard({ order }: OrderCardProps) {
               receipt_long
             </span>
             <span className="text-sm font-bold text-[#261812]">
-              Đơn hàng
+              Orders
             </span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-[#5a4136]">
-              Mã ĐH: #{order.orderCode}
+              Order code: #{order.orderCode}
             </span>
             <span className={`text-xs font-bold uppercase ${className}`}>
               {label}
@@ -116,10 +116,10 @@ export default function OrderCard({ order }: OrderCardProps) {
                 {order.item.name}
               </h3>
               <p className="text-xs text-[#5a4136] mb-2">
-                Phân loại: {classification}
+                Variant: {classification}
               </p>
               <p className="text-xs font-semibold text-[#5a4136]">
-                Số lượng: x{order.item.quantity}
+                Quantity: x{order.item.quantity}
               </p>
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function OrderCard({ order }: OrderCardProps) {
       <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
         <div className="flex items-center gap-2">
           <span className="text-sm text-[#5a4136]">
-            Thành tiền:
+            Total:
           </span>
           <span className="text-xl text-[#ff6a00] font-black">
             {formatPrice(order.total)}

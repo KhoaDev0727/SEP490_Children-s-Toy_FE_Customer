@@ -3,14 +3,14 @@ import Link from "next/link";
 import CheckoutClient from "@/app/(customer)/checkout/components/CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "Thanh toán — ShopX Direct",
-  description: "Hoàn tất đơn hàng của bạn một cách nhanh chóng và bảo mật.",
+  title: "Checkout — ShopX Direct",
+  description: "Complete your order quickly and securely.",
 };
 
 const breadcrumbs = [
-  { label: "Trang chủ", href: "/" },
-  { label: "Giỏ hàng", href: "/cart" },
-  { label: "Thanh toán", href: "/checkout" },
+  { label: "Home", href: "/" },
+  { label: "Cart", href: "/cart" },
+  { label: "Checkout", href: "/checkout" },
 ];
 
 export default function CheckoutPage() {
@@ -45,18 +45,18 @@ export default function CheckoutPage() {
 
         {/* ── Page Header ─────────────────────────────────── */}
         <div className="mb-7 pb-5 border-b border-gray-200">
-          <h1 className="text-3xl font-black tracking-tight text-gray-900">Thanh toán</h1>
+          <h1 className="text-3xl font-black tracking-tight text-gray-900">Checkout</h1>
           <p className="text-sm text-gray-400 mt-1 font-medium">
-            Hoàn tất thông tin để đặt hàng — chỉ mất vài giây 🚀
+            Complete your info to place your order — just a few seconds 🚀
           </p>
         </div>
 
         {/* ── Stepper ─────────────────────────────────────── */}
         <div className="flex items-center gap-0 mb-8 max-w-md">
           {[
-            { label: "Giỏ hàng", done: true },
-            { label: "Thông tin", done: false, active: true },
-            { label: "Xác nhận", done: false },
+            { label: "Cart", done: true },
+            { label: "Information", done: false, active: true },
+            { label: "Confirm", done: false },
           ].map((step, i) => (
             <div key={step.label} className="flex items-center">
               <div className="flex flex-col items-center">

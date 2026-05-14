@@ -91,7 +91,7 @@ export default function OrderSummary({
         }
       } catch (err) {
         setPreview(null);
-        const msg = err instanceof Error ? err.message : "Không thể tính phí ship.";
+        const msg = err instanceof Error ? err.message : "Unable to calculate shipping fee.";
         toast.error(msg);
       } finally {
         setIsPreviewLoading(false);
@@ -112,22 +112,22 @@ export default function OrderSummary({
 
   const handleOrder = async () => {
     if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để đặt hàng.");
+      toast.error("Please log in to place an order.");
       return;
     }
 
     if (!cart || items.length === 0) {
-      toast.error("Giỏ hàng trống.");
+      toast.error("Your cart is empty.");
       return;
     }
 
     if (checkoutLines.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+      toast.error("Please select at least one product for checkout.");
       return;
     }
 
     if (!activeAddress) {
-      toast.error("Vui lòng chọn địa chỉ giao hàng.");
+      toast.error("Please select a shipping address.");
       return;
     }
 
@@ -171,7 +171,7 @@ export default function OrderSummary({
         router.push(`/checkout/success?orderId=${response.orderId}&orderCode=${encodeURIComponent(response.orderCode ?? "")}`);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không thể tạo đơn hàng.";
+      const message = error instanceof Error ? error.message : "Unable to create the order.";
       toast.error(message);
     } finally {
       setIsOrdering(false);
@@ -185,7 +185,7 @@ export default function OrderSummary({
           <div className="absolute inset-0 rounded-full border-4 border-[#ff6a00]/20"></div>
           <div className="absolute inset-0 rounded-full border-4 border-[#ff6a00] border-t-transparent animate-spin"></div>
         </div>
-        <p className="text-sm font-bold text-gray-400 animate-pulse">Đang chuẩn bị đơn hàng...</p>
+        <p className="text-sm font-bold text-gray-400 animate-pulse">Preparing your order...</p>
       </div>
     );
   }
@@ -196,13 +196,13 @@ export default function OrderSummary({
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ff6a00]/10 rounded-full blur-3xl pointer-events-none" />
 
       <h2 className="text-xl font-extrabold text-gray-900 tracking-tight pb-4 border-b border-gray-100/80 mb-5 relative">
-        Tóm tắt đơn hàng
+        Order Summary
       </h2>
 
       {/* Product list */}
       <div className="space-y-2 mb-6 max-h-[42vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {items.length === 0 && (
-          <p className="text-sm text-gray-400 font-medium italic text-center py-4">Giỏ hàng của bạn đang trống.</p>
+          <p className="text-sm text-gray-400 font-medium italic text-center py-4">Your cart is empty.</p>
         )}
         {items.map((item) => (
           <div key={item.cartItemId} className="group flex gap-3.5 items-center p-3 rounded-2xl hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100/80">
@@ -235,8 +235,8 @@ export default function OrderSummary({
       {/* Voucher input */}
       <div className="space-y-3 mb-6">
         <CouponInput
-          label="Mã giảm giá"
-          placeholder="Nhập mã voucher..."
+          label="Discount code"
+          placeholder="Enter voucher code..."
           value={voucherCode}
           onChange={setVoucherCode}
           onApply={applyVoucher}
@@ -247,31 +247,31 @@ export default function OrderSummary({
 
       {/* Price breakdown */}
       <div className="space-y-3 border-t border-gray-100/80 pt-5 mb-5 text-sm">
-        <Row label="Tạm tính" value={fmt(subtotal)} />
+        <Row label="Subtotal" value={fmt(subtotal)} />
         <Row
-          label={isPreviewLoading ? "Phí vận chuyển (đang tính...)" : "Phí vận chuyển"}
+          label={isPreviewLoading ? "Shipping fee (calculating...)" : "Shipping fee"}
           value={
             shipping > 0
               ? fmt(shipping)
               : (isPreviewLoading || isAddressLoading)
-                ? "Đang tải..."
-                : "Chọn địa chỉ"
+                ? "Loading..."
+                : "Select address"
           }
           valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-medium" : "text-gray-900 font-bold"}
         />
         {discount > 0 && (
-          <Row label="Giảm giá voucher" value={`-${fmt(discount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+          <Row label="Voucher discount" value={`-${fmt(discount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
         )}
       </div>
 
       {/* Total */}
       <div className="flex items-end justify-between border-t border-gray-200 pt-5 mb-8 relative">
-        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Tổng cộng</span>
+        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total</span>
         <div className="text-right">
           <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff6a00] to-[#ff4500] tracking-tight">
             {fmt(total)}
           </span>
-          <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-widest">(Đã bao gồm VAT)</p>
+          <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-widest">(VAT included)</p>
         </div>
       </div>
 
@@ -290,11 +290,11 @@ export default function OrderSummary({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            Đang xử lý...
+            Processing...
           </>
         ) : (
           <>
-            <span className="text-lg">Đặt hàng ngay</span>
+            <span className="text-lg">Place Order Now</span>
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -303,8 +303,8 @@ export default function OrderSummary({
       </button>
 
       <p className="text-[11px] text-center text-gray-400 mt-4 font-medium">
-        Bằng việc đặt hàng, bạn đồng ý với{" "}
-        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Điều khoản dịch vụ</a> của ShopX.
+        By placing an order, you agree to{" "}
+        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Terms of Service</a> of ShopX.
       </p>
     </div>
   );
@@ -367,7 +367,7 @@ function CouponInput({
             onClick={onApply}
             className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors whitespace-nowrap"
           >
-            Áp dụng
+            Apply
           </button>
         </div>
       )}

@@ -8,21 +8,21 @@ import type { AddressItem, DistrictOption, ProvinceOption, WardOption } from "@/
 const paymentOptions = [
   {
     id: "cod",
-    label: "Thanh toán khi nhận hàng (COD)",
+    label: "Cash on Delivery (COD)",
     icon: "🚚",
-    desc: "Trả tiền mặt khi người giao hàng đưa hàng cho bạn",
+    desc: "Pay cash when your order is delivered",
   },
   {
     id: "sepay",
-    label: "Chuyển khoản mã QR (Tự động xác nhận)",
+    label: "QR Bank Transfer (Auto-confirm)",
     icon: "📱",
-    desc: "Mở App ngân hàng quét mã QR, tự động xác nhận trong 5s",
+    desc: "Open your banking app to scan the QR code; auto-confirmed in 5s",
   },
   {
     id: "shopwallet",
-    label: "Thanh toán bằng Ví nội bộ",
+    label: "Pay with Internal Wallet",
     icon: "💳",
-    desc: "Thanh toán siêu tốc bằng số dư trong ví của bạn",
+    desc: "Ultra-fast payment with your wallet balance",
   },
 ];
 
@@ -252,11 +252,11 @@ export default function CheckoutForm({
             <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff6a00] to-[#ff4500] shadow-lg shadow-[#ff6a00]/20 text-white flex items-center justify-center font-black text-lg">
               1
             </span>
-            Thông tin giao hàng
+            Shipping Information
           </h2>
           <div className="flex flex-col items-start sm:items-end gap-1.5 w-full sm:w-auto">
             <div className="flex items-center gap-3 w-full">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">Sổ địa chỉ</label>
+              <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">Address Book</label>
               <div className="relative flex-1 sm:w-56">
                 <select
                   className="w-full appearance-none rounded-xl border border-[#ff6a00]/20 bg-[#ff6a00]/5 hover:bg-[#ff6a00]/10 text-sm font-bold text-[#ff6a00] px-4 py-2.5 pr-10 cursor-pointer outline-none transition-colors"
@@ -264,10 +264,10 @@ export default function CheckoutForm({
                   onChange={handleSelectAddress}
                   disabled={!isHydrated || !isAuthenticated || addresses.length === 0}
                 >
-                  <option value={0}>{(!isHydrated || !isAuthenticated) ? "Cần đăng nhập" : "Chọn địa chỉ"}</option>
+                  <option value={0}>{(!isHydrated || !isAuthenticated) ? "Login required" : "Select address"}</option>
                   {addresses.map((a) => (
                     <option key={a.addressId} value={a.addressId}>
-                      {(a.recipientName ?? "").trim() || "Không tên"} - {a.addressLine}
+                      {(a.recipientName ?? "").trim() || "Unnamed"} - {a.addressLine}
                     </option>
                   ))}
                 </select>
@@ -277,7 +277,7 @@ export default function CheckoutForm({
             {isHydrated && isAuthenticated && (
               <a href="/profile/address" className="text-[11px] font-semibold text-gray-400 hover:text-[#ff6a00] transition-colors ml-auto sm:ml-0 flex items-center gap-1">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
-                Thêm/Sửa địa chỉ mới
+                Add/Edit New Address
               </a>
             )}
           </div>
@@ -286,12 +286,12 @@ export default function CheckoutForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative">
           {/* Full Name */}
           <div>
-            <label className={labelBase} htmlFor="fullname">Họ và tên</label>
+            <label className={labelBase} htmlFor="fullname">Full name</label>
             <input
               id="fullname"
               name="fullname"
               type="text"
-              placeholder="Nguyễn Văn A"
+              placeholder="John Doe"
               className={inputBase}
               value={form.fullname}
               onChange={handleFieldChange}
@@ -301,7 +301,7 @@ export default function CheckoutForm({
 
           {/* Phone */}
           <div>
-            <label className={labelBase} htmlFor="phone">Số điện thoại</label>
+            <label className={labelBase} htmlFor="phone">Phone number</label>
             <input
               id="phone"
               name="phone"
@@ -316,12 +316,12 @@ export default function CheckoutForm({
 
           {/* Address - full width */}
           <div className="md:col-span-2">
-            <label className={labelBase} htmlFor="address">Địa chỉ cụ thể</label>
+            <label className={labelBase} htmlFor="address">Street address</label>
             <input
               id="address"
               name="address"
               type="text"
-              placeholder="Số nhà, tên đường, tòa nhà..."
+              placeholder="House number, street, building..."
               className={inputBase}
               value={form.address}
               onChange={handleFieldChange}
@@ -331,7 +331,7 @@ export default function CheckoutForm({
 
           {/* City */}
           <div>
-            <label className={labelBase} htmlFor="provinceId">Tỉnh / Thành phố</label>
+            <label className={labelBase} htmlFor="provinceId">Province / City</label>
             <div className="relative group">
               <select
                 id="provinceId"
@@ -341,7 +341,7 @@ export default function CheckoutForm({
                 onChange={handleProvinceChange}
                 disabled
               >
-                <option value={0}>Chọn Tỉnh / Thành phố</option>
+                <option value={0}>Select Province / City</option>
                 {provinces.map((p) => (
                   <option key={p.provinceId} value={p.provinceId}>{p.provinceName}</option>
                 ))}
@@ -352,7 +352,7 @@ export default function CheckoutForm({
 
           {/* District */}
           <div>
-            <label className={labelBase} htmlFor="districtId">Quận / Huyện</label>
+            <label className={labelBase} htmlFor="districtId">District</label>
             <div className="relative group">
               <select
                 id="districtId"
@@ -362,7 +362,7 @@ export default function CheckoutForm({
                 onChange={handleDistrictChange}
                 disabled
               >
-                <option value={0}>Chọn Quận / Huyện</option>
+                <option value={0}>Select District</option>
                 {districts.map((d) => (
                   <option key={d.districtId} value={d.districtId}>{d.districtName}</option>
                 ))}
@@ -373,7 +373,7 @@ export default function CheckoutForm({
 
           {/* Ward */}
           <div className="md:col-span-2">
-            <label className={labelBase} htmlFor="wardCode">Phường / Xã</label>
+            <label className={labelBase} htmlFor="wardCode">Ward</label>
             <div className="relative group">
               <select
                 id="wardCode"
@@ -383,7 +383,7 @@ export default function CheckoutForm({
                 onChange={handleWardChange}
                 disabled
               >
-                <option value="">Chọn Phường / Xã</option>
+                <option value="">Select Ward</option>
                 {wards.map((w) => (
                   <option key={w.wardCode} value={w.wardCode}>{w.wardName}</option>
                 ))}
@@ -394,12 +394,12 @@ export default function CheckoutForm({
 
           {/* Note */}
           <div className="md:col-span-2 mt-2">
-            <label className={labelBase} htmlFor="note">Ghi chú đơn hàng (tuỳ chọn)</label>
+            <label className={labelBase} htmlFor="note">Order note (optional)</label>
             <textarea
               id="note"
               name="note"
               rows={2}
-              placeholder="Ghi chú thêm cho người giao hàng..."
+              placeholder="Extra note for the delivery person..."
               className={`${inputBase} resize-none`}
               value={form.note}
               onChange={handleFieldChange}
@@ -414,7 +414,7 @@ export default function CheckoutForm({
           <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff6a00] to-[#ff4500] shadow-lg shadow-[#ff6a00]/20 text-white flex items-center justify-center font-black text-lg">
             2
           </span>
-          Phương thức thanh toán
+          Payment Method
         </h2>
 
         <div className="space-y-4">

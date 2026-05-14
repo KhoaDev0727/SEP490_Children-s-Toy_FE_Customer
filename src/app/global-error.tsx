@@ -12,7 +12,7 @@ export default function Error500({
     reset: () => void;
 }) {
     useEffect(() => {
-        // Tùy chọn: Ghi log lỗi vào các hệ thống tracking như Sentry ở đây
+        // Optional: Ghi log lỗi vào các hệ thống tracking như Sentry ở đây
         console.error(error);
     }, [error]);
 
@@ -35,13 +35,13 @@ export default function Error500({
                     {/* Vùng nội dung chữ */}
                     <div className="space-y-stack-md">
                         <div className="inline-block px-3 py-1 bg-error-container text-on-error-container rounded-full font-label-caps text-label-caps">
-                            LỖI 500
+                            ERROR 500
                         </div>
                         <h1 className="font-section-headline text-section-headline text-on-surface">
-                            Hệ thống đang nghỉ ngơi một chút.
+                            The system is taking a short break.
                         </h1>
                         <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm mx-auto">
-                            Có lỗi kỹ thuật xảy ra từ phía chúng tôi. Đội ngũ kỹ thuật đang nhanh chóng khắc phục. Vui lòng thử lại sau giây lát.
+                            A technical issue occurred on our side. Our team is fixing it quickly. Please try again in a moment.
                         </p>
                     </div>
 
@@ -52,14 +52,14 @@ export default function Error500({
                             onClick={() => reset()}
                             className="w-full sm:w-auto px-6 py-3 bg-primary-container text-on-primary font-card-title text-card-title rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
                         >
-                            Thử lại ngay
+                            Try again now
                         </button>
 
                         <Link
                             href="/"
                             className="flex justify-center items-center w-full sm:w-auto px-6 py-3 bg-transparent border-2 border-outline text-on-surface font-card-title text-card-title rounded-lg hover:bg-surface-variant transition-colors duration-200"
                         >
-                            Về trang chủ
+                            Go to homepage
                         </Link>
                     </div>
                 </div>

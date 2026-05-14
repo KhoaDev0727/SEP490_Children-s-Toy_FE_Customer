@@ -1,12 +1,12 @@
 "use client";
 
 const TABS = [
-  { label: "Tất cả", value: "all" },
-  { label: "Chờ thanh toán", value: "pending" },
-  { label: "Vận chuyển", value: "shipping" },
-  { label: "Đang giao", value: "delivering" },
-  { label: "Hoàn thành", value: "completed" },
-  { label: "Đã hủy", value: "cancelled" },
+  { label: "All", value: "all" },
+  { label: "Pending Payment", value: "pending" },
+  { label: "Shipping", value: "shipping" },
+  { label: "Delivering", value: "delivering" },
+  { label: "Completed", value: "completed" },
+  { label: "Cancelled", value: "cancelled" },
 ];
 
 interface OrderTabsProps {

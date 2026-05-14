@@ -5,24 +5,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { label: "Hồ sơ", icon: "person", href: "/profile" },
+  { label: "Profile", icon: "person", href: "/profile" },
   {
-    label: "Quản lý Ví",
+    label: "Wallet Management",
     icon: "account_balance_wallet",
     href: "/profile/wallet",
   },
-  { label: "Quản lý Đơn hàng", icon: "package_2", href: "/profile/orders" },
-  { label: "Đánh giá của tôi", icon: "reviews", href: "/profile/reviews" },
+  { label: "Order Management", icon: "package_2", href: "/profile/orders" },
+  { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
   {
-    label: "Quản lí ngày sinh",
+    label: "Birthday Management",
     icon: "cake",
     href: "/profile/birthday-management",
   },
-  { label: "Địa chỉ", icon: "location_on", href: "/profile/address" },
-  { label: "Đổi mật khẩu", icon: "lock", href: "/profile/password" },
-  { label: "Thông báo", icon: "notifications", href: "/profile/notifications" },
+  { label: "Address", icon: "location_on", href: "/profile/address" },
+  { label: "Change Password", icon: "lock", href: "/profile/password" },
+  { label: "Notifications", icon: "notifications", href: "/profile/notifications" },
   {
-    label: "Cài đặt thông báo",
+    label: "Notification Settings",
     icon: "settings",
     href: "/profile/setting-notifications",
   },
@@ -39,8 +39,8 @@ export default function ProfileSidebar() {
 
   const avatarUrl = isHydrated ? account?.imageUrl : undefined;
   const name = isHydrated
-    ? (account?.accountName ?? "Người dùng")
-    : "Người dùng";
+    ? (account?.accountName ?? "User")
+    : "User";
 
   const initials = name
     .split(" ")
@@ -94,7 +94,7 @@ export default function ProfileSidebar() {
             >
               edit
             </span>
-            Sửa hồ sơ
+            Edit Profile
           </Link>
         </div>
       </div>

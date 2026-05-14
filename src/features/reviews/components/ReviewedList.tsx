@@ -76,7 +76,7 @@ export default function ReviewedList() {
         return (
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Đã duyệt
+            Approved
           </span>
         );
       case "Pending":
@@ -84,14 +84,14 @@ export default function ReviewedList() {
         return (
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-100">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-            Chờ duyệt
+            Pending
           </span>
         );
       case "Rejected":
         return (
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            Bị từ chối
+            Rejected
           </span>
         );
       default:
@@ -123,7 +123,7 @@ export default function ReviewedList() {
           <div className="absolute inset-0 rounded-full border-4 border-orange-100"></div>
           <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
         </div>
-        <p className="text-sm text-slate-500 animate-pulse font-medium">Đang tải lịch sử...</p>
+        <p className="text-sm text-slate-500 animate-pulse font-medium">Loading history...</p>
       </div>
     );
   }
@@ -133,10 +133,10 @@ export default function ReviewedList() {
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
         {[
-          { label: "Tất cả", value: "" },
-          { label: "Đã duyệt", value: "Approved" },
-          { label: "Chờ duyệt", value: "Pending" },
-          { label: "Bị từ chối", value: "Rejected" },
+          { label: "All", value: "" },
+          { label: "Approved", value: "Approved" },
+          { label: "Pending", value: "Pending" },
+          { label: "Rejected", value: "Rejected" },
         ].map((tab) => (
           <button
             key={tab.value}
@@ -160,10 +160,10 @@ export default function ReviewedList() {
             </span>
           </div>
           <h3 className="text-lg font-semibold text-slate-900">
-            Bạn chưa có đánh giá nào
+            You have no reviews yet
           </h3>
           <p className="text-sm text-slate-500 mt-2 max-w-[300px] mx-auto">
-            Hãy mua hàng và chia sẻ đánh giá đầu tiên của bạn nhé!
+            Make a purchase and share your first review!
           </p>
         </div>
       ) : (
@@ -215,7 +215,7 @@ export default function ReviewedList() {
                     {new Date(review.createdAt).toLocaleDateString("vi-VN")}
                     {review.isEdited && (
                       <span className="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded italic">
-                        Đã chỉnh sửa
+                        Edited
                       </span>
                     )}
                   </div>
@@ -227,7 +227,7 @@ export default function ReviewedList() {
                     className="flex items-center gap-1 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all active:scale-95"
                   >
                     <span className="material-symbols-outlined text-[16px]">edit</span>
-                    Sửa đánh giá
+                    Edit review
                   </button>
                 )}
               </div>
@@ -263,7 +263,7 @@ export default function ReviewedList() {
                     <div key={reply.replyProductId} className="text-sm">
                       <div className="flex items-center gap-2 font-bold text-slate-800 mb-2">
                         <span className="material-symbols-outlined text-[18px] text-orange-500">support_agent</span>
-                        Phản hồi từ {reply.staffName}
+                        Reply from {reply.staffName}
                       </div>
                       <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{reply.content}</p>
                     </div>

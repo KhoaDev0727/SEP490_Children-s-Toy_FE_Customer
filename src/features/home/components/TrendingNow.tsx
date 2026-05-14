@@ -9,25 +9,25 @@ interface TrendingItem {
 const trendingItems: TrendingItem[] = [
   {
     name: "Tai nghe Noise Cancel",
-    price: "3.450.000đ",
+    price: "3.450.000 VND",
     badge: "HOT",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVixBbhZTlJXW5qjgFOj1Or8O6QlnuihUzbxbdwBDcnexMM7nd4LS9EDhNf6kHLaDLw0eNHqX9PqROaAiNv73UyZA5TmOTlsulmPPAuyf8x88q8e9QpZXZfZubU2OPXn5LN7I-hULL9u0kZgh7jMZ-q3QtdgNS3gCuGTw-jjRW9RwV5TuoepJtR0XbTDkw7vDHcCGek6Nr8bxVkihY9SKObGTxCgxkLEuPcIuk5p9rNHmHDRwRLAKP4QbLmMW5DnjvrMpLo2yEZTM",
   },
   {
     name: "Camera Retro Fusion",
-    price: "12.200.000đ",
+    price: "12.200.000 VND",
     badge: "TRENDY",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCxeZl4F-0ut19J5cegW-GgVR08IVCrswPr9uHsCPAa-eqJ2T4cDiKmNSL_V6Hn-n-cDvzmMEL4A_eqRFgePBS8Lny_XTMfeE6svCweISeDR4T70HmMYigWK-mt-dw_Y2WgR8PYST8VmJ3RuEdDwIS7n6_j8o_KPBa26D_RilrvJfhBZIGdbV-jrK03DZse9ZREaK-2X_K9wKEywP6ReVRZKr3QQhWLwYQAd0AMQpK-yH7_r_e-QHn1v5HuOWpV6pUhEXe0Jvb2OwE",
   },
   {
-    name: "Đèn Bàn Minimalist",
-    price: "450.000đ",
+    name: "Minimalist Desk Lamp",
+    price: "450.000 VND",
     badge: "SOLD OUT",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAX4cksixDYIG1ynxHVMo66aqdOGgcztuon4_GSxcFmcwq51bozRc6o5NCQQ4Ot6Gu4eJGi2aPMdvykkDmMzaFHq6CnJ9vncuNFONsTFFP5UA3mEivn7YsnsIHaqUEfkOjB19F7xj2-AphOh6PxID1rD6mOsyT1Jg2ls9n6HTCBAleC-XCfyA7lInFOeM4gBW2t4ccEOcx7LWQVibpZ0EP3mJxx9-gQw4NdetTZjV68EH8S1XORSELcfDPxB0uZue2DJYlvTLJz00Q",
   },
   {
-    name: "Kính Mát Urban Sun",
-    price: "620.000đ",
+    name: "Urban Sun Sunglasses",
+    price: "620.000 VND",
     badge: "NEW",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBKAGsEAeEJEvSnt0jcM7JAdDA0owkRX0-NSQ0FVipUJqgeKof0cW8US-TuZG-X35dMHBeMnZuhQj-sjyFI9qw5JJH7hITU78GjPijkSL9nwqetRKXWerJm23NvSH0Fg5IkW5-OelkWcWsjsoZ6K9otTBZ86p8FxsbFYqJ6U2Y8_RfDW3c1sVaN6Gk19L-DOqxmhTiuqAjlxEhvxIE3PbESz3TM5A6MhjNlrG2QhTSGawiZ_IWfrnKJ2ZVCxHAue-rmsxF97NINLd4",
   },
@@ -41,8 +41,8 @@ export default function TrendingNow() {
     >
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
-          <h3 className="text-3xl font-bold text-slate-900 mb-2">Xu hướng thịnh hành</h3>
-          <p className="text-slate-500">Những sản phẩm được yêu thích nhất trong tuần qua.</p>
+          <h3 className="text-3xl font-bold text-slate-900 mb-2">Trending now</h3>
+          <p className="text-slate-500">Most loved products from the past week.</p>
         </div>
         <div className="flex gap-2">
           <button

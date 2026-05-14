@@ -51,7 +51,7 @@ export default function OrderHistoryView() {
       orderCode: item.orderCode,
       status: mapStatusNameToUi(item.statusName),
       item: {
-        name: product?.productName ?? "Sản phẩm",
+        name: product?.productName ?? "Product",
         variant: product?.variant ?? "",
         categoryName: product?.categoryName ?? "",
         quantity: product?.quantity ?? 0,
@@ -77,7 +77,7 @@ export default function OrderHistoryView() {
       setOrders(response.items.map(mapOrderItem));
       setTotalPages(Math.max(1, response.totalPages));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể tải đơn hàng.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -104,10 +104,10 @@ export default function OrderHistoryView() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
         <h1 className="text-2xl font-bold text-[#261812]">
-          Quản lý Đơn hàng
+          Order Management
         </h1>
         <p className="mt-1 text-sm text-[#5a4136]">
-          Xem và theo dõi lịch sử đơn hàng của bạn.
+          View and track your order history.
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export default function OrderHistoryView() {
             <span className="material-symbols-outlined text-6xl opacity-40">
               hourglass_top
             </span>
-            <p className="text-base font-bold">Đang tải đơn hàng...</p>
+            <p className="text-base font-bold">Loading orders...</p>
           </div>
         ) : (
           <OrderList orders={orders} />
