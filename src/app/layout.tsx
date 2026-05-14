@@ -9,8 +9,8 @@ import { Toaster } from "react-hot-toast";
 import { NotificationRealtimeProvider } from "@/features/notifications/context/NotificationRealtimeContext";
 
 export const metadata: Metadata = {
-  title: "ToyStore - Đồ Chơi Trẻ Em Chất Lượng",
-  description: "Cửa hàng đồ chơi trẻ em chất lượng cao, an toàn và sáng tạo",
+  title: "ToyStore - High-Quality Children's Toys",
+  description: "High-quality children's toy store, safe and creative",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

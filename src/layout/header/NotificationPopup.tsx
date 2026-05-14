@@ -114,8 +114,8 @@ export default function NotificationPopup() {
     if (type === "SYSTEM") {
       setConfirmModal({
         show: true,
-        title: "Xác nhận xóa",
-        message: "Đây là thông báo hệ thống quan trọng. Bạn có chắc chắn muốn xóa?",
+        title: "Confirm deletion",
+        message: "This is an important system notification. Are you sure you want to delete it?",
         onConfirm: doDelete,
       });
     } else {
@@ -129,7 +129,7 @@ export default function NotificationPopup() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full relative text-slate-600 dark:text-slate-300 transition-colors"
-        aria-label="Thông báo"
+        aria-label="Notifications"
       >
         <span className="material-symbols-outlined">notifications</span>
         {unreadCount > 0 && (
@@ -152,7 +152,7 @@ export default function NotificationPopup() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Thông báo</h4>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Notifications</h4>
               {unreadCount > 0 && (
                 <span className="bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
                   {unreadCount}
@@ -164,14 +164,14 @@ export default function NotificationPopup() {
               className="text-[11px] font-bold text-primary hover:underline disabled:opacity-40"
               disabled={unreadCount === 0}
             >
-              Đánh dấu đã đọc
+              Mark as read
             </button>
           </div>
 
           {/* List */}
           <ul className="max-h-[340px] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800 no-scrollbar">
             {items.length === 0 ? (
-              <li className="py-6 text-center text-sm text-slate-400">Chưa có thông báo nào</li>
+              <li className="py-6 text-center text-sm text-slate-400">No notifications yet</li>
             ) : items.map((n) => {
               const meta = getIconMeta(n.notificationType);
               const isUnread = n.status === "Unread";
@@ -208,7 +208,7 @@ export default function NotificationPopup() {
                         void handleDelete(n.deliveryId, n.notificationType);
                       }}
                       className="p-1 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Xóa thông báo"
+                      title="Delete notification"
                     >
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
@@ -224,7 +224,7 @@ export default function NotificationPopup() {
             onClick={() => setOpen(false)}
             className="block w-full py-3 text-center text-xs font-bold text-slate-500 hover:text-primary border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors"
           >
-            Xem tất cả thông báo
+            View all notifications
           </Link>
         </div>
       )}
@@ -235,7 +235,7 @@ export default function NotificationPopup() {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal((prev) => ({ ...prev, show: false }))}
-        confirmText="Xóa"
+        confirmText="Delete"
         type="danger"
       />
     </div>

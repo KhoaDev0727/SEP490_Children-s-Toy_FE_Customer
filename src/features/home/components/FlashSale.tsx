@@ -105,7 +105,7 @@ const ProductCard = memo(function ProductCard({
       : 0;
   const almostOut = soldPct >= 80;
 
-  const formatVND = (price: number) => price.toLocaleString("vi-VN") + "đ";
+  const formatVND = (price: number) => price.toLocaleString("vi-VN") + " VND";
 
   const maskVND = (price: number) => {
     const s = price.toLocaleString("vi-VN");
@@ -124,7 +124,7 @@ const ProductCard = memo(function ProductCard({
         res += s[i];
       }
     }
-    return res + "đ";
+    return res + " VND";
   };
 
   return (
@@ -189,8 +189,8 @@ const ProductCard = memo(function ProductCard({
             />
             <div className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white z-10 drop-shadow-sm">
               {almostOut
-                ? `SẮP HẾT (${product.soldQuantity}/${product.saleQuantity})`
-                : `ĐÃ BÁN ${product.soldQuantity}/${product.saleQuantity}`}
+                ? `ALMOST SOLD OUT (${product.soldQuantity}/${product.saleQuantity})`
+                : `SOLD ${product.soldQuantity}/${product.saleQuantity}`}
             </div>
           </div>
         )}
@@ -201,7 +201,7 @@ const ProductCard = memo(function ProductCard({
               : "border-[#ff6a00] text-[#ff6a00] hover:bg-[#fff7ed]"
           }`}
         >
-          {isUpcoming ? "Sắp diễn ra" : "Mua Ngay"}
+          {isUpcoming ? "Upcoming" : "Buy Now"}
         </div>
       </div>
     </Link>
@@ -233,7 +233,7 @@ const TimeSlotPill = memo(function TimeSlotPill({
     <button
       onClick={handleClick}
       disabled={isDisabled}
-      title={isDisabled ? "Khung giờ đã kết thúc" : undefined}
+      title={isDisabled ? "Time slot ended" : undefined}
       className={`flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap transition-all border relative
         ${
           isSelected
@@ -455,10 +455,10 @@ export default function FlashSale() {
                       </span>
                     </div>
                     <p className="text-gray-500 font-medium text-base">
-                      Chưa có sản phẩm nào cho khung giờ này
+                      No products for this time slot
                     </p>
                     <p className="text-gray-400 text-sm mt-1">
-                      Vui lòng chọn khung giờ khác hoặc quay lại sau.
+                      Please choose another time slot or come back later.
                     </p>
                   </div>
                 )}

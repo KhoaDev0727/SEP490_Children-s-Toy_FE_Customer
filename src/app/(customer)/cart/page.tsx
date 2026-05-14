@@ -85,7 +85,7 @@ export default function CartPage() {
             href="/login"
             className="mt-6 inline-flex rounded-lg bg-[#ff6a00] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#e05e00]"
           >
-            Dang nhap
+            Log in
           </Link>
         </div>
       </div>

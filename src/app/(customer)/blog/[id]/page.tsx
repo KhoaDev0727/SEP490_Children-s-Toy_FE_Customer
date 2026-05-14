@@ -104,7 +104,7 @@ export default function BlogDetailPage() {
       <div className="max-w-[1280px] mx-auto px-4 sm:px-8 pt-6 pb-0">
         <Breadcrumb
           items={[
-            { label: "Trang chu", href: "/" },
+            { label: "Home", href: "/" },
             { label: "Blog", href: "/blog" },
             { label: viewModel.title },
           ]}

@@ -17,32 +17,32 @@ interface ContentSettingsProps {
 
 export default function ContentSettings({ values, onChange }: ContentSettingsProps) {
   return (
-    <NotificationSection title="Nội dung thông báo">
+    <NotificationSection title="Notification content">
       <NotificationRow
         id="content-orders"
-        title="Cập nhật đơn hàng"
-        description="Trạng thái vận chuyển và xác nhận thanh toán"
+        title="Order updates"
+        description="Shipping status and payment confirmation"
         checked={values.orderUpdates}
         onChange={(v) => onChange("orderUpdates", v)}
       />
       <NotificationRow
         id="content-promos"
-        title="Khuyến mãi & Ưu đãi"
-        description="Mã giảm giá và các chương trình khuyến mãi đặc biệt"
+        title="Promotions & Offers"
+        description="Discount codes and special promotion campaigns"
         checked={values.promotions}
         onChange={(v) => onChange("promotions", v)}
       />
       <NotificationRow
         id="content-stock"
-        title="Thông báo kho hàng (Stock Alerts)"
-        description="Thông báo khi sản phẩm bạn quan tâm có hàng trở lại"
+        title="Stock alerts"
+        description="Notifications when products you care about are back in stock"
         checked={values.stockAlerts}
         onChange={(v) => onChange("stockAlerts", v)}
       />
       <NotificationRow
         id="content-blog"
-        title="Bài viết mới từ Blog"
-        description="Cập nhật những xu hướng và mẹo mua sắm mới nhất"
+        title="New blog posts"
+        description="Latest trends and shopping tips"
         checked={values.blogPosts}
         onChange={(v) => onChange("blogPosts", v)}
         showDivider={false}

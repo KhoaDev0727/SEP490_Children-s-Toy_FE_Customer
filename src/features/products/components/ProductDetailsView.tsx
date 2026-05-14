@@ -910,7 +910,7 @@ export default function ProductDetailsView({
                         : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
                     }`}
                   >
-                    Tất cả
+                    All
                   </button>
                   {[5, 4, 3, 2, 1].map((star) => (
                     <button
@@ -939,7 +939,7 @@ export default function ProductDetailsView({
                         : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
                     }`}
                   >
-                    Có hình ảnh
+                    With images
                   </button>
                 </div>
               </div>
@@ -968,7 +968,7 @@ export default function ProductDetailsView({
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="py-12 text-center text-slate-500">
-                  Chưa có đánh giá nào phù hợp với bộ lọc.
+                  No reviews match this filter.
                 </div>
               ) : (
                 <div className="space-y-8">
@@ -989,7 +989,7 @@ export default function ProductDetailsView({
                             <span className="material-symbols-outlined text-[10px]">
                               check_circle
                             </span>
-                            Đã mua hàng
+                            Verified purchase
                           </span>
                         </div>
                         <div className="flex items-center text-[#ff6a00] mb-3">
@@ -1036,7 +1036,7 @@ export default function ProductDetailsView({
                           {new Date(review.createdAt).toLocaleDateString(
                             "vi-VN",
                           )}{" "}
-                          {review.isEdited && "(Đã chỉnh sửa)"}
+                          {review.isEdited && "(Edited)"}
                         </div>
 
                         {review.replies && review.replies.length > 0 && (
@@ -1047,7 +1047,7 @@ export default function ProductDetailsView({
                                 className="text-sm"
                               >
                                 <div className="font-bold text-slate-800 mb-1">
-                                  Phản hồi từ {reply.staffName}
+                                  Reply from {reply.staffName}
                                 </div>
                                 <p className="text-slate-600 whitespace-pre-wrap">
                                   {reply.content}

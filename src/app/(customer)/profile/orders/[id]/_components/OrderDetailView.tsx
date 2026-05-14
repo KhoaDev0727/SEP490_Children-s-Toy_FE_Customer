@@ -75,7 +75,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         setTrackingEvents([]);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể tải đơn hàng.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
       setOrder(null);
       setTrackingEvents([]);
     } finally {
@@ -116,8 +116,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   }, [order]);
 
   const shippingMethod = useMemo(() => {
-    if (!order?.shipping?.provider) return "Đang cập nhật";
-    return `Giao hàng qua ${order.shipping.provider}`;
+    if (!order?.shipping?.provider) return "Updating";
+    return `Shipped via ${order.shipping.provider}`;
   }, [order]);
 
   const estimatedDate = useMemo(() => {
@@ -138,7 +138,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       await checkoutApi.cancelOrder(order.orderId);
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể hủy đơn hàng.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
     } finally {
       setIsCancelling(false);
     }
@@ -149,7 +149,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <section className="col-span-1 md:col-span-3 flex flex-col gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30 flex items-center gap-3">
           <span className="material-symbols-outlined text-[#ff6a00]">hourglass_top</span>
-          <p className="text-sm text-[#5a4136]">Đang tải chi tiết đơn hàng...</p>
+          <p className="text-sm text-[#5a4136]">Loading order details...</p>
         </div>
       </section>
     );
@@ -160,7 +160,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <section className="col-span-1 md:col-span-3 flex flex-col gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30 flex items-center gap-3">
           <span className="material-symbols-outlined text-[#ff6a00]">error</span>
-          <p className="text-sm text-[#5a4136]">{errorMessage ?? "Không tìm thấy đơn hàng."}</p>
+          <p className="text-sm text-[#5a4136]">{errorMessage ?? "Order not found."}</p>
         </div>
       </section>
     );
@@ -179,9 +179,9 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-[#261812]">
-              Chi tiết đơn hàng <span className="text-[#ff6a00]">#{order.orderCode}</span>
+              Order details <span className="text-[#ff6a00]">#{order.orderCode}</span>
             </h1>
-            <p className="text-sm text-[#5a4136]">Đặt lúc {formatDateTime(order.orderDate)}</p>
+            <p className="text-sm text-[#5a4136]">Placed at {formatDateTime(order.orderDate)}</p>
           </div>
         </div>
         {isCancellable ? (
@@ -191,7 +191,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
               disabled={isCancelling}
               className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
             >
-              {isCancelling ? "Đang hủy..." : "Hủy đơn hàng"}
+              {isCancelling ? "Cancelling..." : "Cancel order"}
             </button>
           </div>
         ) : null}
@@ -212,7 +212,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             phone={order.shippingPhone}
             address={shippingAddress}
             method={shippingMethod}
-            estimatedDate={estimatedDate || "Đang cập nhật"}
+            estimatedDate={estimatedDate || "Updating"}
           />
           <PaymentSummary
             subtotal={order.subTotal}

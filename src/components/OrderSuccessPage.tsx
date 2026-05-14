@@ -18,8 +18,8 @@ interface OrderItem {
 const MOCK_ITEMS: OrderItem[] = [
   {
     id: "1",
-    name: "Giày Thể Thao Cao Cấp Đỏ/Đen",
-    variant: "Đỏ · Size 42",
+    name: "Premium Red/Black Sneakers",
+    variant: "Red · Size 42",
     price: 2450000,
     qty: 1,
     image:
@@ -68,10 +68,10 @@ function CheckIcon() {
 
 // ─── Progress Steps ────────────────────────────────────────────────────────────
 const STEPS = [
-  { label: "Đã tiếp nhận", icon: "📋" },
-  { label: "Đang xử lý", icon: "⚙️" },
-  { label: "Đang giao", icon: "🚚" },
-  { label: "Hoàn tất", icon: "🎉" },
+  { label: "Received", icon: "📋" },
+  { label: "Processing", icon: "⚙️" },
+  { label: "Delivering", icon: "🚚" },
+  { label: "Completed", icon: "🎉" },
 ];
 
 function ProgressBar({ active }: { active: number }) {
@@ -190,17 +190,17 @@ function OrderSuccessContent() {
                 className="slide-up text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-900 mb-2"
                 style={{ animationDelay: "0.12s" }}
               >
-                Đặt hàng thành công!
+                Order placed successfully!
               </h1>
 
               <p
                 className="slide-up text-zinc-500 text-sm md:text-base mb-1 leading-relaxed"
                 style={{ animationDelay: "0.18s" }}
               >
-                Cảm ơn bạn đã mua sắm tại{" "}
-                <span className="font-bold text-orange-500">ShopX</span>. Đơn hàng{" "}
-                <span className="font-bold text-zinc-800">#{orderCode}</span> đã được tiếp nhận
-                và đang được xử lý.
+                Thank you for shopping at{" "}
+                <span className="font-bold text-orange-500">ShopX</span>. Order{" "}
+                <span className="font-bold text-zinc-800">#{orderCode}</span> has been received
+                and is being processed.
               </p>
 
               <div
@@ -210,7 +210,7 @@ function OrderSuccessContent() {
               >
                 <span>🚚</span>
                 <span>
-                  Dự kiến giao: <strong className="text-orange-800">3-5 ngày làm việc</strong>
+                  Estimated delivery: <strong className="text-orange-800">3-5 business days</strong>
                 </span>
               </div>
 
@@ -223,7 +223,7 @@ function OrderSuccessContent() {
                 style={{ animationDelay: "0.36s" }}
               >
                 <h2 className="font-bold text-zinc-800 text-sm uppercase tracking-widest mb-4 pb-2 border-b border-orange-100">
-                  Tóm tắt đơn hàng
+                  Order summary
                 </h2>
 
                 <ul className="divide-y divide-orange-100">
@@ -247,7 +247,7 @@ function OrderSuccessContent() {
                 </ul>
 
                 <div className="flex justify-between items-center mt-4 pt-3 border-t border-orange-200">
-                  <span className="text-sm font-semibold text-zinc-600">Tổng cộng</span>
+                  <span className="text-sm font-semibold text-zinc-600">Total</span>
                   <span className="text-lg font-extrabold text-orange-500">{fmt(total)}</span>
                 </div>
               </div>
@@ -262,7 +262,7 @@ function OrderSuccessContent() {
                     text-orange-500 font-bold text-sm hover:bg-orange-50
                     transition-colors duration-200 text-center"
                 >
-                  Tiếp tục mua sắm
+                  Continue shopping
                 </Link>
                 <Link
                   href={orderId ? `/accounts/orders/${orderId}` : "/accounts/orders"}
@@ -270,7 +270,7 @@ function OrderSuccessContent() {
                     font-bold text-sm shadow-md shadow-orange-200
                     hover:bg-orange-600 active:scale-95 transition-all duration-200 text-center"
                 >
-                  Xem đơn hàng →
+                  View orders →
                 </Link>
               </div>
             </div>
@@ -280,9 +280,9 @@ function OrderSuccessContent() {
             className="slide-up text-center text-xs text-zinc-400 mt-5"
             style={{ animationDelay: "0.5s" }}
           >
-            Cần hỗ trợ?{" "}
+            Need help?{" "}
             <a href="/contact" className="text-orange-500 hover:underline font-medium">
-              Liên hệ chúng tôi
+              Contact us
             </a>
           </p>
         </div>

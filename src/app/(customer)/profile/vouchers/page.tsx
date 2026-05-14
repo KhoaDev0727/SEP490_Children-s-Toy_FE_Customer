@@ -4,7 +4,7 @@ import VoucherList from "@/features/vouchers/components/VoucherList";
 
 export const metadata: Metadata = {
   title: "Kho Voucher | Children's Toy Store",
-  description: "Quản lý và sử dụng các mã giảm giá của bạn.",
+  description: "Manage and use your discount vouchers.",
 };
 
 export default function VouchersPage() {

@@ -12,13 +12,13 @@ export default function HeroBanner() {
         style={{ background: "linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.4), transparent)" }}
       >
         <span className="font-bold uppercase tracking-widest text-sm mb-2" style={{ color: "#ff6a00" }}>
-          Bộ sưu tập mới 2024
+          New Collection 2024
         </span>
         <h2 className="text-4xl md:text-6xl font-black mb-4 leading-tight">
-          Thời Trang <br />Mùa Thu Tỏa Sáng
+          Fashion <br />Shine This Fall
         </h2>
         <p className="text-lg md:text-xl text-slate-200 mb-8 max-w-md">
-          Giảm giá lên đến 50% cho tất cả các thiết kế mới nhất. Nâng tầm phong cách của bạn ngay hôm nay.
+          Up to 50% off all latest designs. Elevate your style today.
         </p>
         <div className="flex gap-4">
           <button
@@ -27,7 +27,7 @@ export default function HeroBanner() {
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Mua Ngay
+            Buy Now
           </button>
           <button
             className="text-white border px-8 py-3 rounded-lg font-bold transition-all"
@@ -37,7 +37,7 @@ export default function HeroBanner() {
               backdropFilter: "blur(8px)",
             }}
           >
-            Khám Phá
+            Explore
           </button>
         </div>
       </div>

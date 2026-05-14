@@ -10,8 +10,8 @@ export default function ReviewTabs() {
   );
 
   const tabs = [
-    { value: "unreviewed", label: "Chưa Đánh Giá" },
-    { value: "reviewed", label: "Đã Đánh Giá" },
+    { value: "unreviewed", label: "Not reviewed yet" },
+    { value: "reviewed", label: "Reviewed" },
   ];
 
   return (

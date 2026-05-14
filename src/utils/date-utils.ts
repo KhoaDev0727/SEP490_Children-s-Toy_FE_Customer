@@ -45,14 +45,14 @@ export const formatTimeAgo = (dateString: string | null | undefined): string => 
   const diff = now.getTime() - date.getTime();
   const min = Math.floor(diff / 60000);
 
-  if (min < 1) return "Vừa xong";
-  if (min < 60) return `${min} phút trước`;
+  if (min < 1) return "Just now";
+  if (min < 60) return `${min} minutes ago`;
 
   const hours = Math.floor(min / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return `${hours} hours ago`;
 
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} ngày trước`;
+  if (days < 30) return `${days} days ago`;
 
   return date.toLocaleDateString("vi-VN");
 };

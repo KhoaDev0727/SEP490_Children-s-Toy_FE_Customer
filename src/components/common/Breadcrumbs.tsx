@@ -14,7 +14,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
     <nav className="flex items-center gap-2 text-sm text-[#5a4136]">
       <Link href="/" className="hover:text-[#a14000] transition-colors">
-        Trang chủ
+        Home
       </Link>
       {items.map((item, index) => (
         <React.Fragment key={index}>

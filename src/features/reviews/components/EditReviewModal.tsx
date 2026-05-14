@@ -58,7 +58,7 @@ export default function EditReviewModal({
       const filesArray = Array.from(e.target.files);
       const totalImages = selectedImages.length + filesArray.length;
       if (totalImages > 5) {
-        toast.error("Tối đa 5 hình ảnh");
+        toast.error("Maximum 5 images");
         return;
       }
       setSelectedImages((prev) => [...prev, ...filesArray]);
@@ -83,12 +83,12 @@ export default function EditReviewModal({
       });
 
       await reviewApi.updateReview(review.reviewId, formData);
-      toast.success("Đã cập nhật đánh giá!");
+      toast.success("Review updated!");
       onSuccess();
       onClose();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật đánh giá"
+        error.response?.data?.message || "An error occurred while updating the review"
       );
     } finally {
       setIsSubmitting(false);
@@ -100,8 +100,8 @@ export default function EditReviewModal({
       <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg mx-auto overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center px-8 py-6 border-b border-slate-50 bg-linear-to-r from-blue-50/50 to-white">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Sửa đánh giá</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Cập nhật lại trải nghiệm của bạn</p>
+            <h2 className="text-xl font-bold text-slate-900">Edit review</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Update your experience</p>
           </div>
           <button
             onClick={onClose}
@@ -117,7 +117,7 @@ export default function EditReviewModal({
               <span className="material-symbols-outlined text-2xl">history_edu</span>
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Sản phẩm đánh giá</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Reviewed product</p>
               <h3 className="text-sm font-bold text-slate-800 truncate">{review.productName}</h3>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function EditReviewModal({
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="text-center">
               <label className="block text-sm font-bold text-slate-700 mb-4 tracking-wide">
-                Chất lượng sản phẩm
+                Product quality
               </label>
               <div className="flex justify-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -156,13 +156,13 @@ export default function EditReviewModal({
             <div className="space-y-3">
               <label className="text-sm font-bold text-slate-700 tracking-wide flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-slate-400">edit_note</span>
-                Nhận xét của bạn
+                Your comments
               </label>
               <textarea
                 {...register("comment")}
                 rows={4}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none placeholder:text-slate-400 text-slate-700"
-                placeholder="Nội dung đánh giá..."
+                placeholder="Review content..."
               ></textarea>
               {errors.comment && (
                 <p className="text-xs text-red-500 font-medium">{errors.comment.message}</p>
@@ -172,7 +172,7 @@ export default function EditReviewModal({
             <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3">
               <span className="material-symbols-outlined text-amber-500 shrink-0">info</span>
               <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
-                <strong>Lưu ý quan trọng:</strong> Việc cập nhật đánh giá sẽ thay thế toàn bộ hình ảnh cũ. Nếu bạn muốn giữ lại ảnh, vui lòng tải lên lại chúng ở phần dưới.
+                <strong>Important note:</strong> Updating the review will replace all old images. If you want to keep them, please upload them again below.
               </p>
             </div>
 
@@ -180,7 +180,7 @@ export default function EditReviewModal({
               <div className="flex justify-between items-center">
                 <label className="text-sm font-bold text-slate-700 tracking-wide flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-slate-400">upload_file</span>
-                  Tải lên ảnh mới
+                  Upload new images
                 </label>
                 <span className="text-[10px] font-bold text-slate-400 tracking-wider">
                   {selectedImages.length} / 5
@@ -208,7 +208,7 @@ export default function EditReviewModal({
                 {selectedImages.length < 5 && (
                   <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 hover:text-blue-600 transition-all text-slate-400">
                     <span className="material-symbols-outlined text-[24px]">add_photo_alternate</span>
-                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Chọn ảnh</span>
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Choose image</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -228,7 +228,7 @@ export default function EditReviewModal({
                 disabled={isSubmitting}
                 className="flex-1 px-6 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 active:scale-95"
               >
-                Hủy bỏ
+                Cancel
               </button>
               <button
                 type="submit"
@@ -238,11 +238,11 @@ export default function EditReviewModal({
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Đang lưu...
+                    Saving...
                   </>
                 ) : (
                   <>
-                    Lưu thay đổi
+                    Save changes
                     <span className="material-symbols-outlined text-[18px]">done_all</span>
                   </>
                 )}

@@ -13,10 +13,10 @@ interface PaymentField {
 const formatCurrency = (value: number) => `${value.toLocaleString("vi-VN")} ₫`;
 
 const steps = [
-  "Mở ứng dụng ngân hàng trên điện thoại.",
-  <>Chọn <strong>Quét mã QR</strong> hoặc chuyển khoản theo thông tin trên.</>,
-  <>Nhập đúng <strong>số tiền</strong> và <strong>nội dung</strong> nếu nhập thủ công.</>,
-  "Xác nhận thanh toán và chờ hệ thống cập nhật.",
+  "Open your banking app on your phone.",
+  <>Choose <strong>Scan QR Code</strong> or transfer using the details above.</>,
+  <>Enter the exact <strong>amount</strong> and <strong>transfer note</strong> if entering manually.</>,
+  "Confirm payment and wait for system updates.",
 ];
 
 interface PaymentPanelProps {
@@ -44,11 +44,11 @@ export default function PaymentPanel({
   const [hasConfirmed, setHasConfirmed] = useState(false);
 
   const paymentFields: PaymentField[] = [
-    { label: "Ngân hàng", value: bankName },
-    { label: "Số tài khoản", value: accountNumber, copyable: true },
-    { label: "Chủ tài khoản", value: accountName },
-    { label: "Số tiền", value: formatCurrency(amount), accent: true },
-    { label: "Nội dung chuyển khoản", value: content, copyable: true, mono: true },
+    { label: "Bank", value: bankName },
+    { label: "Account number", value: accountNumber, copyable: true },
+    { label: "Account holder", value: accountName },
+    { label: "Amount", value: formatCurrency(amount), accent: true },
+    { label: "Transfer note", value: content, copyable: true, mono: true },
   ];
 
   const handleCopy = (value: string) => {
@@ -85,10 +85,10 @@ export default function PaymentPanel({
       {/* Header */}
       <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
         <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-          Thông tin chuyển khoản
+          Transfer details
         </h2>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-          Đơn hàng sẽ được xác nhận sau khi hệ thống nhận được thanh toán.
+          Order will be confirmed once the system receives payment.
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export default function PaymentPanel({
       {/* Instructions */}
       <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-xl p-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-3">
-          Hướng dẫn thanh toán
+          Payment guide
         </p>
         <ol className="space-y-2">
           {steps.map((step, i) => (
@@ -176,12 +176,12 @@ export default function PaymentPanel({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              Đang kiểm tra...
+              Checking...
             </>
           ) : hasConfirmed ? (
-            "✓ Đã xác nhận thanh toán"
+            "✓ Payment confirmed"
           ) : (
-            "Tôi đã chuyển khoản"
+            "I have transferred"
           )}
         </button>
         <button
@@ -195,10 +195,10 @@ export default function PaymentPanel({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              Đang hủy...
+              Cancelling...
             </>
           ) : (
-            "Hủy giao dịch"
+            "Cancel transaction"
           )}
         </button>
       </div>

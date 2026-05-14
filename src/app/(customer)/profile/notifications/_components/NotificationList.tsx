@@ -58,14 +58,14 @@ export default function NotificationList({
             onClick={handleLoadMore}
             className="px-6 py-2 border border-[#8e7164] text-[#a14000] text-sm font-semibold rounded-lg hover:bg-[#fff1eb] transition-colors"
           >
-            Xem thêm
+            Load more
           </button>
         </div>
       )}
 
       {!hasMore && filtered.length > 0 && (
         <p className="text-center text-xs text-[#5a4136] py-6">
-          Đã hiển thị tất cả thông báo
+          All notifications are displayed
         </p>
       )}
     </div>
@@ -156,7 +156,7 @@ function NotificationItem({
           onDelete();
         }}
         className="absolute top-4 right-4 p-2 text-[#8e7164] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-        title="Xóa thông báo"
+        title="Delete notification"
       >
         <span className="material-symbols-outlined text-[20px]">delete</span>
       </button>
@@ -171,9 +171,9 @@ function EmptyState() {
       <span className="material-symbols-outlined text-6xl text-[#e2bfb0]">
         notifications_off
       </span>
-      <p className="text-sm font-semibold">Không có thông báo nào</p>
+      <p className="text-sm font-semibold">No notifications</p>
       <p className="text-xs text-[#8e7164]">
-        Các thông báo mới sẽ xuất hiện ở đây
+        New notifications will appear here
       </p>
     </div>
   );

@@ -14,7 +14,7 @@ export default function OrderList({ orders }: OrderListProps) {
           package_2
         </span>
         <p className="text-base font-bold">
-          Không tìm thấy đơn hàng nào
+          No orders found
         </p>
       </div>
     );

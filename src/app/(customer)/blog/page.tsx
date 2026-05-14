@@ -13,7 +13,7 @@ export default function BlogPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-10">
         <nav className="flex items-center gap-2 text-sm text-slate-500 font-medium mb-6">
           <Link href="/" className="hover:text-[#ff6a00] transition-colors">
-            Trang chu
+            Home
           </Link>
           <span className="material-symbols-outlined text-slate-300" style={{ fontSize: 16 }}>
             chevron_right

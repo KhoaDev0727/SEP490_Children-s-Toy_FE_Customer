@@ -15,18 +15,18 @@ interface ChannelSettingsProps {
 
 export default function ChannelSettings({ values, onChange }: ChannelSettingsProps) {
   return (
-    <NotificationSection title="Kênh thông báo">
+    <NotificationSection title="Notification channels">
       <NotificationRow
         id="channel-email"
-        title="Nhận thông báo qua Email"
-        description="Nhận thông tin cập nhật trực tiếp vào hộp thư đến của bạn"
+        title="Receive notifications via Email"
+        description="Get updates delivered directly to your inbox"
         checked={values.email}
         onChange={(v) => onChange("email", v)}
       />
       <NotificationRow
         id="channel-webpush"
-        title="Thông báo đẩy trên trình duyệt (Web Push)"
-        description="Nhận thông báo ngay lập tức khi đang sử dụng trình duyệt"
+        title="Browser push notifications (Web Push)"
+        description="Receive instant notifications while browsing"
         checked={values.webPush}
         onChange={(v) => onChange("webPush", v)}
         showDivider={false}

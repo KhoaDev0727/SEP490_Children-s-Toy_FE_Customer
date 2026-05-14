@@ -73,7 +73,7 @@ export const checkoutApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể tính phí ship. Vui lòng thử lại."),
+        extractCheckoutErrorMessage(error, "Unable to calculate shipping fee. Please try again."),
       );
     }
   },
@@ -90,7 +90,7 @@ export const checkoutApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể tạo đơn hàng. Vui lòng thử lại."),
+        extractCheckoutErrorMessage(error, "Unable to create order. Please try again."),
       );
     }
   },
@@ -104,7 +104,7 @@ export const checkoutApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể tạo QR mới. Vui lòng thử lại."),
+        extractCheckoutErrorMessage(error, "Unable to generate a new QR code. Please try again."),
       );
     }
   },
@@ -118,7 +118,7 @@ export const checkoutApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể lấy trạng thái thanh toán."),
+        extractCheckoutErrorMessage(error, "Unable to get payment status."),
       );
     }
   },
@@ -132,17 +132,17 @@ export const checkoutApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể lấy thông tin giao hàng."),
+        extractCheckoutErrorMessage(error, "Unable to get shipping information."),
       );
     }
   },
-  /** Hủy đơn hàng. */
+  /** Cancel đơn hàng. */
   cancelOrder: async (orderId: number, reason?: string): Promise<void> => {
     try {
       await axiosClient.post(`/orders/${orderId}/cancel`, { reason });
     } catch (error) {
       throw new Error(
-        extractCheckoutErrorMessage(error, "Không thể hủy đơn hàng. Vui lòng liên hệ hỗ trợ."),
+        extractCheckoutErrorMessage(error, "Unable to cancel order. Please contact support."),
       );
     }
   },

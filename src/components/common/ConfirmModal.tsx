@@ -19,8 +19,8 @@ export default function ConfirmModal({
   message,
   onConfirm,
   onCancel,
-  confirmText = "Xác nhận",
-  cancelText = "Hủy",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
   type = "warning",
 }: ConfirmModalProps) {
   // Prevent scrolling when modal is open

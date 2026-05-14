@@ -60,8 +60,8 @@ export default function NotificationSettingsPage() {
       <div className="col-span-full mb-2">
         <Breadcrumbs 
           items={[
-            { label: "Tài khoản", href: "/profile" },
-            { label: "Cài đặt thông báo" }
+            { label: "Account", href: "/profile" },
+            { label: "Notification Settings" }
           ]} 
         />
       </div>
@@ -73,10 +73,10 @@ export default function NotificationSettingsPage() {
       <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
         <div className="px-6 py-6 border-b border-[#e2bfb0]/30 bg-white">
           <h1 className="text-[24px] leading-[1.2] tracking-[-0.025em] font-extrabold text-[#261812] mb-1">
-            Cài đặt thông báo
+            Notification Settings
           </h1>
           <p className="text-[14px] text-[#5a4136]">
-            Tuỳ chỉnh cách bạn muốn nhận thông báo từ ShopX
+            Customize how you want to receive notifications from ShopX
           </p>
         </div>
 
