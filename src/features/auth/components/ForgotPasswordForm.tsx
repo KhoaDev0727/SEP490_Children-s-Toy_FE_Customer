@@ -13,25 +13,25 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 
 const forgotSchema = z.object({
-  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
+  email: z.string().min(1, "Email is required").email("Invalid email"),
 });
 
 const resetSchema = z.object({
   otpCode: z
     .string()
-    .min(1, "Mã OTP là bắt buộc")
-    .length(6, "Mã OTP gồm 6 chữ số")
-    .regex(/^\d{6}$/, "Mã OTP chỉ gồm chữ số"),
+    .min(1, "OTP code is required")
+    .length(6, "OTP code must be 6 digits")
+    .regex(/^\d{6}$/, "OTP code must contain only digits"),
   newPassword: z
     .string()
-    .min(8, "Tối thiểu 8 ký tự")
-    .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-    .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-    .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
-    .regex(/[^a-zA-Z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
-  confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
+    .min(8, "At least 8 characters")
+    .regex(/[A-Z]/, "Must include at least one uppercase letter")
+    .regex(/[a-z]/, "Must include at least one lowercase letter")
+    .regex(/[0-9]/, "Must include at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Must include at least one special character"),
+  confirmPassword: z.string().min(1, "Confirm password is required"),
 }).refine((d) => d.newPassword === d.confirmPassword, {
-  message: "Mật khẩu không khớp",
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
@@ -59,11 +59,11 @@ export default function ForgotPasswordForm() {
       await authApi.forgotPassword(data);
       setEmail(data.email);
       setStep("reset");
-      toast.success("Mã OTP đã được gửi đến email của bạn.");
+      toast.success("OTP has been sent to your email.");
     } catch (error: unknown) {
       const { message, code } = resolveAuthOperationErrorMessage(
         error,
-        "Không thể gửi OTP. Vui lòng thử lại.",
+        "Unable to send OTP. Please try again.",
       );
       if (code === AUTH_ERROR_ACCOUNT_INACTIVE) {
         forgotForm.setError("email", { type: "server", message });
@@ -78,12 +78,12 @@ export default function ForgotPasswordForm() {
     setIsResetting(true);
     try {
       await authApi.resetPassword({ email, ...data });
-      toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
+      toast.success("Password reset successful! Please sign in.");
       router.push("/login");
     } catch (error: unknown) {
       const { message } = resolveAuthOperationErrorMessage(
         error,
-        "Đặt lại mật khẩu thất bại. Vui lòng thử lại.",
+        "Password reset failed. Please try again.",
       );
       toast.error(message);
     } finally {
@@ -101,7 +101,7 @@ export default function ForgotPasswordForm() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          Quay lại đăng nhập
+          Back to sign in
         </Link>
       </div>
 
@@ -112,12 +112,12 @@ export default function ForgotPasswordForm() {
               <span className="text-3xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
             </div>
             <h1 className="mb-3 font-semibold text-gray-800 text-4xl tracking-tight">
-              Quên mật khẩu
+              Forgot password
             </h1>
             <p className="text-base text-gray-500 leading-relaxed max-w-prose">
               {step === "email"
-                ? "Nhập email để nhận mã OTP đặt lại mật khẩu."
-                : `Nhập mã OTP đã gửi đến ${email} và mật khẩu mới.`}
+                ? "Enter your email to receive an OTP to reset your password."
+                : `Enter the OTP sent to ${email} and your new password.`}
             </p>
           </div>
 
@@ -148,7 +148,7 @@ export default function ForgotPasswordForm() {
                   className="flex w-full items-center justify-center rounded-lg px-4 py-3.5 text-base font-medium text-white transition disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
                 >
-                  {isSending ? "Đang gửi..." : "Gửi mã OTP"}
+                    {isSending ? "Sending..." : "Send OTP"}
                 </button>
               </div>
             </form>
@@ -159,12 +159,12 @@ export default function ForgotPasswordForm() {
               <div className="space-y-6">
                 <div>
                   <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="otp-code">
-                    Mã OTP <span className="text-red-500">*</span>
+                    OTP code <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="otp-code"
                     type="text"
-                    placeholder="Nhập mã 6 chữ số"
+                    placeholder="Enter the 6-digit code"
                     maxLength={6}
                     className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                     {...resetForm.register("otpCode")}
@@ -178,13 +178,13 @@ export default function ForgotPasswordForm() {
 
                 <div>
                   <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="new-pass">
-                    Mật khẩu mới <span className="text-red-500">*</span>
+                    New password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       id="new-pass"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Tối thiểu 8 ký tự"
+                      placeholder="At least 8 characters"
                       className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 pr-12 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                       {...resetForm.register("newPassword")}
                     />
@@ -215,13 +215,13 @@ export default function ForgotPasswordForm() {
 
                 <div>
                   <label className="block mb-2 text-base font-medium text-gray-700" htmlFor="confirm-pass">
-                    Xác nhận mật khẩu mới <span className="text-red-500">*</span>
+                    Confirm new password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       id="confirm-pass"
                       type={showConfirm ? "text" : "password"}
-                      placeholder="Nhập lại mật khẩu mới"
+                      placeholder="Re-enter new password"
                       className="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 pr-12 text-base text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                       {...resetForm.register("confirmPassword")}
                     />
@@ -256,7 +256,7 @@ export default function ForgotPasswordForm() {
                   className="flex w-full items-center justify-center rounded-lg px-4 py-3.5 text-base font-medium text-white transition disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
                 >
-                  {isResetting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                  {isResetting ? "Processing..." : "Reset password"}
                 </button>
 
                 <button
@@ -264,7 +264,7 @@ export default function ForgotPasswordForm() {
                   onClick={() => setStep("email")}
                   className="w-full text-base text-gray-500 hover:text-gray-700 transition-colors py-1.5"
                 >
-                  Gửi lại OTP
+                  Resend OTP
                 </button>
               </div>
             </form>

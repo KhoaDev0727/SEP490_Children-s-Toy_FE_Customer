@@ -57,11 +57,11 @@ export function formatVnd(value: number) {
   const formatted = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(absValue);
-  return `${value < 0 ? "-" : "+"}${formatted} \u20ab`;
+  return `${value < 0 ? "-" : "+"}${formatted} VND`;
 }
 
 export function formatBalance(value: number) {
-  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)} \u20ab`;
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)} VND`;
 }
 
 function formatTransactionTime(isoDate: string) {
