@@ -102,7 +102,7 @@ export default function OrderSummary({
 
   useEffect(() => {
     if (!mounted || !isHydrated || !isAuthenticated || formData.addressId <= 0 || checkoutLines.length === 0) return;
-    
+
     void fetchPreview(formData.addressId, appliedVoucherCode, checkoutLines);
   }, [formData.addressId, appliedVoucherCode, checkoutLines, fetchPreview, mounted, isHydrated, isAuthenticated]);
 
@@ -251,10 +251,10 @@ export default function OrderSummary({
         <Row
           label={isPreviewLoading ? "Phí vận chuyển (đang tính...)" : "Phí vận chuyển"}
           value={
-            shipping > 0 
-              ? fmt(shipping) 
-              : (isPreviewLoading || isAddressLoading) 
-                ? "Đang tải..." 
+            shipping > 0
+              ? fmt(shipping)
+              : (isPreviewLoading || isAddressLoading)
+                ? "Đang tải..."
                 : "Chọn địa chỉ"
           }
           valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-medium" : "text-gray-900 font-bold"}
