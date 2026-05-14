@@ -90,6 +90,7 @@ export interface ProductLookups {
 }
 
 export interface ProductFilters {
+  searchTerm?: string;
   superCategoryId?: number;
   categoryId?: number;
   categoryIds?: number[];

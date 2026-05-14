@@ -7,7 +7,7 @@ import type { ProductDetail } from "@/features/products/types/product";
 import { formatCurrency } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import NotificationPopup from "./NotificationPopup";
@@ -208,6 +208,9 @@ function UserDropdown() {
 }
 
 export default function Header() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
@@ -217,6 +220,21 @@ export default function Header() {
   const { cart, addItem } = useCart();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const cartCount = cart?.totalQuantity ?? 0;
+
+  useEffect(() => {
+    const currentTerm = searchParams.get("searchTerm") ?? "";
+    setSearchTerm(currentTerm);
+  }, [searchParams]);
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const keyword = searchTerm.trim();
+    if (keyword) {
+      router.push(`/products?searchTerm=${encodeURIComponent(keyword)}`);
+      return;
+    }
+    router.push("/products");
+  };
 
   const fetchWishlistPreview = useCallback(async () => {
     if (!isAuthenticated) {
@@ -447,19 +465,23 @@ export default function Header() {
 
           {/* Search */}
           <div className="flex-1 max-w-md hidden lg:block mx-4">
-            <div className="relative">
-              <span
+            <form className="relative" onSubmit={handleSearchSubmit}>
+              <button
+                type="submit"
                 className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 style={{ fontSize: 20 }}
+                aria-label="Search"
               >
                 search
-              </span>
+              </button>
               <input
                 className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-[#ff6a00] text-sm outline-none transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400"
-                placeholder="Tìm kiếm sản phẩm..."
+                placeholder="Search for products..."
                 type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
               />
-            </div>
+            </form>
           </div>
 
           {/* Right icons */}
