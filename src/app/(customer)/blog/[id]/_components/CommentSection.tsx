@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { customerBlogApi } from "@/features/blog/services/blog-api";
 import { BlogReview, BlogReviewReply } from "@/features/blog/types/blog";
+import ReactionPicker from "./ReactionPicker";
 
 interface CommentSectionProps {
   blogPostId: number;
@@ -12,20 +13,14 @@ interface CommentSectionProps {
   onReload: () => Promise<void>;
 }
 
+const DEFAULT_AVATAR = "/assets/images/d.jpg";
+
 const toTimeText = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "Just now";
   }
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date);
-};
-
-const getInitials = (name: string) => {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return "NA";
-  }
-  return parts.slice(-2).map((part) => part[0]?.toUpperCase() ?? "").join("");
 };
 
 const getReplyIndentClass = (depth: number) => {
@@ -48,6 +43,20 @@ const flattenReplies = (
 ): Array<{ reply: BlogReviewReply; depth: number }> => {
   return replies.flatMap((item) => [{ reply: item, depth }, ...flattenReplies(item.replies, depth + 1)]);
 };
+
+function UserAvatar({ imageUrl, name, sizeClass }: { imageUrl?: string | null; name: string; sizeClass: string }) {
+  const [failed, setFailed] = useState(false);
+  const source = !failed && imageUrl ? imageUrl : DEFAULT_AVATAR;
+
+  return (
+    <img
+      src={source}
+      alt={name}
+      onError={() => setFailed(true)}
+      className={`${sizeClass} rounded-full object-cover border border-[#f1ddd2]`}
+    />
+  );
+}
 
 export default function CommentSection({ blogPostId, comments, onReload }: CommentSectionProps) {
   const { account, isAuthenticated } = useAuthContext();
@@ -146,9 +155,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
   const renderReply = (reviewBlogId: number, reply: BlogReviewReply, depth: number) => (
     <div key={reply.replyBlogId} className={`mt-3 ${getReplyIndentClass(depth >= 2 ? 2 : depth)}`}>
       <div className={`flex gap-3 ${getReplyThreadClass(depth)}`}>
-        <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[11px]">
-          {getInitials(reply.accountName)}
-        </div>
+        <UserAvatar imageUrl={reply.accountImageUrl} name={reply.accountName} sizeClass="w-8 h-8" />
         <div className="flex-1 rounded-xl border border-[#f3e3d7] bg-white p-3">
           <p className="text-sm font-semibold text-[#261812]">{reply.accountName}</p>
           <p className="text-xs text-[#8e7164] mt-0.5">{toTimeText(reply.createdAt)}</p>
@@ -156,32 +163,15 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
             {reply.replyToAccountName ? <span className="font-medium text-[#7f4a2a]">@{reply.replyToAccountName} </span> : null}
             {reply.comment}
           </p>
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            {(
-              [
-                { code: "like" as const, icon: "👍" },
-                { code: "love" as const, icon: "❤️" },
-                { code: "haha" as const, icon: "😂" },
-              ] as const
-            ).map((item) => {
-              const code = item.code;
-              const count = code === "like" ? reply.likeCount : code === "love" ? reply.loveCount : reply.hahaCount;
-              const active = (reply.currentUserReaction ?? "").toLowerCase() === code;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => handleReactReply(reply.replyBlogId, code)}
-                  disabled={isSubmitting}
-                  className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
-                    active ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]" : "border-[#f1ddd2] text-[#8e7164]"
-                  }`}
-                >
-                  <span className="text-sm mr-1">{item.icon}</span>
-                  <span>{count}</span>
-                </button>
-              );
-            })}
+          <div className="mt-2">
+            <ReactionPicker
+              currentReaction={reply.currentUserReaction}
+              likeCount={reply.likeCount}
+              loveCount={reply.loveCount}
+              hahaCount={reply.hahaCount}
+              disabled={isSubmitting}
+              onSelect={(reactionCode) => handleReactReply(reply.replyBlogId, reactionCode)}
+            />
           </div>
           {isAuthenticated && (
             <button
@@ -223,9 +213,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       <div className="flex flex-col gap-4">
         {comments.map((comment) => (
           <div key={comment.reviewBlogId} className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
-              {getInitials(comment.accountName)}
-            </div>
+            <UserAvatar imageUrl={comment.accountImageUrl} name={comment.accountName} sizeClass="w-9 h-9" />
             <div className="flex-1 rounded-xl border border-[#f8ddd2] bg-white p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -237,32 +225,15 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                 )}
               </div>
               <p className="text-sm text-[#5a4136] mt-2">{comment.comment}</p>
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                {(
-                  [
-                    { code: "like" as const, icon: "👍" },
-                    { code: "love" as const, icon: "❤️" },
-                    { code: "haha" as const, icon: "😂" },
-                  ] as const
-                ).map((item) => {
-                  const code = item.code;
-                  const count = code === "like" ? comment.likeCount : code === "love" ? comment.loveCount : comment.hahaCount;
-                  const active = (comment.currentUserReaction ?? "").toLowerCase() === code;
-                  return (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => handleReactReview(comment.reviewBlogId, code)}
-                      disabled={isSubmitting}
-                      className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
-                        active ? "border-[#c2410c] bg-[#fff1e8] text-[#c2410c]" : "border-[#f1ddd2] text-[#8e7164]"
-                      }`}
-                    >
-                      <span className="text-sm mr-1">{item.icon}</span>
-                      <span>{count}</span>
-                    </button>
-                  );
-                })}
+              <div className="mt-2">
+                <ReactionPicker
+                  currentReaction={comment.currentUserReaction}
+                  likeCount={comment.likeCount}
+                  loveCount={comment.loveCount}
+                  hahaCount={comment.hahaCount}
+                  disabled={isSubmitting}
+                  onSelect={(reactionCode) => handleReactReview(comment.reviewBlogId, reactionCode)}
+                />
               </div>
               {isAuthenticated && (
                 <button

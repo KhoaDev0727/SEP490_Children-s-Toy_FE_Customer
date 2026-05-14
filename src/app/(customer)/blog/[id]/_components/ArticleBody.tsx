@@ -17,6 +17,20 @@ const removeDangerousHtml = (html: string) => {
   doc.querySelectorAll("script, style, iframe, object, embed").forEach((node) => node.remove());
 
   doc.querySelectorAll("*").forEach((el) => {
+    Array.from(el.attributes).forEach((attribute) => {
+      const attrName = attribute.name.toLowerCase();
+      const attrValue = attribute.value.trim().toLowerCase();
+
+      if (attrName.startsWith("on")) {
+        el.removeAttribute(attribute.name);
+        return;
+      }
+
+      if ((attrName === "href" || attrName === "src") && attrValue.startsWith("javascript:")) {
+        el.removeAttribute(attribute.name);
+      }
+    });
+
     const style = (el.getAttribute("style") ?? "").toLowerCase();
     const className = (el.getAttribute("class") ?? "").toLowerCase();
 
