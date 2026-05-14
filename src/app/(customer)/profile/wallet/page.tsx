@@ -6,6 +6,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import { walletApi } from "@/features/wallet/services/wallet-api";
 import {
   changeWalletPinSchema,
+  createSePayTopUpQrSchema,
   createWalletSchema,
   resetForgotWalletPinSchema,
   verifyForgotWalletPinOtpSchema,
@@ -16,6 +17,7 @@ import WalletActivationState from "./_components/WalletActivationState";
 import WalletBreadcrumb from "./_components/WalletBreadcrumb";
 import WalletOverview from "./_components/WalletOverview";
 import WalletPinModal from "./_components/WalletPinModal";
+import WalletTopUpSePayPanel from "./_components/WalletTopUpSePayPanel";
 import {
   DEFAULT_PIN_VISIBILITY,
   getValidationErrorMessage,
@@ -24,6 +26,13 @@ import {
   type PinVisibilityField,
   type UiTransaction,
 } from "./_components/wallet-shared";
+
+const TOP_UP_QUICK_AMOUNTS = [2000, 20000, 50000, 100000, 200000, 500000] as const;
+const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
+const SEP_BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "SePay";
+const SEP_BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
+const SEP_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
+const SEP_ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
 
 function getApiError(error: unknown) {
   const err = error as { response?: { status?: number; data?: ApiErrorResponse } };
@@ -58,6 +67,14 @@ export default function WalletPage() {
   const [pinVisibility, setPinVisibility] = useState<Record<PinVisibilityField, boolean>>(
     () => ({ ...DEFAULT_PIN_VISIBILITY }),
   );
+  const [isTopUpPanelOpen, setIsTopUpPanelOpen] = useState(false);
+  const [topUpToken, setTopUpToken] = useState<string | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState<number>(DEFAULT_TOP_UP_AMOUNT);
+  const [topUpAttemptCode, setTopUpAttemptCode] = useState("");
+  const [topUpQrImageUrl, setTopUpQrImageUrl] = useState("");
+  const [topUpStatus, setTopUpStatus] = useState("PENDING");
+  const [isCreatingTopUpQr, setIsCreatingTopUpQr] = useState(false);
+  const [isCheckingTopUpStatus, setIsCheckingTopUpStatus] = useState(false);
 
   const isWalletActivated = wallet !== null;
   const currentBalance = wallet?.balance ?? 0;
@@ -137,6 +154,78 @@ export default function WalletPage() {
     setPinVisibility((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  const resetTopUpPanelState = () => {
+    setIsTopUpPanelOpen(false);
+    setTopUpToken(null);
+    setTopUpAmount(DEFAULT_TOP_UP_AMOUNT);
+    setTopUpAttemptCode("");
+    setTopUpQrImageUrl("");
+    setTopUpStatus("PENDING");
+    setIsCreatingTopUpQr(false);
+    setIsCheckingTopUpStatus(false);
+  };
+
+  const createTopUpQrForAmount = useCallback(
+    async (amount: number, tokenOverride?: string) => {
+      const activeTopUpToken = tokenOverride ?? topUpToken;
+      if (!activeTopUpToken) {
+        toast.error("Top-up session has expired. Please verify PIN again.");
+        resetTopUpPanelState();
+        return;
+      }
+
+      const validation = createSePayTopUpQrSchema.safeParse({ amount, topUpToken: activeTopUpToken });
+      if (!validation.success) {
+        toast.error(getValidationErrorMessage(validation.error));
+        return;
+      }
+
+      setIsCreatingTopUpQr(true);
+      try {
+        const response = await walletApi.createSePayTopUpQr(validation.data);
+        setTopUpAmount(response.amount);
+        setTopUpAttemptCode(response.attemptCode);
+        setTopUpQrImageUrl(response.qrImageUrl);
+        setTopUpStatus("PENDING");
+      } catch (error: unknown) {
+        const apiError = getApiError(error);
+        toast.error(apiError.message ?? "Unable to create SePay top-up QR.");
+      } finally {
+        setIsCreatingTopUpQr(false);
+      }
+    },
+    [topUpToken],
+  );
+
+  const checkTopUpStatus = useCallback(async () => {
+    if (!topUpAttemptCode) return false;
+
+    setIsCheckingTopUpStatus(true);
+    try {
+      const statusResponse = await walletApi.getSePayTopUpStatus(topUpAttemptCode);
+      const normalizedStatus = (statusResponse.status || "PENDING").toUpperCase();
+      setTopUpStatus(normalizedStatus);
+
+      if (normalizedStatus === "PAID") {
+        toast.success("Top-up payment confirmed. Wallet balance updated.");
+        await loadWalletData();
+        resetTopUpPanelState();
+        return true;
+      }
+
+      if (normalizedStatus === "FAILED") {
+        toast.error("Top-up payment failed. Please generate a new QR and try again.");
+      }
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      toast.error(apiError.message ?? "Unable to check top-up payment status.");
+    } finally {
+      setIsCheckingTopUpStatus(false);
+    }
+
+    return false;
+  }, [loadWalletData, topUpAttemptCode]);
+
   const handleSubmitPinModal = async () => {
     if (pinModalMode === "changePin") {
       const changePinValidation = changeWalletPinSchema.safeParse({
@@ -197,8 +286,22 @@ export default function WalletPage() {
         setTransactions([]);
         toast.success("Wallet activated successfully.");
       } else if (pinModalMode === "topup") {
-        await walletApi.verifyPin(topUpValidation!.data);
-        toast.success("PIN verified successfully. You can continue top-up.");
+        const verifyResponse = await walletApi.verifyPin(topUpValidation!.data);
+        const newTopUpToken = verifyResponse.topUpToken;
+        if (!newTopUpToken) {
+          toast.error("Unable to start top-up session. Please try again.");
+          return;
+        }
+
+        setTopUpToken(newTopUpToken);
+        setIsTopUpPanelOpen(true);
+        setTopUpAmount(DEFAULT_TOP_UP_AMOUNT);
+        setTopUpAttemptCode("");
+        setTopUpQrImageUrl("");
+        setTopUpStatus("PENDING");
+        toast.success("PIN verified. Creating top-up QR...");
+
+        await createTopUpQrForAmount(DEFAULT_TOP_UP_AMOUNT, newTopUpToken);
       } else {
         await walletApi.verifyPin(viewBalanceValidation!.data);
         setIsBalanceVisible(true);
@@ -266,6 +369,16 @@ export default function WalletPage() {
     }
   };
 
+  useEffect(() => {
+    if (!isTopUpPanelOpen || !topUpAttemptCode) return;
+
+    const timer = window.setInterval(() => {
+      void checkTopUpStatus();
+    }, 4000);
+
+    return () => window.clearInterval(timer);
+  }, [checkTopUpStatus, isTopUpPanelOpen, topUpAttemptCode]);
+
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
       <WalletBreadcrumb />
@@ -281,6 +394,32 @@ export default function WalletPage() {
           <div className="px-6 py-20 text-center text-[#5a4136] text-sm">Loading wallet information...</div>
         ) : !isWalletActivated ? (
           <WalletActivationState onActivate={() => openPinModal("activate")} />
+        ) : isTopUpPanelOpen ? (
+          <WalletTopUpSePayPanel
+            quickAmounts={[...TOP_UP_QUICK_AMOUNTS]}
+            selectedAmount={topUpAmount}
+            attemptCode={topUpAttemptCode}
+            qrImageUrl={topUpQrImageUrl}
+            status={topUpStatus}
+            isCreatingQr={isCreatingTopUpQr}
+            isCheckingStatus={isCheckingTopUpStatus}
+            bankName={SEP_BANK_NAME}
+            bankCode={SEP_BANK_CODE}
+            accountNumber={SEP_ACCOUNT_NUMBER}
+            accountName={SEP_ACCOUNT_NAME}
+            onSelectAmount={(amount) => {
+              void createTopUpQrForAmount(amount);
+            }}
+            onRefreshQr={() => {
+              void createTopUpQrForAmount(topUpAmount);
+            }}
+            onCheckStatus={() => {
+              void checkTopUpStatus();
+            }}
+            onBack={() => {
+              resetTopUpPanelState();
+            }}
+          />
         ) : (
           <WalletOverview
             isBalanceVisible={isBalanceVisible}
