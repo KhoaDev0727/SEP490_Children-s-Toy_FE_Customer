@@ -13,6 +13,8 @@ import {
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import { followApi } from "@/features/products/services/follow-api";
 import Image from "next/image";
+import { reviewApi } from "@/features/reviews/services/review-api";
+import { ReviewProductListDto } from "@/features/reviews/types/review.types";
 
 const FALLBACK_IMAGE = "https://placehold.co/900x900/png?text=Toy";
 
@@ -154,6 +156,16 @@ export default function ProductDetailsView({
     "description" | "specs" | "reviews"
   >("description");
 
+  // State for reviews
+  const [reviews, setReviews] = useState<ReviewProductListDto[]>([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [reviewsFilter, setReviewsFilter] = useState<{
+    rating?: number;
+    hasImage?: boolean;
+  }>({});
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+
   useEffect(() => {
     let active = true;
 
@@ -259,6 +271,35 @@ export default function ProductDetailsView({
     };
   }, [isAuthenticated, isHydrated, product?.productId]);
 
+  useEffect(() => {
+    let active = true;
+    const fetchReviews = async () => {
+      if (activeTab !== "reviews") return;
+      setIsReviewsLoading(true);
+      try {
+        const res = await reviewApi.getPublicReviews({
+          productId,
+          pageNumber: reviewsPage,
+          pageSize: 10,
+          rating: reviewsFilter.rating,
+          hasImage: reviewsFilter.hasImage,
+        });
+        if (!active) return;
+        setReviews(res.items);
+        setReviewsTotalPages(res.totalPages);
+      } catch {
+        if (!active) return;
+        setReviews([]);
+      } finally {
+        if (active) setIsReviewsLoading(false);
+      }
+    };
+    fetchReviews();
+    return () => {
+      active = false;
+    };
+  }, [productId, activeTab, reviewsPage, reviewsFilter]);
+
   const images = useMemo(() => buildImageList(product), [product]);
   const safeDescriptionHtml = useMemo(
     () => sanitizeRichTextHtml(product?.description),
@@ -306,9 +347,7 @@ export default function ProductDetailsView({
 
   if (isLoading) {
     return (
-      <div className="py-16 text-center text-slate-500">
-        Loading product...
-      </div>
+      <div className="py-16 text-center text-slate-500">Loading product...</div>
     );
   }
 
@@ -418,7 +457,10 @@ export default function ProductDetailsView({
         toast.success("You will be notified when the product launches!");
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to complete the action.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to complete the action.";
       toast.error(message);
     } finally {
       setIsFollowUpdating(false);
@@ -479,13 +521,15 @@ export default function ProductDetailsView({
 
         <div className="flex flex-col">
           <div className="mb-2 flex gap-2">
-            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-              product.productStatus === "ComingSoon" 
-                ? "bg-blue-100 text-blue-700" 
-                : inStock 
-                  ? "bg-emerald-100 text-emerald-700" 
-                  : "bg-slate-200 text-slate-600"
-            }`}>
+            <span
+              className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
+                product.productStatus === "ComingSoon"
+                  ? "bg-blue-100 text-blue-700"
+                  : inStock
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-slate-200 text-slate-600"
+              }`}
+            >
               {product.productStatus === "ComingSoon"
                 ? "Coming soon"
                 : inStock
@@ -570,7 +614,9 @@ export default function ProductDetailsView({
                   <span className="text-lg text-slate-400 line-through">
                     {formatCurrency(product.price)}
                   </span>
-                  <span className="text-xs text-slate-400">(Original price)</span>
+                  <span className="text-xs text-slate-400">
+                    (Original price)
+                  </span>
                 </div>
               </div>
             ) : (
@@ -670,8 +716,8 @@ export default function ProductDetailsView({
             {product.productStatus === "ComingSoon" || !inStock ? (
               <button
                 className={`flex-1 px-8 py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${
-                  isFollowed 
-                    ? "bg-slate-100 text-slate-600 border-2 border-slate-200 hover:bg-slate-200" 
+                  isFollowed
+                    ? "bg-slate-100 text-slate-600 border-2 border-slate-200 hover:bg-slate-200"
                     : "bg-[#ff6a00] text-white hover:bg-[#e05e00] shadow-lg shadow-orange-200"
                 }`}
                 type="button"
@@ -697,7 +743,9 @@ export default function ProductDetailsView({
                   onClick={handleAddToCart}
                   disabled={!canAddToCart || isAddingToCart}
                 >
-                  <span className="material-symbols-outlined">add_shopping_cart</span>
+                  <span className="material-symbols-outlined">
+                    add_shopping_cart
+                  </span>
                   {isAddingToCart
                     ? "Adding..."
                     : !canAddToCart
@@ -786,8 +834,8 @@ export default function ProductDetailsView({
                 />
               ) : (
                 <p className="mb-4">
-                  This product description is being updated. Check back soon
-                  for more details on materials, features, and benefits.
+                  This product description is being updated. Check back soon for
+                  more details on materials, features, and benefits.
                 </p>
               )}
               <div className="clear-both" />
@@ -851,85 +899,200 @@ export default function ProductDetailsView({
                   </div>
                 </div>
                 <div className="md:w-3/4 flex flex-wrap gap-3 items-center">
-                  {[
-                    "All",
-                    "5 stars (102)",
-                    "4 stars (15)",
-                    "3 stars (8)",
-                    "2 stars (2)",
-                    "1 star (1)",
-                    "With photos/videos (45)",
-                  ].map((label, index) => (
+                  <button
+                    onClick={() => {
+                      setReviewsFilter({});
+                      setReviewsPage(1);
+                    }}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                      !reviewsFilter.rating && !reviewsFilter.hasImage
+                        ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  {[5, 4, 3, 2, 1].map((star) => (
                     <button
-                      key={label}
-                      className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                        index === 0
+                      key={star}
+                      onClick={() => {
+                        setReviewsFilter({ rating: star });
+                        setReviewsPage(1);
+                      }}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors flex items-center gap-1 ${
+                        reviewsFilter.rating === star
                           ? "bg-[#ff6a00] text-white border-[#ff6a00]"
                           : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
                       }`}
                     >
-                      {label}
+                      {star} Sao
                     </button>
                   ))}
+                  <button
+                    onClick={() => {
+                      setReviewsFilter({ hasImage: true });
+                      setReviewsPage(1);
+                    }}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                      reviewsFilter.hasImage
+                        ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                    }`}
+                  >
+                    Có hình ảnh
+                  </button>
                 </div>
               </div>
 
-              <div className="space-y-8">
-                {[
-                  {
-                    name: "Alex Nguyen",
-                    rating: 5,
-                    content:
-                      "The toy is sturdy, colorful, and my kid loves it. Well packaged and fast delivery.",
-                    meta: "12/10/2023 14:30 | Category: Educational toys",
-                  },
-                  {
-                    name: "Bella Tran",
-                    rating: 4,
-                    content:
-                      "Accurate description and safe materials. My child stays engaged for a long time. Hope there will be more colors.",
-                    meta: "05/10/2023 09:15 | Category: Building toys",
-                  },
-                ].map((review) => (
-                  <div
-                    key={review.name}
-                    className="flex gap-4 border-b border-slate-100 pb-8 last:border-0 last:pb-0"
+              {isReviewsLoading ? (
+                <div className="py-12 flex justify-center">
+                  <svg
+                    className="animate-spin h-8 w-8 text-[#ff6a00]"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-sm">{review.name}</span>
-                        <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[10px]">
-                            check_circle
-                          </span>
-                          Verified purchase
-                        </span>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="py-12 text-center text-slate-500">
+                  Chưa có đánh giá nào phù hợp với bộ lọc.
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.reviewId}
+                      className="flex gap-4 border-b border-slate-100 pb-8 last:border-0 last:pb-0"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-500 font-bold">
+                        {review.accountName?.charAt(0).toUpperCase()}
                       </div>
-                      <div className="flex items-center text-[#ff6a00] mb-3">
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <span
-                            key={index}
-                            className="material-symbols-outlined text-sm"
-                            style={{
-                              fontVariationSettings:
-                                index < review.rating ? "'FILL' 1" : "'FILL' 0",
-                            }}
-                          >
-                            star
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-sm">
+                            {review.accountName}
                           </span>
-                        ))}
-                      </div>
-                      <p className="text-sm text-slate-600 mb-4">
-                        {review.content}
-                      </p>
-                      <div className="text-xs text-slate-400">
-                        {review.meta}
+                          <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <span className="material-symbols-outlined text-[10px]">
+                              check_circle
+                            </span>
+                            Đã mua hàng
+                          </span>
+                        </div>
+                        <div className="flex items-center text-[#ff6a00] mb-3">
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <span
+                              key={index}
+                              className="material-symbols-outlined text-sm"
+                              style={{
+                                fontVariationSettings:
+                                  index < review.rating
+                                    ? "'FILL' 1"
+                                    : "'FILL' 0",
+                              }}
+                            >
+                              star
+                            </span>
+                          ))}
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap">
+                            {review.comment}
+                          </p>
+                        )}
+
+                        {review.images && review.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {review.images.map((img) => (
+                              <div
+                                key={img.reviewProductImageId}
+                                className="relative w-20 h-20 rounded border border-slate-200 overflow-hidden cursor-pointer"
+                              >
+                                <Image
+                                  src={img.imageUrl}
+                                  alt="Review image"
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-slate-400 mb-4">
+                          {new Date(review.createdAt).toLocaleDateString(
+                            "vi-VN",
+                          )}{" "}
+                          {review.isEdited && "(Đã chỉnh sửa)"}
+                        </div>
+
+                        {review.replies && review.replies.length > 0 && (
+                          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mt-2">
+                            {review.replies.map((reply) => (
+                              <div
+                                key={reply.replyProductId}
+                                className="text-sm"
+                              >
+                                <div className="font-bold text-slate-800 mb-1">
+                                  Phản hồi từ {reply.staffName}
+                                </div>
+                                <p className="text-slate-600 whitespace-pre-wrap">
+                                  {reply.content}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+
+                  {reviewsTotalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8 pt-4 border-t border-slate-100">
+                      <button
+                        onClick={() =>
+                          setReviewsPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={reviewsPage === 1}
+                        className="w-8 h-8 rounded border border-slate-200 flex items-center justify-center disabled:opacity-50 hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          chevron_left
+                        </span>
+                      </button>
+                      <span className="text-sm font-medium text-slate-700">
+                        {reviewsPage} / {reviewsTotalPages}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setReviewsPage((p) =>
+                            Math.min(reviewsTotalPages, p + 1),
+                          )
+                        }
+                        disabled={reviewsPage === reviewsTotalPages}
+                        className="w-8 h-8 rounded border border-slate-200 flex items-center justify-center disabled:opacity-50 hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          chevron_right
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         )}

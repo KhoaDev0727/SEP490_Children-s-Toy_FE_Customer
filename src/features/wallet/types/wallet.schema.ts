@@ -14,9 +14,7 @@ export const createWalletSchema = z
 
 export const verifyWalletPinSchema = z.object({
   pin: z.string().regex(PIN_REGEX, "PIN must be exactly 6 digits."),
-  actionType: z.enum(["PAYMENT", "VIEW_BALANCE", "TOP_UP"], {
-    required_error: "Please select an action for PIN verification.",
-  }),
+  actionType: z.enum(["PAYMENT", "VIEW_BALANCE", "TOP_UP"]),
 });
 
 export const changeWalletPinSchema = z

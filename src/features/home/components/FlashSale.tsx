@@ -52,7 +52,7 @@ const TimeBlock = memo(function TimeBlock({
 }) {
   return (
     <div
-      className={`px-1.5 sm:px-2 py-1 rounded-md text-white font-bold text-sm sm:text-base min-w-8 sm:min-w-10 text-center shadow-sm tracking-widest transition-colors ${
+      className={`px-1.5 sm:px-2 py-1 rounded-lg text-white font-bold text-sm sm:text-base min-w-8 sm:min-w-10 text-center shadow-sm tracking-widest transition-colors ${
         isLive ? "bg-rose-600" : "bg-[#0f172a]"
       }`}
     >
@@ -63,7 +63,7 @@ const TimeBlock = memo(function TimeBlock({
 
 function TabSkeleton() {
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4">
+    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
       {[1, 2, 3].map((i) => (
         <div
           key={i}
@@ -108,16 +108,23 @@ const ProductCard = memo(function ProductCard({
   const formatVND = (price: number) => price.toLocaleString("vi-VN") + "đ";
 
   const maskVND = (price: number) => {
-    const s = price.toString();
-    if (s.length >= 7) {
-      return `${s[0]}.${s[1]}xx.xxxđ`;
-    } else if (s.length === 6) {
-      return `${s[0]}xx.xxxđ`;
-    } else if (s.length === 5) {
-      return `${s[0]}x.xxxđ`;
-    } else {
-      return "xxxđ";
+    const s = price.toLocaleString("vi-VN");
+    let res = "";
+    let digitCount = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (/[0-9]/.test(s[i])) {
+        digitCount++;
+        // Mask the 2nd digit (and 3rd if price is large)
+        if (digitCount === 2 || (s.length >= 7 && digitCount === 3)) {
+          res += "?";
+        } else {
+          res += s[i];
+        }
+      } else {
+        res += s[i];
+      }
     }
+    return res + "đ";
   };
 
   return (
@@ -161,11 +168,13 @@ const ProductCard = memo(function ProductCard({
       {/* Price */}
       <div className="flex items-end gap-2 mb-2">
         <span className="font-bold text-base sm:text-lg text-[#ff6a00] leading-none">
-          {isUpcoming ? maskVND(product.salePrice) : formatVND(product.salePrice)}
+          {isUpcoming
+            ? maskVND(product.salePrice)
+            : formatVND(product.salePrice)}
         </span>
         {product.originalPrice > product.salePrice && (
-          <span className="text-gray-400 text-xs line-through">
-            {isUpcoming ? maskVND(product.originalPrice) : formatVND(product.originalPrice)}
+          <span className="text-gray-400 text-sm line-through">
+            {formatVND(product.originalPrice)}
           </span>
         )}
       </div>
@@ -230,7 +239,7 @@ const TimeSlotPill = memo(function TimeSlotPill({
           isSelected
             ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-md -translate-y-0.5"
             : isDisabled
-              ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed"
+              ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed opacity-70"
               : "bg-white text-gray-600 border-gray-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
         }
       `}
@@ -281,7 +290,7 @@ export default function FlashSale() {
       <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-gray-200 p-4 sm:p-6 lg:p-8">
         {/* ── Header Row ────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="material-symbols-outlined text-[#ff6a00] text-[32px] sm:text-[40px] drop-shadow-sm">
               bolt
             </span>
@@ -289,38 +298,53 @@ export default function FlashSale() {
               Flash Sale
             </h2>
 
-            <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
+            {countdown && (
+              <>
+                <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
+                <span className="text-gray-500 font-bold text-xs sm:text-sm uppercase hidden sm:block">
+                  {countdownLabel}
+                </span>
 
-            <span className="text-gray-500 font-bold text-xs sm:text-sm uppercase hidden sm:block">
-              {countdownLabel}
-            </span>
+                <div className="flex items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
+                  {isLive && (
+                    <div className="relative flex h-3 w-3 mr-1">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 animate-breath"></span>
+                    </div>
+                  )}
+                  {countdown.d > 0 && (
+                    <>
+                      <TimeBlock value={countdown.d} isLive={isLive} />
+                      <span className="text-gray-800 font-bold">:</span>
+                    </>
+                  )}
+                  <TimeBlock value={countdown.h} isLive={isLive} />
+                  <span className="text-gray-800 font-bold">:</span>
+                  <TimeBlock value={countdown.m} isLive={isLive} />
+                  <span className="text-gray-800 font-bold">:</span>
+                  <TimeBlock value={countdown.s} isLive={isLive} />
+                </div>
+              </>
+            )}
 
-            {countdown ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
-                {isLive && (
-                  <div className="relative flex h-3 w-3 mr-1">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 animate-breath"></span>
-                  </div>
-                )}
-                <TimeBlock value={countdown.d} isLive={isLive} />
-                <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.h} isLive={isLive} />
-                <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.m} isLive={isLive} />
-                <span className="text-gray-800 font-bold">:</span>
-                <TimeBlock value={countdown.s} isLive={isLive} />
-              </div>
-            ) : isLoading ? (
+            {!countdown && isLoading && (
               <div className="flex gap-1 ml-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="w-8 h-8 sm:w-10 sm:h-9 bg-gray-200 rounded animate-pulse"
+                    className="w-8 h-8 sm:w-10 sm:h-9 bg-gray-200 rounded-lg animate-pulse"
                   />
                 ))}
               </div>
-            ) : null}
+            )}
+            {!countdown && !isLoading && (
+              <>
+                <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
+                <span className="text-gray-500 font-bold text-xs sm:text-sm uppercase hidden sm:block">
+                  {countdownLabel}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -328,23 +352,20 @@ export default function FlashSale() {
         {isLoading ? (
           <TabSkeleton />
         ) : promotions.length > 0 ? (
-          <div className="flex items-center gap-8 border-b border-gray-100 mb-6 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-6 overflow-x-auto no-scrollbar">
             {promotions.map((promo) => {
               const isActive = promo.promotionId === selectedPromotionId;
               return (
                 <button
                   key={promo.promotionId}
                   onClick={() => selectPromotion(promo.promotionId)}
-                  className={`relative py-3 px-1 text-sm sm:text-base font-bold whitespace-nowrap transition-all ${
+                  className={`relative py-1.5 px-4 rounded-full text-sm sm:text-base font-bold whitespace-nowrap transition-all border ${
                     isActive
-                      ? "text-rose-600"
-                      : "text-gray-500 hover:text-rose-500"
+                      ? "bg-rose-50 border-rose-200 text-rose-600 shadow-sm"
+                      : "bg-white border-gray-200 text-gray-500 hover:text-rose-500 hover:border-rose-200"
                   }`}
                 >
                   {promo.promotionName}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-600 rounded-full" />
-                  )}
                 </button>
               );
             })}
@@ -352,10 +373,10 @@ export default function FlashSale() {
         ) : null}
 
         {/* ── Dates & Time Slots ────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mb-6 items-start lg:items-center">
+        <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mb-6 items-start lg:items-center px-1">
           {/* Dates */}
           {!isLoading && availableDates.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 lg:pb-0 w-full lg:w-auto">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto">
               {availableDates.map((dateKey) => {
                 const isSelected = dateKey === selectedDate;
                 return (
@@ -385,7 +406,7 @@ export default function FlashSale() {
 
           {/* Time Slots */}
           {!isLoading && timeSlotsForDate.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2.5 w-full lg:w-auto">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2.5 w-full lg:w-auto pr-2">
               {timeSlotsForDate.map((slot) => {
                 const status = getSlotRuntimeStatus(slot);
                 return (
@@ -419,16 +440,25 @@ export default function FlashSale() {
                       key={product.slotProductId}
                       product={product}
                       index={i}
-                      isUpcoming={selectedSlot ? getSlotRuntimeStatus(selectedSlot) === "upcoming" : false}
+                      isUpcoming={
+                        selectedSlot
+                          ? getSlotRuntimeStatus(selectedSlot) === "upcoming"
+                          : false
+                      }
                     />
                   ))
               : !isLoading && (
-                  <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-                    <span className="material-symbols-outlined text-5xl text-gray-300 mb-2 block">
-                      inventory_2
-                    </span>
-                    <p className="text-gray-500 font-medium">
+                  <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="w-20 h-20 mb-4 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+                      <span className="material-symbols-outlined text-4xl text-gray-300">
+                        inventory_2
+                      </span>
+                    </div>
+                    <p className="text-gray-500 font-medium text-base">
                       Chưa có sản phẩm nào cho khung giờ này
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Vui lòng chọn khung giờ khác hoặc quay lại sau.
                     </p>
                   </div>
                 )}

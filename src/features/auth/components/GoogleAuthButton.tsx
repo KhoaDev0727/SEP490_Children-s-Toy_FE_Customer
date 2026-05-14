@@ -74,7 +74,6 @@ function GoogleAuthButton({ mode }: GoogleAuthButtonProps) {
     <GoogleLogin
       onSuccess={handleGoogleSuccess}
       onError={handleGoogleError}
-      locale="en"
       text={mode === "register" ? "signup_with" : "signin_with"}
       shape="rectangular"
       size="large"
