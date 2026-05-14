@@ -123,7 +123,7 @@ export default function FilterSidebar({
     return (
       <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
         <div className="bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-500">
-          Đang tải bộ lọc...
+          Loading filters...
         </div>
       </aside>
     );
@@ -157,7 +157,7 @@ export default function FilterSidebar({
       {hasSuperCategories && (
         <div>
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Danh mục lớn
+          Main categories
         </h3>
         <select
           value={draftFilters.superCategoryId ?? ""}
@@ -172,7 +172,7 @@ export default function FilterSidebar({
           }
           className="w-full text-sm border border-slate-200 bg-white rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#ff6a00]/20"
         >
-          <option value="">Tất cả danh mục lớn</option>
+          <option value="">All main categories</option>
           {lookups.superCategories.map((item) => (
             <option key={item.id} value={item.id}>
               {item.label}
@@ -185,7 +185,7 @@ export default function FilterSidebar({
       {hasCategories && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Danh mục con
+          Subcategories
         </h3>
         <select
           value={draftFilters.categoryId ?? ""}
@@ -199,7 +199,7 @@ export default function FilterSidebar({
           }
           className="w-full text-sm border border-slate-200 bg-white rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#ff6a00]/20"
         >
-          <option value="">Tất cả danh mục con</option>
+          <option value="">All subcategories</option>
           {categories.map((item) => (
             <option key={item.id} value={item.id}>
               {item.label}
@@ -212,7 +212,7 @@ export default function FilterSidebar({
       {hasPriceRanges && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Khoảng giá
+          Price range
         </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
@@ -259,7 +259,7 @@ export default function FilterSidebar({
 
       <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Đánh giá
+          Rating
         </h3>
         <div className="space-y-2">
           {[5, 4, 3, 2, 1].map((rating) => (
@@ -294,7 +294,7 @@ export default function FilterSidebar({
       {hasBrands && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Thương hiệu
+          Brand
         </h3>
         {renderCheckboxList(lookups.brands, draftFilters.brandIds, (value) =>
           setDraftFilters((prev) => ({
@@ -308,7 +308,7 @@ export default function FilterSidebar({
       {hasAges && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Độ tuổi
+          Age
         </h3>
         {renderCheckboxList(lookups.ages, draftFilters.ageIds, (value) =>
           setDraftFilters((prev) => ({
@@ -322,7 +322,7 @@ export default function FilterSidebar({
       {hasMaterials && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Chất liệu
+          Material
         </h3>
         {renderCheckboxList(lookups.materials, draftFilters.materialIds, (value) =>
           setDraftFilters((prev) => ({
@@ -336,7 +336,7 @@ export default function FilterSidebar({
       {hasSexes && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Giới tính
+          Gender
         </h3>
         {renderCheckboxList(lookups.sexes, draftFilters.sexIds, (value) =>
           setDraftFilters((prev) => ({
@@ -350,7 +350,7 @@ export default function FilterSidebar({
       {hasOrigins && (
         <div className="pt-6 border-t border-slate-200">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-          Nguồn gốc
+          Origin
         </h3>
         {renderCheckboxList(lookups.origins, draftFilters.originIds, (value) =>
           setDraftFilters((prev) => ({
@@ -367,7 +367,7 @@ export default function FilterSidebar({
             className="flex-1 py-2 rounded-lg text-sm font-bold text-white bg-[#ff6a00] hover:bg-[#e05e00] transition-colors"
             onClick={() => onChange(normalizeFilters(draftFilters))}
           >
-            Áp dụng bộ lọc
+            Apply filters
           </button>
           <button
             className="px-3 rounded-lg text-sm font-bold border border-slate-200 text-slate-600 hover:border-[#ff6a00] hover:text-[#ff6a00] transition-colors"
@@ -375,7 +375,7 @@ export default function FilterSidebar({
               onRefresh();
             }}
           >
-            Làm mới
+            Reset
           </button>
         </div>
       </div>
