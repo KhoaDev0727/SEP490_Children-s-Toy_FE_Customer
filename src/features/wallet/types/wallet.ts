@@ -50,6 +50,7 @@ export interface VerifyWalletPinResponse {
   remainingAttempts: number;
   lockedUntil: string | null;
   walletStatus: WalletStatus;
+  topUpToken?: string | null;
 }
 
 export interface ChangeWalletPinRequest {
@@ -65,6 +66,27 @@ export interface VerifyForgotWalletPinOtpRequest {
 export interface ResetForgotWalletPinRequest {
   newPin: string;
   confirmNewPin: string;
+}
+
+export interface CreateSePayTopUpQrRequest {
+  amount: number;
+  topUpToken: string;
+}
+
+export interface SePayTopUpQrResponse {
+  attemptCode: string;
+  qrImageUrl: string;
+  amount: number;
+  expiresAt: string;
+}
+
+export interface SePayTopUpStatusResponse {
+  attemptCode: string;
+  amount: number;
+  status: "PENDING" | "PAID" | "FAILED" | string;
+  walletTransactionId: number | null;
+  createdAt: string;
+  completedAt: string | null;
 }
 
 export interface ApiErrorResponse {
