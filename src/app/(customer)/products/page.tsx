@@ -1,16 +1,32 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import FilterSidebar from "./_components/FilterSidebar";
 import ProductGrid from "./_components/ProductGrid";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductFilters, ProductLookups } from "@/features/products/types/product";
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<ProductFilters>({});
   const [lookups, setLookups] = useState<ProductLookups | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(true);
+  const searchTerm = searchParams.get("searchTerm")?.trim() ?? "";
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const nextTerm = searchTerm || undefined;
+      if (prev.searchTerm === nextTerm) {
+        return prev;
+      }
+      return {
+        ...prev,
+        searchTerm: nextTerm,
+      };
+    });
+  }, [searchTerm]);
 
   useEffect(() => {
     let active = true;
