@@ -26,7 +26,7 @@ export interface CustomerOrderListItem {
   paymentMethod: string;
   paymentStatus: string;
   totalItems: number;
-  item?: CustomerOrderListItemProduct | null;
+  items: CustomerOrderListItemProduct[];
 }
 
 export interface CustomerOrderDetailItem {

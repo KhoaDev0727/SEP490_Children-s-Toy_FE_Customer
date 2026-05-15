@@ -1,17 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import OrderTabs from "./OrderTabs";
 import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
 import OrderPagination from "./OrderPagination";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Order, OrderStatus } from "./OrderCard";
 import { ordersApi } from "@/features/orders/services/orders-api";
+import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
 
 const ORDERS_PER_PAGE = 3;
 
 export default function OrderHistoryView() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,13 +24,17 @@ export default function OrderHistoryView() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+
   const mapStatusNameToUi = useCallback((statusName?: string | null): OrderStatus => {
     if (!statusName) return "pending";
 
     switch (statusName.toLowerCase()) {
       case "pending":
-      case "confirmed":
         return "pending";
+      case "confirmed":
       case "processing":
       case "shipped":
         return "shipping";
@@ -44,21 +52,22 @@ export default function OrderHistoryView() {
 
   const mapOrderItem = useCallback((item: CustomerOrderListItem): Order => {
     const fallbackImage = "/assets/images/tinitoy.png";
-    const product = item.item;
 
     return {
       orderId: item.orderId,
       orderCode: item.orderCode,
       status: mapStatusNameToUi(item.statusName),
-      item: {
-        name: product?.productName ?? "Product",
-        variant: product?.variant ?? "",
-        categoryName: product?.categoryName ?? "",
-        quantity: product?.quantity ?? 0,
-        price: product?.unitPrice ?? 0,
-        image: product?.productImage || fallbackImage,
-      },
+      items: (item.items || []).map((p) => ({
+        name: p.productName,
+        variant: p.variant ?? "",
+        categoryName: p.categoryName ?? "",
+        quantity: p.quantity,
+        price: p.unitPrice,
+        image: p.productImage || fallbackImage,
+      })),
       total: item.totalAmount,
+      paymentMethod: item.paymentMethod,
+      rawStatusName: item.statusName,
     };
   }, [mapStatusNameToUi]);
 
@@ -77,7 +86,7 @@ export default function OrderHistoryView() {
       setOrders(response.items.map(mapOrderItem));
       setTotalPages(Math.max(1, response.totalPages));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
+      setErrorMessage(error instanceof Error ? error.message : "Could not load orders.");
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -97,6 +106,36 @@ export default function OrderHistoryView() {
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+  };
+
+  const handlePrimaryAction = useCallback((order: Order) => {
+    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
+      router.push(`/checkout/payment?orderId=${order.orderId}`);
+    } else {
+      router.push(`/profile/orders/${order.orderId}`);
+    }
+  }, [router]);
+
+  const handleSecondaryAction = useCallback((order: Order) => {
+    if (order.status === "pending") {
+      setOrderToCancel(order);
+      setIsCancelModalOpen(true);
+    } else {
+      router.push(`/profile/orders/${order.orderId}`);
+    }
+  }, [router]);
+
+  const confirmCancel = async () => {
+    if (!orderToCancel) return;
+    try {
+      await checkoutApi.cancelOrder(orderToCancel.orderId);
+      await loadOrders();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
+    } finally {
+      setIsCancelModalOpen(false);
+      setOrderToCancel(null);
+    }
   };
 
   return (
@@ -134,9 +173,27 @@ export default function OrderHistoryView() {
             <p className="text-base font-bold">Loading orders...</p>
           </div>
         ) : (
-          <OrderList orders={orders} />
+          <OrderList 
+            orders={orders} 
+            onPrimaryAction={handlePrimaryAction}
+            onSecondaryAction={handleSecondaryAction}
+          />
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={isCancelModalOpen}
+        title="Cancel Order"
+        message={`Are you sure you want to cancel order #${orderToCancel?.orderCode}? This action cannot be undone.`}
+        onConfirm={confirmCancel}
+        onCancel={() => {
+          setIsCancelModalOpen(false);
+          setOrderToCancel(null);
+        }}
+        confirmText="Confirm Cancel"
+        cancelText="Close"
+        type="danger"
+      />
 
       {/* Pagination */}
       <OrderPagination

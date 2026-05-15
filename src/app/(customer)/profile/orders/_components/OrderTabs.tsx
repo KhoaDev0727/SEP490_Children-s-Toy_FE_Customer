@@ -2,7 +2,7 @@
 
 const TABS = [
   { label: "All", value: "all" },
-  { label: "Pending Payment", value: "pending" },
+  { label: "Pending", value: "pending" },
   { label: "Shipping", value: "shipping" },
   { label: "Delivering", value: "delivering" },
   { label: "Completed", value: "completed" },

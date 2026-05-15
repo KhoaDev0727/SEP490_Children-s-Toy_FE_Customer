@@ -38,7 +38,7 @@ export default function OrderProductList({
         {displayedProducts.map((product, i) => {
           const hasLink = Boolean(product.productId && product.productId > 0);
           const classification = product.categoryName || product.variant;
-          const classificationText = classification || "Updating";
+          const classificationText = classification || "N/A";
 
           const media = (
             <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
@@ -101,12 +101,12 @@ export default function OrderProductList({
             >
               {isExpanded ? (
                 <>
-                  Collapse
+                  Show less
                   <span className="material-symbols-outlined text-[18px]">expand_less</span>
                 </>
               ) : (
                 <>
-                  Load more {products.length - 2} products
+                  See {products.length - 2} more products
                   <span className="material-symbols-outlined text-[18px]">expand_more</span>
                 </>
               )}

@@ -4,9 +4,11 @@ import OrderCard, { Order } from "./OrderCard";
 
 interface OrderListProps {
   orders: Order[];
+  onPrimaryAction?: (order: Order) => void;
+  onSecondaryAction?: (order: Order) => void;
 }
 
-export default function OrderList({ orders }: OrderListProps) {
+export default function OrderList({ orders, onPrimaryAction, onSecondaryAction }: OrderListProps) {
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/50 gap-4 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
@@ -23,7 +25,12 @@ export default function OrderList({ orders }: OrderListProps) {
   return (
     <div className="flex flex-col gap-4">
       {orders.map((order) => (
-        <OrderCard key={order.orderId} order={order} />
+        <OrderCard 
+          key={order.orderId} 
+          order={order} 
+          onPrimaryAction={onPrimaryAction}
+          onSecondaryAction={onSecondaryAction}
+        />
       ))}
     </div>
   );

@@ -25,24 +25,24 @@ export default function PaymentSummary({
         <span className="material-symbols-outlined text-[#ff6a00]">
           payments
         </span>
-        Payment information
+        Payment Summary
       </h2>
 
       <div className="flex flex-col gap-3 pb-4 border-b border-[#e2bfb0]/10">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-[#5a4136]">Item total</span>
+          <span className="text-sm text-[#5a4136]">Subtotal</span>
           <span className="text-sm font-bold text-[#261812]">
             {formatPrice(subtotal)}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-[#5a4136]">Shipping fee</span>
+          <span className="text-sm text-[#5a4136]">Shipping Fee</span>
           <span className="text-sm font-bold text-[#261812]">
             {formatPrice(shippingFee)}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-[#5a4136]">Discount code</span>
+          <span className="text-sm text-[#5a4136]">Discount</span>
           <span className="text-sm font-bold text-green-600">
             -{formatPrice(discount)}
           </span>

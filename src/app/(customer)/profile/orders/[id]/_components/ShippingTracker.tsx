@@ -12,8 +12,8 @@ interface ShippingTrackerProps {
 }
 
 const STEPS = [
-  { icon: "receipt_long", label: "Ordered" },
-  { icon: "inventory_2", label: "Packed" },
+  { icon: "receipt_long", label: "Placed" },
+  { icon: "inventory_2", label: "Processing" },
   { icon: "local_shipping", label: "Delivering" },
   { icon: "check_circle", label: "Completed" },
 ];
@@ -42,29 +42,41 @@ const getActiveStep = (status?: string | null): number => {
 
 const formatEventTimeShort = (value?: string | null): string => {
   if (!value) return "";
-  const date = new Date(value);
+  let dateStr = value;
+  if (value.includes("T") && !value.endsWith("Z") && !value.includes("+")) {
+    dateStr = value + "Z";
+  }
+  const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return "";
 
-  return date.toLocaleString("vi-VN", {
+  return date.toLocaleString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).replace(",", "");
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).replace(",", "") + " (GMT+7)";
 };
 
 const formatEventTime = (value: string): string => {
-  const date = new Date(value);
+  let dateStr = value;
+  if (value.includes("T") && !value.endsWith("Z") && !value.includes("+")) {
+    dateStr = value + "Z";
+  }
+  const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleString("vi-VN", {
+  return date.toLocaleString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).replace(",", " -");
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).replace(",", " -") + " (GMT+7)";
 };
 
 export default function ShippingTracker({ currentStatus, events = [] }: ShippingTrackerProps) {
@@ -107,7 +119,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
     : [
       {
         highlight: true,
-        title: isCancelled ? "Order has been cancelled" : isRefunded ? "Order has been refunded" : "Updating status",
+        title: isCancelled ? "Order has been cancelled" : isRefunded ? "Order has been refunded" : "Updating status...",
         time: "",
         desc: "",
       },
@@ -117,7 +129,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
     <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30">
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#e2bfb0]/20">
         <h2 className="text-lg font-bold text-[#261812]">
-          Order status
+          Order Status
         </h2>
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${isCancelled ? "bg-red-50 border-red-100" : isRefunded ? "bg-blue-50 border-blue-100" : "bg-emerald-50 border-emerald-100"}`}>
           <div className={`w-2 h-2 rounded-full ${isCancelled ? "bg-red-500" : isRefunded ? "bg-blue-500" : "bg-emerald-500"}`} />
@@ -237,7 +249,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
           onClick={() => setShowAll(!showAll)}
           className="text-sm text-emerald-600 font-semibold hover:underline w-full text-center mt-3"
         >
-          {showAll ? "Collapse" : "View full history"}
+          {showAll ? "Show less" : "View full history"}
         </button>
       )}
     </div>
