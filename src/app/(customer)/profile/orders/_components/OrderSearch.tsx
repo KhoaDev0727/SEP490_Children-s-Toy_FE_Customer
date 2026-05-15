@@ -17,7 +17,7 @@ export default function OrderSearch({ value, onChange }: OrderSearchProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white text-[#261812] focus:border-[#ff6a00] focus:ring-1 focus:ring-[#ff6a00] outline-none transition-all text-sm"
-          placeholder="Tìm đơn hàng theo ID hoặc Tên sản phẩm"
+          placeholder="Search by Order ID or Product Name"
         />
       </div>
     </div>

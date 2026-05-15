@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import QRCodeCard from "@/app/(customer)/checkout/payment/components/QRCodeCard";
 import PaymentPanel from "@/app/(customer)/checkout/payment/components/PaymentPanel";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import { useCart } from "@/features/cart/context/CartContext";
 
 const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Ngân hàng";
 const BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
@@ -54,12 +55,15 @@ export default function QRPaymentContent({
   initialQrUrl,
 }: QRPaymentContentProps) {
   const router = useRouter();
+  const { refreshCart } = useCart();
   const [attemptCode, setAttemptCode] = useState(initialAttemptCode ?? "");
   const [qrUrl, setQrUrl] = useState(initialQrUrl ?? "");
   const [amountValue, setAmountValue] = useState<number | null>(
     Number.isFinite(amount) ? Math.round(amount as number) : null,
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [expiredByServer, setExpiredByServer] = useState(false);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const redirectedRef = useRef(false);
@@ -131,6 +135,7 @@ export default function QRPaymentContent({
     const checkStatus = async () => {
       try {
         const res = await checkoutApi.getPaymentStatus(orderId);
+        if (typeof res.expiresAt === "string") setExpiresAt(res.expiresAt);
         if (res.paymentStatus === "PAID") {
           redirectedRef.current = true;
           if (pollingRef.current) {
@@ -141,6 +146,15 @@ export default function QRPaymentContent({
           router.replace(
             `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
           );
+          return;
+        }
+
+        if (["CANCELLED", "EXPIRED", "FAILED"].includes(res.paymentStatus)) {
+          setExpiredByServer(true);
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
         }
       } catch {
         // Silent retry; avoid toast spam while polling
@@ -192,6 +206,15 @@ export default function QRPaymentContent({
       setAttemptCode(res.paymentAttemptCode);
       setQrUrl(res.qrImageUrl);
       setAmountValue(Math.round(res.totalAmount));
+      try {
+        const status = await checkoutApi.getPaymentStatus(orderId);
+        if (typeof status.expiresAt === "string") setExpiresAt(status.expiresAt);
+        if (["CANCELLED", "EXPIRED", "FAILED"].includes(status.paymentStatus)) {
+          setExpiredByServer(true);
+        }
+      } catch {
+        /* ignore */
+      }
       toast.success("Đã tạo mã QR mới.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Không thể tạo QR mới.";
@@ -225,7 +248,8 @@ export default function QRPaymentContent({
     if (!window.confirm("Bạn có chắc chắn muốn hủy giao dịch này và quay lại giỏ hàng?")) return;
     try {
       await checkoutApi.cancelOrder(orderId, "Khách hàng hủy tại trang QR");
-      toast.success("Đã hủy giao dịch.");
+      toast.success("Đã hủy giao dịch. Sản phẩm đã được khôi phục vào giỏ hàng.");
+      await refreshCart();
       router.push("/cart");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Không thể hủy đơn hàng.";
@@ -235,7 +259,13 @@ export default function QRPaymentContent({
 
   return (
     <>
-      <QRCodeCard qrUrl={qrImageUrl} onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+      <QRCodeCard
+        qrUrl={qrImageUrl}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        expiresAt={expiresAt}
+        isExpired={expiredByServer}
+      />
       <PaymentPanel
         bankName={BANK_NAME}
         accountNumber={ACCOUNT_NUMBER}

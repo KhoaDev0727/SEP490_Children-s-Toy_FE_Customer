@@ -6,6 +6,7 @@ import ShippingTracker, { type ShippingEvent } from "./ShippingTracker";
 import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
@@ -16,24 +17,38 @@ interface OrderDetailViewProps {
 
 const formatDateTime = (value?: string | null): string => {
   if (!value) return "";
-  const date = new Date(value);
+  let dateStr = value;
+  if (value.includes("T") && !value.endsWith("Z") && !value.includes("+")) {
+    dateStr = value + "Z";
+  }
+  const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleString("vi-VN", {
+  return date.toLocaleString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).replace(",", " -");
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).replace(",", " -") + " (GMT+7)";
 };
 
 const formatDate = (value?: string | null): string => {
   if (!value) return "";
-  const date = new Date(value);
+  let dateStr = value;
+  if (value.includes("T") && !value.endsWith("Z") && !value.includes("+")) {
+    dateStr = value + "Z";
+  }
+  const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleDateString("vi-VN");
+  return date.toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 
 export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
@@ -42,6 +57,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -127,7 +143,14 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
   const isCancellable = useMemo(() => {
     if (!order?.statusName) return false;
-    return ["pending", "confirmed"].includes(order.statusName.toLowerCase());
+    const status = order.statusName.toLowerCase();
+
+    // SHIP_COD rule: Chỉ được hủy khi chưa confirmed (tức là chỉ được hủy khi đang Pending)
+    if (order.paymentMethod === "SHIP_COD" && status === "confirmed") {
+      return false;
+    }
+
+    return ["pending", "confirmed"].includes(status);
   }, [order]);
 
   const handleCancel = useCallback(async () => {
@@ -138,9 +161,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       await checkoutApi.cancelOrder(order.orderId);
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể hủy đơn hàng.");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
     } finally {
       setIsCancelling(false);
+      setIsCancelModalOpen(false);
     }
   }, [loadOrder, order]);
 
@@ -149,7 +173,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <section className="col-span-1 md:col-span-3 flex flex-col gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30 flex items-center gap-3">
           <span className="material-symbols-outlined text-[#ff6a00]">hourglass_top</span>
-          <p className="text-sm text-[#5a4136]">Đang tải chi tiết đơn hàng...</p>
+          <p className="text-sm text-[#5a4136]">Loading order details...</p>
         </div>
       </section>
     );
@@ -160,7 +184,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <section className="col-span-1 md:col-span-3 flex flex-col gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30 flex items-center gap-3">
           <span className="material-symbols-outlined text-[#ff6a00]">error</span>
-          <p className="text-sm text-[#5a4136]">{errorMessage ?? "Không tìm thấy đơn hàng."}</p>
+          <p className="text-sm text-[#5a4136]">{errorMessage ?? "Order not found."}</p>
         </div>
       </section>
     );
@@ -179,23 +203,34 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-[#261812]">
-              Chi tiết đơn hàng <span className="text-[#ff6a00]">#{order.orderCode}</span>
+              Order Details <span className="text-[#ff6a00]">#{order.orderCode}</span>
             </h1>
-            <p className="text-sm text-[#5a4136]">Đặt lúc {formatDateTime(order.orderDate)}</p>
+            <p className="text-sm text-[#5a4136]">Placed at {formatDateTime(order.orderDate)}</p>
           </div>
         </div>
         {isCancellable ? (
           <div className="flex gap-3 w-full sm:w-auto">
             <button
-              onClick={handleCancel}
+              onClick={() => setIsCancelModalOpen(true)}
               disabled={isCancelling}
               className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
             >
-              {isCancelling ? "Đang hủy..." : "Hủy đơn hàng"}
+              Cancel Order
             </button>
           </div>
         ) : null}
       </div>
+
+      <ConfirmModal
+        isOpen={isCancelModalOpen}
+        title="Cancel Order"
+        message={`Are you sure you want to cancel order #${order.orderCode}? This action cannot be undone.`}
+        onConfirm={handleCancel}
+        onCancel={() => setIsCancelModalOpen(false)}
+        confirmText={isCancelling ? "Processing..." : "Confirm Cancel"}
+        cancelText="Close"
+        type="danger"
+      />
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

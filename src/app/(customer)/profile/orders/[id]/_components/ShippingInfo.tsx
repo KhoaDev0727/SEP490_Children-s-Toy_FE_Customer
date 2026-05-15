@@ -23,7 +23,7 @@ export default function ShippingInfo({
           <span className="material-symbols-outlined text-[#ff6a00]">
             location_on
           </span>
-          Thông tin nhận hàng
+          Shipping Address
         </h2>
         <div className="flex flex-col gap-3">
           <div>
@@ -44,12 +44,12 @@ export default function ShippingInfo({
           <span className="material-symbols-outlined text-[#ff6a00]">
             local_shipping
           </span>
-          Phương thức vận chuyển
+          Shipping Method
         </h2>
         <div className="flex flex-col gap-2">
           <p className="text-sm font-bold text-[#261812]">{method}</p>
           <p className="text-sm text-[#5a4136]">
-            Dự kiến giao hàng: {estimatedDate}
+            Estimated Delivery: {estimatedDate}
           </p>
         </div>
       </div>

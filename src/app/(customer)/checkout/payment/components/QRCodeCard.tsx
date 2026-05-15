@@ -2,17 +2,47 @@
 
 import { useEffect, useState } from "react";
 
-const EXPIRE_SECONDS = 15 * 60; // 15 phút
+const DEFAULT_EXPIRE_SECONDS = 5 * 60; // 5 phút
+
+const normalizeExpiresAt = (expiresAt: string): string => {
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(expiresAt)) return expiresAt;
+  return `${expiresAt}Z`;
+};
+
+const getSecondsLeftFromExpiry = (expiresAt?: string | null): number | null => {
+  if (!expiresAt) return null;
+  const expiresAtMs = Date.parse(normalizeExpiresAt(expiresAt));
+  if (Number.isNaN(expiresAtMs)) return null;
+  const diffMs = expiresAtMs - Date.now();
+  return Math.max(0, Math.floor(diffMs / 1000));
+};
 
 interface QRCodeCardProps {
   qrUrl: string;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  expiresAt?: string | null;
+  isExpired?: boolean;
 }
 
-export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCardProps) {
-  const [secondsLeft, setSecondsLeft] = useState(EXPIRE_SECONDS);
+export default function QRCodeCard({
+  qrUrl,
+  onRefresh,
+  isRefreshing,
+  expiresAt,
+  isExpired,
+}: QRCodeCardProps) {
+  const [secondsLeft, setSecondsLeft] = useState(
+    () => getSecondsLeftFromExpiry(expiresAt) ?? DEFAULT_EXPIRE_SECONDS,
+  );
   const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    const next = getSecondsLeftFromExpiry(expiresAt);
+    if (next === null) return;
+    setSecondsLeft(next);
+    setExpired(next <= 0);
+  }, [expiresAt]);
 
   useEffect(() => {
     if (secondsLeft <= 0) {
@@ -28,7 +58,8 @@ export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCar
     .padStart(2, "0");
   const seconds = (secondsLeft % 60).toString().padStart(2, "0");
 
-  const progress = secondsLeft / EXPIRE_SECONDS;
+  const effectiveExpired = expired || Boolean(isExpired);
+  const progress = secondsLeft / DEFAULT_EXPIRE_SECONDS;
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
@@ -36,8 +67,10 @@ export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCar
 
   const handleRefresh = () => {
     onRefresh?.();
-    setSecondsLeft(EXPIRE_SECONDS);
-    setExpired(false);
+    if (!expiresAt) {
+      setSecondsLeft(DEFAULT_EXPIRE_SECONDS);
+      setExpired(false);
+    }
   };
 
   return (
@@ -65,7 +98,7 @@ export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCar
         <div
           className={[
             "w-56 h-56 rounded-lg overflow-hidden transition-all duration-300",
-            expired ? "opacity-30 blur-sm" : "opacity-100",
+            effectiveExpired ? "opacity-30 blur-sm" : "opacity-100",
           ].join(" ")}
         >
           <img
@@ -77,7 +110,7 @@ export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCar
         </div>
 
         {/* Expired overlay */}
-        {expired && (
+        {effectiveExpired && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 rounded-lg">
             <svg className="w-10 h-10 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -130,7 +163,7 @@ export default function QRCodeCard({ qrUrl, onRefresh, isRefreshing }: QRCodeCar
         </p>
       </div>
 
-      {expired && (
+      {effectiveExpired && (
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}

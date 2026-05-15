@@ -38,7 +38,7 @@ export default function OrderProductList({
         {displayedProducts.map((product, i) => {
           const hasLink = Boolean(product.productId && product.productId > 0);
           const classification = product.categoryName || product.variant;
-          const classificationText = classification || "Đang cập nhật";
+          const classificationText = classification || "N/A";
 
           const media = (
             <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
@@ -79,9 +79,9 @@ export default function OrderProductList({
                     </h3>
                   )}
                   <p className="text-sm text-[#5a4136] mb-2">
-                    Phân loại: {classificationText}
+                    Variant: {classificationText}
                   </p>
-                  <p className="text-sm font-semibold text-[#5a4136]">Số lượng: x{product.quantity}</p>
+                  <p className="text-sm font-semibold text-[#5a4136]">Quantity: x{product.quantity}</p>
                 </div>
               </div>
               <div className="flex items-end justify-end flex-shrink-0">
@@ -101,12 +101,12 @@ export default function OrderProductList({
             >
               {isExpanded ? (
                 <>
-                  Thu gọn
+                  Show less
                   <span className="material-symbols-outlined text-[18px]">expand_less</span>
                 </>
               ) : (
                 <>
-                  Xem thêm {products.length - 2} sản phẩm khác
+                  See {products.length - 2} more products
                   <span className="material-symbols-outlined text-[18px]">expand_more</span>
                 </>
               )}

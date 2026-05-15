@@ -6,6 +6,8 @@ export interface CheckoutConfirmItem {
 export interface CheckoutConfirmRequest {
   addressId: number;
   paymentMethod: string;
+  orderVoucherCode?: string;
+  shippingVoucherCode?: string;
   voucherCode?: string;
   voucherDiscountAmount: number;
   note?: string;
@@ -29,6 +31,8 @@ export interface CheckoutConfirmResponse {
 
 export interface CheckoutPreviewRequest {
   addressId: number;
+  orderVoucherCode?: string;
+  shippingVoucherCode?: string;
   voucherCode?: string;
   /** Dòng đã chọn (khớp confirm). Không gửi = preview toàn bộ giỏ trên server. */
   items?: CheckoutConfirmItem[];
@@ -44,6 +48,8 @@ export interface CheckoutPreviewResponse {
   subTotal: number;
   shippingFee: number;
   discountAmount: number;
+  orderDiscountAmount?: number;
+  shippingDiscountAmount?: number;
   totalAmount: number;
   totalWeightGrams: number;
   estimatedDeliveryTime?: string;
@@ -61,6 +67,7 @@ export interface PaymentStatusResponse {
   orderCode: string;
   paymentStatus: string;
   paidAt?: string | null;
+  expiresAt?: string | null;
 }
 
 export interface OrderTrackingEvent {

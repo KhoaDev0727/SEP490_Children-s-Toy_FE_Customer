@@ -3,29 +3,8 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface OrderItem {
-  id: string;
-  name: string;
-  variant: string;
-  price: number;
-  qty: number;
-  image: string;
-}
-
-// ─── Mock Data (Fallback) ──────────────────────────────────────────────────────
-const MOCK_ITEMS: OrderItem[] = [
-  {
-    id: "1",
-    name: "Giày Thể Thao Cao Cấp Đỏ/Đen",
-    variant: "Đỏ · Size 42",
-    price: 2450000,
-    qty: 1,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAAccSy_PfqZDI8UaPITOfz5rpuPGnAVTA8Tpk--993ZwgqLOSEdQ8wjyFRYTmNW_DeT4lwF5lAq2yx96iLldmHaX-rUTnSrIOYSHjYbJKjgFrErNQLQfbhfk5VamnaUoE-BTy8kptbDaVFUBAu_vlRSU7gldcJ34pq3MB537CHJKWhXriEoPIOCBoDT178pm7UH8F2hq8VUGRFka4uR_kLCOYa0G-00LkdQiqWxQMuKtkudChzp75I2DdjffsXPC1kcRUJORXiPwU",
-  },
-];
+import { ordersApi } from "@/features/orders/services/orders-api";
+import type { CustomerOrderDetail } from "@/features/orders/types/orders";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
@@ -112,13 +91,16 @@ function ProgressBar({ active }: { active: number }) {
   );
 }
 
+const FALLBACK_IMAGE = "https://placehold.co/64x64/png?text=Toy";
+
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const orderCode = searchParams.get("orderCode") || "N/A";
-  
+
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -126,7 +108,12 @@ function OrderSuccessContent() {
     return () => clearTimeout(t);
   }, []);
 
-  const total = MOCK_ITEMS.reduce((s, it) => s + it.price * it.qty, 0);
+  useEffect(() => {
+    if (!orderId) return;
+    ordersApi.getOrderDetail(Number(orderId)).then(setOrder).catch(() => {
+      // Fallback to no order — page still shows success message
+    });
+  }, [orderId]);
 
   if (!mounted) return null;
 
@@ -226,30 +213,43 @@ function OrderSuccessContent() {
                   Tóm tắt đơn hàng
                 </h2>
 
-                <ul className="divide-y divide-orange-100">
-                  {MOCK_ITEMS.map((item) => (
-                    <li key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg border border-orange-100 shadow-sm flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-zinc-800 text-sm line-clamp-2">{item.name}</p>
-                        <p className="text-xs text-zinc-500 mt-0.5">{item.variant}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-orange-500 text-sm whitespace-nowrap">{fmt(item.price)}</p>
-                        <p className="text-xs text-zinc-400 mt-0.5">×{item.qty}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                {!order ? (
+                  <p className="text-sm text-zinc-400 text-center py-3">Đang tải thông tin đơn hàng...</p>
+                ) : (
+                  <>
+                    <ul className="divide-y divide-orange-100">
+                      {order.items.map((item) => (
+                        <li key={item.orderDetailId} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+                          <img
+                            src={item.productImage ?? FALLBACK_IMAGE}
+                            alt={item.productName}
+                            className="w-16 h-16 object-cover rounded-lg border border-orange-100 shadow-sm flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-zinc-800 text-sm line-clamp-2">{item.productName}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-bold text-orange-500 text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
+                            <p className="text-xs text-zinc-400 mt-0.5">×{item.quantity}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
 
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-orange-200">
-                  <span className="text-sm font-semibold text-zinc-600">Tổng cộng</span>
-                  <span className="text-lg font-extrabold text-orange-500">{fmt(total)}</span>
-                </div>
+                    <div className="mt-4 pt-3 border-t border-orange-200 space-y-1.5">
+                      {order.voucherDiscountAmount > 0 && (
+                        <div className="flex justify-between items-center text-sm text-zinc-500">
+                          <span>Giảm giá voucher</span>
+                          <span className="text-emerald-600 font-semibold">-{fmt(order.voucherDiscountAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-zinc-600">Tổng cộng</span>
+                        <span className="text-lg font-extrabold text-orange-500">{fmt(order.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div
@@ -265,7 +265,7 @@ function OrderSuccessContent() {
                   Tiếp tục mua sắm
                 </Link>
                 <Link
-                  href={orderId ? `/accounts/orders/${orderId}` : "/accounts/orders"}
+                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
                   className="w-full sm:w-auto px-7 py-3 rounded-xl bg-orange-500 text-white
                     font-bold text-sm shadow-md shadow-orange-200
                     hover:bg-orange-600 active:scale-95 transition-all duration-200 text-center"

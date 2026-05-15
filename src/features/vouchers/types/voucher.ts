@@ -14,6 +14,7 @@ export interface IVoucher {
   minOrderAmount: number | null;
   voucherDescription: string;
   maxUsagePerUser: number | null;
+  maxDiscountCap: number | null;
 }
 
 export interface IVoucherResponse {
