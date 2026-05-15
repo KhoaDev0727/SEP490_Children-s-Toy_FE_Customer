@@ -119,7 +119,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
     : [
       {
         highlight: true,
-        title: isCancelled ? "Order Cancelled" : isRefunded ? "Order Refunded" : "Updating status...",
+        title: isCancelled ? "Order has been cancelled" : isRefunded ? "Order has been refunded" : "Updating status...",
         time: "",
         desc: "",
       },
@@ -202,7 +202,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
             {isCancelled ? "This order has been cancelled" : "Order has been refunded"}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            {isCancelled ? "Please contact support for more information" : "Funds have been returned to your wallet"}
+            {isCancelled ? "If you have questions, please contact support" : "Refund has been returned to your wallet"}
           </p>
         </div>
       )}

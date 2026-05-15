@@ -16,10 +16,10 @@ export interface Notification {
 }
 
 export const NOTIFICATION_TABS: { key: NotificationCategory; label: string }[] = [
-  { key: "all", label: "Tất cả" },
-  { key: "promotion", label: "Khuyến mãi" },
-  { key: "order", label: "Đơn hàng" },
-  { key: "system", label: "Hệ thống" },
+  { key: "all", label: "All" },
+  { key: "promotion", label: "Promotions" },
+  { key: "order", label: "Orders" },
+  { key: "system", label: "System" },
 ];
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
@@ -27,8 +27,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "1",
     category: "order",
     read: false,
-    title: "Đơn hàng #SX789012 đang được giao",
-    description: "Tài xế đang trên đường giao đơn hàng LEGO Technic Ferrari của bạn. Vui lòng giữ máy.",
+    title: "Order #SX789012 is being delivered",
+    description: "The driver is on the way with your LEGO Technic Ferrari order. Please keep your phone available.",
     timestamp: "10:30 - 09/05/2024",
     icon: "local_shipping",
     iconBg: "bg-blue-100",
@@ -38,8 +38,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "2",
     category: "promotion",
     read: false,
-    title: "Voucher 50K sắp hết hạn!",
-    description: "Đừng quên sử dụng Voucher Giảm 50K cho đơn hàng từ 500K. Hạn dùng đến hết hôm nay.",
+    title: "Voucher 50K is expiring soon!",
+    description: "Don't forget to use your 50K voucher for orders from 500K. Valid until today.",
     timestamp: "08:15 - 09/05/2024",
     icon: "sell",
     iconBg: "bg-orange-100",
@@ -49,8 +49,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "3",
     category: "system",
     read: true,
-    title: "Xác thực tài khoản thành công",
-    description: "Tài khoản của bạn đã được bảo mật 2 lớp. Cảm ơn bạn đã tin dùng ShopX.",
+    title: "Account verification successful",
+    description: "Your account is now secured with two-factor authentication. Thank you for trusting ShopX.",
     timestamp: "21:00 - 08/05/2024",
     icon: "security",
     iconBg: "bg-green-100",
@@ -60,8 +60,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "4",
     category: "order",
     read: true,
-    title: "Giao hàng thành công",
-    description: "Đơn hàng #SX789001 đã được giao thành công. Đánh giá ngay để nhận 200 Xu!",
+    title: "Delivered successfully",
+    description: "Order #SX789001 has been delivered successfully. Leave a review now to receive 200 Coins!",
     timestamp: "15:45 - 07/05/2024",
     icon: "check_circle",
     iconBg: "bg-slate-100",

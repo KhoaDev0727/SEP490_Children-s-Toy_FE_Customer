@@ -27,10 +27,10 @@ export default function OfflinePage() {
 
                     {/* Typography */}
                     <h1 className="font-section-headline text-section-headline text-on-surface mb-stack-sm">
-                        Mất kết nối với Trạm Vũ Trụ rồi!
+                        Connection to the Space Station was lost!
                     </h1>
                     <p className="font-body-sm text-body-sm text-secondary mb-stack-md px-4">
-                        Vui lòng kiểm tra lại đường truyền internet của bạn để tiếp tục hành trình mua sắm.
+                        Please check your internet connection to continue shopping.
                     </p>
 
                     {/* Action Button */}
@@ -39,7 +39,7 @@ export default function OfflinePage() {
                         className="bg-primary-container text-on-primary font-card-title text-card-title px-8 py-3 rounded-full shadow-lg shadow-primary-container/20 hover:scale-105 transition-transform flex items-center gap-2"
                     >
                         <span className="material-symbols-outlined text-[20px]">wifi_off</span>
-                        Kiểm tra lại kết nối
+                        Check connection again
                     </button>
                 </div>
             </main>

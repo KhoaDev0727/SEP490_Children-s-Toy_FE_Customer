@@ -14,32 +14,32 @@ import NotificationPopup from "./NotificationPopup";
 
 const categories = [
   {
-    label: "Thời trang",
-    sub: "Quần áo & phụ kiện",
+    label: "Fashion",
+    sub: "Clothing & Accessories",
     icon: "apparel",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDSvXBgjASMQbwm3AKatnkqRNRqY4pXNgJm7qcYzvJS8Sf0hPwpytSO8T8inw055KH3lHzVQYcTHhAqCazvz0e2tZBVfcHE-fmcjvrlnajV0BkY-VyTxzLTZgfqZ3_qTVnnPMNlSTBCtDD3OJdJZcK69QgD6x9C_YMkc2-Hqmr9skQxbdkOy5hv7-w-nZxATBKAOSyBnGiaqdkv7o5isCJvsLFitjgW8He3JmX_PRYmTb2o4FQqEeG8NjwZAQyZkkUcrQO6J9w5Kwo",
   },
   {
-    label: "Điện tử",
+    label: "Electronics",
     sub: "Smartphones & Laptops",
     icon: "devices",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAX4cksixDYIG1ynxHVMo66aqdOGgcztuon4_GSxcFmcwq51bozRc6o5NCQQ4Ot6Gu4eJGi2aPMdvykkDmMzaFHq6CnJ9vncuNFONsTFFP5UA3mEivn7YsnsIHaqUEfkOjB19F7xj2-AphOh6PxID1rD6mOsyT1Jg2ls9n6HTCBAleC-XCfyA7lInFOeM4gBW2t4ccEOcx7LWQVibpZ0EP3mJxx9-gQw4NdetTZjV68EH8S1XORSELcfDPxB0uZue2DJYlvTLJz00Q",
   },
   {
-    label: "Đồ gia dụng",
-    sub: "Thiết bị nhà bếp",
+    label: "Home Appliances",
+    sub: "Kitchen Appliances",
     icon: "home_appliance",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAX4cksixDYIG1ynxHVMo66aqdOGgcztuon4_GSxcFmcwq51bozRc6o5NCQQ4Ot6Gu4eJGi2aPMdvykkDmMzaFHq6CnJ9vncuNFONsTFFP5UA3mEivn7YsnsIHaqUEfkOjB19F7xj2-AphOh6PxID1rD6mOsyT1Jg2ls9n6HTCBAleC-XCfyA7lInFOeM4gBW2t4ccEOcx7LWQVibpZ0EP3mJxx9-gQw4NdetTZjV68EH8S1XORSELcfDPxB0uZue2DJYlvTLJz00Q",
   },
   {
-    label: "Làm đẹp",
-    sub: "Mỹ phẩm & Chăm sóc",
+    label: "Beauty",
+    sub: "Cosmetics & Care",
     icon: "face_5",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAZXcJsZlfDu3I5P34AlnI8tEBaCIrtLZcKMo0TFCmnv-65kxmcESqKFte7crFmX8aFxdZJohfl0aqKB9GyJB9An9aCyQeT27qpqwNBwxshLd44hMD6Drf7bLrZ5nsYehdWQe-wP7k4tAoE4wh8YmDvQBfAikcgsfT0zaeM5HVlw1FtL9OzNWV_9B6lmGRt2NsH1iTrCQEf99fjaSEpItlDlV2PetiN7h3thTcWrijmxoAHyfLyxlRuVkwldN7atM7wA9-vVSyEoU",
   },
   {
-    label: "Sách",
-    sub: "Kiến thức & Giải trí",
+    label: "Books",
+    sub: "Knowledge & Entertainment",
     icon: "menu_book",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAX4cksixDYIG1ynxHVMo66aqdOGgcztuon4_GSxcFmcwq51bozRc6o5NCQQ4Ot6Gu4eJGi2aPMdvykkDmMzaFHq6CnJ9vncuNFONsTFFP5UA3mEivn7YsnsIHaqUEfkOjB19F7xj2-AphOh6PxID1rD6mOsyT1Jg2ls9n6HTCBAleC-XCfyA7lInFOeM4gBW2t4ccEOcx7LWQVibpZ0EP3mJxx9-gQw4NdetTZjV68EH8S1XORSELcfDPxB0uZue2DJYlvTLJz00Q",
   },
@@ -92,14 +92,14 @@ function UserDropdown() {
           href="/login"
           className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
         >
-          Đăng nhập
+          Log in
         </Link>
         <Link
           href="/register"
           className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
         >
-          Đăng ký
+          Sign up
         </Link>
       </div>
     );
@@ -383,13 +383,13 @@ export default function Header() {
                 href="/"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
               >
-                Trang chủ
+                Home
               </Link>
               <Link
                 href="/products"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
               >
-                Sản Phẩm
+                Products
               </Link>
 
               {/* Products dropdown */}
@@ -399,7 +399,7 @@ export default function Header() {
                 onMouseLeave={() => setDropdownOpen(false)}
               >
                 <button className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors flex items-center gap-1 py-4 cursor-pointer">
-                  Danh Mục
+                  Categories
                   <span
                     className="material-symbols-outlined transition-transform duration-200"
                     style={{
@@ -452,13 +452,13 @@ export default function Header() {
                 href="#"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
               >
-                Khuyến mãi
+                Promotions
               </a>
               <Link
                 href="/blog"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
               >
-                Tin tức
+                News
               </Link>
             </nav>
           </div>

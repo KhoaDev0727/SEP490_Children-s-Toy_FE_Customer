@@ -88,7 +88,7 @@ export default function NotFound() {
                 fontFamily: "Inter, sans-serif",
               }}
             >
-              Oops! Trang này đã đi chơi mất rồi.
+              Oops! This page has gone out to play.
             </h2>
             <p
               style={{
@@ -100,8 +100,8 @@ export default function NotFound() {
                 fontFamily: "Inter, sans-serif",
               }}
             >
-              Chúng tôi không tìm thấy nội dung bạn yêu cầu. Đừng lo, hãy quay
-              về trang chủ để tiếp tục khám phá thế giới đồ chơi nhé!
+              We couldn't find the content you requested. Don't worry, go
+              back to the homepage to continue exploring the toy world!
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export default function NotFound() {
               >
                 <path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z" />
               </svg>
-              Quay về trang chủ
+              Back to homepage
             </Link>
           </div>
         </div>

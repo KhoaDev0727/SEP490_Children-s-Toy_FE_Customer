@@ -8,7 +8,7 @@ import PaymentPanel from "@/app/(customer)/checkout/payment/components/PaymentPa
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { useCart } from "@/features/cart/context/CartContext";
 
-const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Ngân hàng";
+const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank";
 const BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
 const ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
 const ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
@@ -116,7 +116,7 @@ export default function QRPaymentContent({
         setAmountValue(Math.round(res.totalAmount));
       } catch (err) {
         if (cancelled) return;
-        const msg = err instanceof Error ? err.message : "Không thể lấy thông tin thanh toán.";
+        const msg = err instanceof Error ? err.message : "Unable to retrieve payment information.";
         toast.error(msg);
       } finally {
         if (!cancelled) setIsRefreshing(false);
@@ -187,12 +187,12 @@ export default function QRPaymentContent({
     return (
       <>
         <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Đang tải QR</p>
-          <p className="text-sm text-slate-500">Vui lòng chờ trong giây lát...</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Loading QR</p>
+          <p className="text-sm text-slate-500">Please wait a moment...</p>
         </div>
         <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Thông tin thanh toán</p>
-          <p className="text-sm text-slate-500">Đang lấy thông tin từ hệ thống...</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Payment information</p>
+          <p className="text-sm text-slate-500">Fetching payment information...</p>
         </div>
       </>
     );
@@ -215,9 +215,9 @@ export default function QRPaymentContent({
       } catch {
         /* ignore */
       }
-      toast.success("Đã tạo mã QR mới.");
+      toast.success("New QR code generated.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Không thể tạo QR mới.";
+      const msg = err instanceof Error ? err.message : "Unable to generate a new QR code.";
       toast.error(msg);
     } finally {
       setIsRefreshing(false);
@@ -229,30 +229,30 @@ export default function QRPaymentContent({
     try {
       const res = await checkoutApi.getPaymentStatus(orderId);
       if (res.paymentStatus === "PAID") {
-        toast.success("Thanh toán thành công!");
+        toast.success("Payment successful!");
         const resolvedOrderCode = orderCode || res.orderCode || "";
         router.replace(
           `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
         );
       } else {
-        toast.error("Hệ thống chưa nhận được thanh toán. Vui lòng chờ thêm giây lát.");
+        toast.error("The system has not received payment yet. Please wait a little longer.");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Không thể kiểm tra trạng thái.";
+      const msg = err instanceof Error ? err.message : "Unable to check status.";
       toast.error(msg);
     }
   };
 
   const handleCancelOrder = async () => {
     if (!orderId) return;
-    if (!window.confirm("Bạn có chắc chắn muốn hủy giao dịch này và quay lại giỏ hàng?")) return;
+    if (!window.confirm("Are you sure you want to cancel this transaction and return to cart?")) return;
     try {
-      await checkoutApi.cancelOrder(orderId, "Khách hàng hủy tại trang QR");
-      toast.success("Đã hủy giao dịch. Sản phẩm đã được khôi phục vào giỏ hàng.");
+      await checkoutApi.cancelOrder(orderId, "Customer cancelled on QR page");
+      toast.success("Transaction cancelled. Products restored to cart.");
       await refreshCart();
       router.push("/cart");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Không thể hủy đơn hàng.";
+      const msg = err instanceof Error ? err.message : "Unable to cancel order.";
       toast.error(msg);
     }
   };

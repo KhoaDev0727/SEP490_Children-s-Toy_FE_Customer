@@ -78,11 +78,11 @@ export default function QRCodeCard({
       {/* Title */}
       <div className="text-center">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-          Thanh toán bằng
+          Pay with
         </p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-2xl font-black tracking-tight text-[#ff6a00] dark:text-[#ff6a00]">
-            Mã QR (VietQR)
+            QR code (VietQR)
           </span>
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function QRCodeCard({
             <svg className="w-10 h-10 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs font-bold text-red-500">Mã đã hết hạn</p>
+            <p className="text-xs font-bold text-red-500">Code expired</p>
           </div>
         )}
       </div>
@@ -145,7 +145,7 @@ export default function QRCodeCard({
               {minutes}:{seconds}
             </p>
             <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">
-              Còn lại
+              Remaining
             </p>
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function QRCodeCard({
           />
         </svg>
         <p className="text-xs font-medium text-orange-700 dark:text-orange-400">
-          Mở App Ngân hàng → Quét mã QR
+          Open Banking App → Scan QR Code
         </p>
       </div>
 
@@ -175,10 +175,10 @@ export default function QRCodeCard({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              Đang tạo...
+              Generating...
             </>
           ) : (
-            "Tạo mã QR mới"
+            "Generate new QR code"
           )}
         </button>
       )}

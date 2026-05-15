@@ -91,7 +91,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         setTrackingEvents([]);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể tải đơn hàng.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
       setOrder(null);
       setTrackingEvents([]);
     } finally {
@@ -132,8 +132,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   }, [order]);
 
   const shippingMethod = useMemo(() => {
-    if (!order?.shipping?.provider) return "Đang cập nhật";
-    return `Giao hàng qua ${order.shipping.provider}`;
+    if (!order?.shipping?.provider) return "Updating";
+    return `Shipped via ${order.shipping.provider}`;
   }, [order]);
 
   const estimatedDate = useMemo(() => {
@@ -161,7 +161,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       await checkoutApi.cancelOrder(order.orderId);
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
     } finally {
       setIsCancelling(false);
       setIsCancelModalOpen(false);
@@ -215,7 +215,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
               disabled={isCancelling}
               className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
             >
-              Cancel Order
+              {isCancelling ? "Cancelling..." : "Cancel Order"}
             </button>
           </div>
         ) : null}
@@ -247,7 +247,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             phone={order.shippingPhone}
             address={shippingAddress}
             method={shippingMethod}
-            estimatedDate={estimatedDate || "Đang cập nhật"}
+            estimatedDate={estimatedDate || "Updating"}
           />
           <PaymentSummary
             subtotal={order.subTotal}

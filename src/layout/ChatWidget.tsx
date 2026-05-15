@@ -7,11 +7,11 @@ interface Message {
   text: string;
 }
 
-const suggestions = ["Tra cứu đơn hàng", "Tư vấn sản phẩm", "Chính sách hoàn trả", "Liên hệ hỗ trợ"];
+const suggestions = ["Track order", "Product consultation", "Return policy", "Contact support"];
 
 const initialMessages: Message[] = [
-  { id: 1, from: "bot", text: "Xin chào! Rất vui được gặp bạn. ShopX có thể giúp gì cho bạn hôm nay?" },
-  { id: 2, from: "user", text: "Tôi muốn kiểm tra tình trạng đơn hàng của mình." },
+  { id: 1, from: "bot", text: "Hello! Great to see you. How can ShopX help you today?" },
+  { id: 2, from: "user", text: "I want to check my order status." },
 ];
 
 export default function ChatWidget() {
@@ -36,7 +36,7 @@ export default function ChatWidget() {
       const botReply: Message = {
         id: now + 1,
         from: "bot",
-        text: "Cảm ơn bạn đã liên hệ! Chúng tôi sẽ hỗ trợ bạn ngay.",
+        text: "Thanks for contacting us! We'll assist you right away.",
       };
       setMessages((prev) => [...prev, botReply]);
     }, 900);
@@ -77,13 +77,13 @@ export default function ChatWidget() {
               <span className="material-symbols-outlined text-white" style={{ fontSize: 24 }}>smart_toy</span>
             </div>
             <div>
-              <h2 className="text-base font-bold leading-tight">Hỗ trợ trực tuyến</h2>
+              <h2 className="text-base font-bold leading-tight">Live support</h2>
               <div className="flex items-center gap-1.5">
                 <span
                   className="w-2 h-2 bg-green-400 rounded-full"
                   style={{ animation: "pulse-dot 1.5s ease-in-out infinite" }}
                 />
-                <span className="text-xs font-medium opacity-90">ShopX Bot đang online</span>
+                <span className="text-xs font-medium opacity-90">ShopX Bot is online</span>
               </div>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function ChatWidget() {
             ) : (
               <div key={msg.id} className="flex items-end gap-2.5 justify-end">
                 <div className="flex flex-col gap-1 items-end max-w-[80%]">
-                  <p className="text-[11px] font-medium text-slate-500 mr-1">Bạn</p>
+                  <p className="text-[11px] font-medium text-slate-500 mr-1">You</p>
                   <div
                     className="rounded-2xl rounded-br-none px-4 py-3 text-white shadow-sm"
                     style={{ backgroundColor: "#ff6a00" }}
@@ -139,7 +139,7 @@ export default function ChatWidget() {
           style={{ backgroundColor: "#f8fafc" }}
         >
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">
-            Gợi ý cho bạn
+            Suggestions for you
           </p>
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
             {suggestions.map((s) => (
@@ -171,7 +171,7 @@ export default function ChatWidget() {
             </button>
             <input
               className="flex-1 bg-transparent border-none text-sm text-slate-800 placeholder:text-slate-400 py-1 outline-none"
-              placeholder="Nhập tin nhắn..."
+              placeholder="Type a message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
@@ -184,7 +184,7 @@ export default function ChatWidget() {
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>send</span>
             </button>
           </div>
-          <p className="text-center text-[10px] text-slate-400 mt-3">Sức mạnh bởi ShopX AI Support</p>
+          <p className="text-center text-[10px] text-slate-400 mt-3">Powered by ShopX AI Support</p>
         </div>
       </div>
     </>

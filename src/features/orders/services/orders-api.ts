@@ -68,7 +68,7 @@ export const ordersApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractOrderErrorMessage(error, "Không thể tải danh sách đơn hàng."),
+        extractOrderErrorMessage(error, "Unable to load order list."),
       );
     }
   },
@@ -80,7 +80,7 @@ export const ordersApi = {
       return unwrap(response);
     } catch (error) {
       throw new Error(
-        extractOrderErrorMessage(error, "Không thể tải chi tiết đơn hàng."),
+        extractOrderErrorMessage(error, "Unable to load order details."),
       );
     }
   },

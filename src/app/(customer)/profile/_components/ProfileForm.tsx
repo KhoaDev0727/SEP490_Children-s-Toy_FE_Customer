@@ -10,8 +10,8 @@ import toast from "react-hot-toast";
 
 const SEX_OPTIONS = [
   { id: 1, label: "Nam" },
-  { id: 2, label: "Nữ" },
-  { id: 3, label: "Khác" },
+  { id: 2, label: "Female" },
+  { id: 3, label: "Other" },
 ] as const;
 
 const getSexLabelById = (id: number | null | undefined) => {

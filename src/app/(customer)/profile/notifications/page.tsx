@@ -108,8 +108,8 @@ export default function NotificationsPage() {
     if (type === "SYSTEM") {
       setConfirmModal({
         show: true,
-        title: "Xác nhận xóa",
-        message: "Đây là thông báo hệ thống quan trọng. Bạn có chắc chắn muốn xóa?",
+        title: "Confirm deletion",
+        message: "This is an important system notification. Are you sure you want to delete it?",
         onConfirm: doDelete,
       });
     } else {
@@ -120,8 +120,8 @@ export default function NotificationsPage() {
   const handleDeleteAllRead = () => {
     setConfirmModal({
       show: true,
-      title: "Xác nhận xóa tất cả",
-      message: "Bạn có chắc chắn muốn xóa tất cả thông báo đã đọc?",
+      title: "Confirm delete all",
+      message: "Are you sure you want to delete all read notifications?",
       onConfirm: async () => {
         try {
           await notificationApi.deleteAllReadNotifications();
@@ -183,8 +183,8 @@ export default function NotificationsPage() {
       <div className="col-span-full mb-2">
         <Breadcrumbs
           items={[
-            { label: "Tài khoản", href: "/profile" },
-            { label: "Thông báo" }
+            { label: "Account", href: "/profile" },
+            { label: "Notifications" }
           ]}
         />
       </div>
@@ -196,21 +196,21 @@ export default function NotificationsPage() {
       <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-          <h1 className="text-xl font-bold text-[#261812]">Thông báo của tôi</h1>
+          <h1 className="text-xl font-bold text-[#261812]">My Notifications</h1>
           <div className="flex items-center gap-4">
             <button
               onClick={handleMarkAllRead}
               disabled={counts.all === 0}
               className="text-sm text-[#a14000] hover:text-[#ff6a00] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Đánh dấu tất cả đã đọc
+              Mark all as read
             </button>
             <div className="w-[1px] h-4 bg-[#e2bfb0]/30" />
             <button
               onClick={handleDeleteAllRead}
               className="text-sm text-red-500 hover:text-red-600 font-semibold transition-colors"
             >
-              Xóa tất cả đã đọc
+              Delete all read
             </button>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function NotificationsPage() {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal((prev) => ({ ...prev, show: false }))}
-        confirmText="Xác nhận"
+        confirmText="Confirm"
         type="danger"
       />
     </main>

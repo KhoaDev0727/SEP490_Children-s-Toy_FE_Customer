@@ -26,7 +26,7 @@ export default function SaveButton({ onSave, isSaving, saved }: SaveButtonProps)
         <span className="material-symbols-outlined text-[20px]">
           {saved ? "check_circle" : isSaving ? "sync" : "save"}
         </span>
-        {saved ? "Đã lưu thay đổi" : isSaving ? "Đang lưu..." : "Lưu cài đặt"}
+        {saved ? "Changes saved" : isSaving ? "Saving..." : "Save settings"}
       </button>
     </div>
   );

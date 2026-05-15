@@ -89,10 +89,10 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
               {voucher.voucherName}
             </h3>
             <p className="text-xs text-slate-500 mt-1 truncate">
-              Đơn Tối Thiểu{" "}
+              Minimum Order{" "}
               {voucher.minOrderAmount
                 ? formatCurrency(voucher.minOrderAmount)
-                : "0đ"}
+                : "0 VND"}
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
             <div className="relative flex flex-col gap-3 pointer-events-auto">
               <div>
                 <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                  Mã voucher
+                  Voucher code
                 </span>
                 <div className="flex items-center justify-between mt-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-md">
                   <span className="font-mono font-bold text-orange-600 text-base">
@@ -155,7 +155,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
               </div>
               <div>
                 <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                  Thời hạn sử dụng
+                  Validity period
                 </span>
                 <p className="mt-1 font-semibold text-slate-700 text-[13px]">
                   {formatDate(voucher.startDate)} -{" "}
@@ -165,7 +165,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
               {voucher.voucherDescription && (
                 <div className="pt-2 border-t border-slate-100">
                   <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                    Mô tả
+                    Description
                   </span>
                   <p className="mt-1 text-xs text-slate-600 leading-relaxed italic">
                     {voucher.voucherDescription}
@@ -186,11 +186,11 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
                 : "border-orange-500 text-orange-500 hover:bg-orange-50"
             }`}
           >
-            {isCopied ? "Đã lưu" : "Copy"}
+            {isCopied ? "Saved" : "Copy"}
           </button>
           {isExpiringSoon && (
             <span className="mt-2 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 text-center w-full leading-tight">
-              Sắp hết hạn
+              Expiring soon
             </span>
           )}
         </div>

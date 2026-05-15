@@ -47,7 +47,7 @@ export default function UnreviewedList() {
           <div className="absolute inset-0 rounded-full border-4 border-orange-100"></div>
           <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
         </div>
-        <p className="text-sm text-slate-500 animate-pulse font-medium">Đang tải sản phẩm...</p>
+        <p className="text-sm text-slate-500 animate-pulse font-medium">Loading products...</p>
       </div>
     );
   }
@@ -61,10 +61,10 @@ export default function UnreviewedList() {
           </span>
         </div>
         <h3 className="text-lg font-semibold text-slate-900">
-          Tuyệt vời! Bạn đã đánh giá tất cả sản phẩm
+          Great! You have reviewed all products
         </h3>
         <p className="text-sm text-slate-500 mt-2 max-w-[300px] mx-auto">
-          Cảm ơn bạn đã chia sẻ trải nghiệm mua sắm tại ToyStore.
+          Thank you for sharing your shopping experience at ToyStore.
         </p>
       </div>
     );
@@ -107,7 +107,7 @@ export default function UnreviewedList() {
                       : "bg-emerald-50 text-emerald-600"
                   }`}>
                     <span className="material-symbols-outlined text-[12px]">schedule</span>
-                    Còn {product.remainingDays} ngày
+                    {product.remainingDays} days left
                   </span>
                 )}
               </div>
@@ -119,7 +119,7 @@ export default function UnreviewedList() {
               </Link>
               
               <p className="text-sm text-slate-500 line-clamp-1">
-                Hãy dành chút thời gian để chia sẻ cảm nhận về sản phẩm này nhé!
+                Take a moment to share your thoughts on this product!
               </p>
             </div>
 
@@ -140,7 +140,7 @@ export default function UnreviewedList() {
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                Viết đánh giá
+                Write review
               </button>
             </div>
           </div>
