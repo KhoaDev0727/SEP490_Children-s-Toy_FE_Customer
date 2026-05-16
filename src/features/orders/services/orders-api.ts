@@ -84,4 +84,16 @@ export const ordersApi = {
       );
     }
   },
+  completeOrder: async (orderId: number): Promise<string> => {
+    try {
+      const response = await axiosClient.post<string | ApiResponse<string>>(
+        `/orders/${orderId}/complete`,
+      );
+      return unwrap(response);
+    } catch (error) {
+      throw new Error(
+        extractOrderErrorMessage(error, "Unable to complete order."),
+      );
+    }
+  },
 };
