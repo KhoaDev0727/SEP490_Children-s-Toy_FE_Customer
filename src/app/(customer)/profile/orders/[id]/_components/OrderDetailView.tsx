@@ -58,6 +58,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -71,25 +72,51 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
       setOrder(detail);
 
+      // Merge internal status history and external tracking events
+      const allEvents: ShippingEvent[] = [];
+
+      // 1. Add GHN tracking events (already translated by backend)
       if (tracking?.events?.length) {
-        setTrackingEvents(
-          tracking.events.map((event) => ({
-            time: event.time,
-            status: event.status,
-            description: event.description ?? event.location ?? undefined,
-          })),
-        );
-      } else if (detail.statusHistory?.length) {
-        setTrackingEvents(
-          detail.statusHistory.map((event) => ({
-            time: event.createdAt,
-            status: event.statusName,
-            description: event.note ?? undefined,
-          })),
-        );
-      } else {
-        setTrackingEvents([]);
+        tracking.events.forEach((e) => {
+          allEvents.push({
+            time: e.time,
+            status: e.status,
+            description: e.description,
+          });
+        });
       }
+
+      // 2. Add internal status history (and translate common legacy Vietnamese notes)
+      if (detail.statusHistory?.length) {
+        detail.statusHistory.forEach((h) => {
+          let note = h.note || h.statusName;
+          
+          // Simple inline translation for legacy Vietnamese notes
+          const n = note.toLowerCase();
+          if (n.includes("chờ lấy hàng")) note = "Ready to pick";
+          else if (n.includes("đang lấy hàng")) note = "Picking up";
+          else if (n.includes("đã lấy hàng")) note = "Picked up";
+          else if (n.includes("đang giao hàng")) note = "Out for delivery";
+          else if (n.includes("giao hàng thành công")) note = "Delivered successfully";
+          else if (n.includes("đã hủy")) note = "Cancelled";
+          else if (n.includes("order completed")) note = "Order completed";
+
+          allEvents.push({
+            time: h.createdAt,
+            status: h.statusName,
+            description: note,
+          });
+        });
+      }
+
+      // 3. Sort by time descending and remove duplicates
+      const uniqueEvents = allEvents
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .filter((ev, idx, self) =>
+          idx === self.findIndex((t) => t.description === ev.description && t.time === ev.time)
+        );
+
+      setTrackingEvents(uniqueEvents);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
       setOrder(null);
@@ -153,6 +180,13 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     return ["pending", "confirmed"].includes(status);
   }, [order]);
 
+  const isCompletable = useMemo(() => {
+    if (!order?.statusName) return false;
+    const status = order.statusName.toLowerCase();
+    // Match backend: Delivered only
+    return status === "delivered";
+  }, [order]);
+
   const handleCancel = useCallback(async () => {
     if (!order) return;
 
@@ -165,6 +199,19 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     } finally {
       setIsCancelling(false);
       setIsCancelModalOpen(false);
+    }
+  }, [loadOrder, order]);
+
+  const handleComplete = useCallback(async () => {
+    if (!order) return;
+    setIsCompleting(true);
+    try {
+      await ordersApi.completeOrder(order.orderId);
+      await loadOrder();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to complete order.");
+    } finally {
+      setIsCompleting(false);
     }
   }, [loadOrder, order]);
 
@@ -208,15 +255,26 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             <p className="text-sm text-[#5a4136]">Placed at {formatDateTime(order.orderDate)}</p>
           </div>
         </div>
-        {isCancellable ? (
+        {(isCancellable || isCompletable) ? (
           <div className="flex gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => setIsCancelModalOpen(true)}
-              disabled={isCancelling}
-              className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
-            >
-              {isCancelling ? "Cancelling..." : "Cancel Order"}
-            </button>
+            {isCancellable && (
+              <button
+                onClick={() => setIsCancelModalOpen(true)}
+                disabled={isCancelling || isCompleting}
+                className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
+              >
+                {isCancelling ? "Cancelling..." : "Cancel Order"}
+              </button>
+            )}
+            {isCompletable && (
+              <button
+                onClick={handleComplete}
+                disabled={isCompleting || isCancelling}
+                className="flex-1 sm:flex-none px-6 py-2.5 bg-[#ff6a00] text-white text-sm font-bold rounded-xl hover:bg-[#e65f00] transition-all hover:scale-105 shadow-lg shadow-[#ff6a00]/10 disabled:opacity-60"
+              >
+                {isCompleting ? "Processing..." : "Order Received"}
+              </button>
+            )}
           </div>
         ) : null}
       </div>

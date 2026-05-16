@@ -15,6 +15,7 @@ const STEPS = [
   { icon: "receipt_long", label: "Placed" },
   { icon: "inventory_2", label: "Processing" },
   { icon: "local_shipping", label: "Delivering" },
+  { icon: "package_2", label: "Delivered" },
   { icon: "check_circle", label: "Completed" },
 ];
 
@@ -26,13 +27,14 @@ const getActiveStep = (status?: string | null): number => {
     case "confirmed":
       return 0;
     case "processing":
-    case "shipped":
       return 1;
+    case "shipped":
     case "delivering":
       return 2;
     case "delivered":
-    case "completed":
       return 3;
+    case "completed":
+      return 4;
     case "cancelled":
       return 0;
     default:
@@ -57,7 +59,7 @@ const formatEventTimeShort = (value?: string | null): string => {
     month: "2-digit",
     year: "numeric",
     timeZone: "Asia/Ho_Chi_Minh",
-  }).replace(",", "") + " (GMT+7)";
+  }).replace(",", "");
 };
 
 const formatEventTime = (value: string): string => {
