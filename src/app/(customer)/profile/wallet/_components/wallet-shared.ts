@@ -104,7 +104,7 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
 
   if (normalizedType === "payment") {
     icon = "shopping_bag";
-    title = txn.relatedOrderId ? `Order payment #ORD-${txn.relatedOrderId}` : "Order payment";
+    title = txn.reason || (txn.relatedOrderCode ? `Order payment #${txn.relatedOrderCode}` : "Order payment");
   }
 
   if (normalizedType === "topup") {
@@ -114,7 +114,7 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
 
   if (normalizedType === "refund") {
     icon = "currency_exchange";
-    title = txn.relatedOrderId ? `Order refund #ORD-${txn.relatedOrderId}` : "Order refund";
+    title = txn.reason || (txn.relatedOrderCode ? `Order refund #${txn.relatedOrderCode}` : "Order refund");
   }
 
   const normalizedStatus = txn.status.trim().toLowerCase();

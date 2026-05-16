@@ -12,6 +12,7 @@ export interface WalletDto {
 export interface WalletTransactionDto {
   walletTransactionId: number;
   relatedOrderId: number | null;
+  relatedOrderCode: string | null;
   txnType: string;
   direction: string;
   amount: number;

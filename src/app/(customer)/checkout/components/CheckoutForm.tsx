@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { addressApi } from "@/features/address/services/address-api";
 import type { AddressItem, DistrictOption, ProvinceOption, WardOption } from "@/features/address/types/address";
@@ -81,16 +81,17 @@ export default function CheckoutForm({
     return () => { active = false; };
   }, []);
 
+  const isInitialized = useRef(false);
   useEffect(() => {
-    if (!isHydrated || !isAuthenticated) {
-      setSelectedAddressId(0);
+    if (!isHydrated || !isAuthenticated || isInitialized.current || externalLoading) {
       return;
     }
 
-    let active = true;
     const addrs = externalAddresses ?? [];
-    
-    if (addrs.length > 0 && form.addressId === 0) {
+    if (addrs.length === 0) return;
+
+    // Thêm một chút delay để đảm bảo UI đã sẵn sàng (theo yêu cầu user)
+    const timer = setTimeout(() => {
       const defaultAddr = addrs.find((a) => a.isDefault) ?? addrs[0];
       setSelectedAddressId(defaultAddr.addressId);
       
@@ -104,28 +105,22 @@ export default function CheckoutForm({
         districtId: defaultAddr.districtId ?? 0,
         wardCode: defaultAddr.wardCode ?? "",
       };
+      
       setForm(updated);
       onFormChange?.(updated);
+      isInitialized.current = true;
       
-      // Load districts for this default address
+      // Load districts & wards
       if (defaultAddr.provinceId) {
-        addressApi.getDistricts(defaultAddr.provinceId).then((dList) => {
-          if (active) setDistricts(dList ?? []);
-        }).catch(() => {
-          if (active) setDistricts([]);
-        });
+        addressApi.getDistricts(defaultAddr.provinceId).then(dList => setDistricts(dList ?? []));
       }
-      // Load wards for this default address
       if (defaultAddr.districtId) {
-        addressApi.getWards(defaultAddr.districtId).then((wList) => {
-          if (active) setWards(wList ?? []);
-        }).catch(() => {
-          if (active) setWards([]);
-        });
+        addressApi.getWards(defaultAddr.districtId).then(wList => setWards(wList ?? []));
       }
-    }
-    return () => { active = false; };
-  }, [isAuthenticated, isHydrated, externalAddresses, form.addressId, onFormChange]);
+    }, 500); // Delay 500ms cho mượt
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, isHydrated, externalAddresses, externalLoading, onFormChange, form]);
 
   const addresses = externalAddresses ?? [];
 
@@ -255,26 +250,30 @@ export default function CheckoutForm({
             Shipping Information
           </h2>
           <div className="flex flex-col items-start sm:items-end gap-1.5 w-full sm:w-auto">
-            <div className="flex items-center gap-3 w-full">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">Address Book</label>
-              <div className="relative flex-1 sm:w-56">
-                <select
-                  className="w-full appearance-none rounded-xl border border-[#ff6a00]/20 bg-[#ff6a00]/5 hover:bg-[#ff6a00]/10 text-sm font-bold text-[#ff6a00] px-4 py-2.5 pr-10 cursor-pointer outline-none transition-colors"
-                  value={selectedAddressId}
-                  onChange={handleSelectAddress}
-                  disabled={!isHydrated || !isAuthenticated || addresses.length === 0}
-                >
-                  <option value={0}>{(!isHydrated || !isAuthenticated) ? "Login required" : "Select address"}</option>
-                  {addresses.map((a) => (
-                    <option key={a.addressId} value={a.addressId}>
-                      {(a.recipientName ?? "").trim() || "Unnamed"} - {a.addressLine}
-                    </option>
-                  ))}
-                </select>
-                <ChevronIcon className="text-[#ff6a00]" />
+            {externalLoading ? (
+              <div className="h-10 w-full sm:w-56 bg-gray-200 animate-pulse rounded-xl" />
+            ) : (
+              <div className="flex items-center gap-3 w-full">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">Address Book</label>
+                <div className="relative flex-1 sm:w-56">
+                  <select
+                    className="w-full appearance-none rounded-xl border border-[#ff6a00]/20 bg-[#ff6a00]/5 hover:bg-[#ff6a00]/10 text-sm font-bold text-[#ff6a00] px-4 py-2.5 pr-10 cursor-pointer outline-none transition-colors"
+                    value={selectedAddressId}
+                    onChange={handleSelectAddress}
+                    disabled={!isHydrated || !isAuthenticated || addresses.length === 0}
+                  >
+                    <option value={0}>{(!isHydrated || !isAuthenticated) ? "Login required" : "Select address"}</option>
+                    {addresses.map((a) => (
+                      <option key={a.addressId} value={a.addressId}>
+                        {(a.recipientName ?? "").trim() || "Unnamed"} - {a.addressLine}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronIcon className="text-[#ff6a00]" />
+                </div>
               </div>
-            </div>
-            {isHydrated && isAuthenticated && (
+            )}
+            {isHydrated && isAuthenticated && !externalLoading && (
               <a href="/profile/address" className="text-[11px] font-semibold text-gray-400 hover:text-[#ff6a00] transition-colors ml-auto sm:ml-0 flex items-center gap-1">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
                 Add/Edit New Address
