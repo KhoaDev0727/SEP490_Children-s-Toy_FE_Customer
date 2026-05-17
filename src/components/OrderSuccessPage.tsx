@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
+import { useCart } from "@/features/cart/context/CartContext";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
@@ -101,6 +102,9 @@ function OrderSuccessContent() {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
+  const { cart, refreshCart, removeItem, updateQuantity } = useCart();
+  const syncedOrderIdRef = useRef<number | null>(null);
+  const isSyncingCartRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -114,6 +118,71 @@ function OrderSuccessContent() {
       // Fallback to no order — page still shows success message
     });
   }, [orderId]);
+
+  useEffect(() => {
+    void refreshCart().catch(() => {
+      // Ignore cart refresh errors on success page.
+    });
+  }, [refreshCart]);
+
+  useEffect(() => {
+    const parsedOrderId = Number(orderId);
+    if (!Number.isFinite(parsedOrderId) || parsedOrderId <= 0) return;
+    if (!order || !cart) return;
+    if (syncedOrderIdRef.current === parsedOrderId || isSyncingCartRef.current) return;
+
+    const purchasedQtyByProductId = order.items.reduce((acc, item) => {
+      acc.set(item.productId, (acc.get(item.productId) ?? 0) + item.quantity);
+      return acc;
+    }, new Map<number, number>());
+
+    const cartTargets = cart.items.filter((item) => purchasedQtyByProductId.has(item.productId));
+    if (cartTargets.length === 0) {
+      syncedOrderIdRef.current = parsedOrderId;
+      return;
+    }
+
+    isSyncingCartRef.current = true;
+    let cancelled = false;
+
+    const syncPurchasedItems = async () => {
+      try {
+        for (const cartItem of cartTargets) {
+          if (cancelled) return;
+
+          const purchasedQty = purchasedQtyByProductId.get(cartItem.productId) ?? 0;
+          if (purchasedQty <= 0) continue;
+
+          try {
+            if (cartItem.quantity > purchasedQty) {
+              await updateQuantity(cartItem.cartItemId, cartItem.quantity - purchasedQty);
+            } else {
+              await removeItem(cartItem.cartItemId);
+            }
+          } catch {
+            // Ignore per-item errors and continue syncing remaining items.
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          await refreshCart();
+          syncedOrderIdRef.current = parsedOrderId;
+        }
+      }
+    };
+
+    void syncPurchasedItems()
+      .catch(() => {
+        // Ignore reconciliation errors on success page.
+      })
+      .finally(() => {
+        isSyncingCartRef.current = false;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart, order, orderId, refreshCart, removeItem, updateQuantity]);
 
   if (!mounted) return null;
 
