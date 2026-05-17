@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Header from "@/layout/header/Header";
 import Footer from "@/layout/Footer";
 import ChatWidget from "@/layout/ChatWidget";
@@ -9,7 +10,9 @@ export default function CustomerLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Suspense fallback={<div className="h-16" aria-hidden="true" />}>
+        <Header />
+      </Suspense>
       <main className="flex-grow">
         {children}
       </main>
