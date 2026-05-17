@@ -50,7 +50,7 @@ const QUICK_TOP_UP_AMOUNTS = [2000, 20000, 50000, 100000, 200000, 500000] as con
 
 export const createSePayTopUpQrSchema = z.object({
   amount: z
-    .number({ required_error: "Top-up amount is required." })
+    .number({ message: "Top-up amount is required." })
     .refine((amount) => QUICK_TOP_UP_AMOUNTS.includes(amount as (typeof QUICK_TOP_UP_AMOUNTS)[number]), {
       message: "Top-up amount is not supported.",
     }),
