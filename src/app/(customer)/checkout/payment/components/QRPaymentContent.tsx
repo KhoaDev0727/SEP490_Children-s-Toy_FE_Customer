@@ -142,6 +142,9 @@ export default function QRPaymentContent({
             clearInterval(pollingRef.current);
             pollingRef.current = null;
           }
+          await refreshCart().catch(() => {
+            // Ignore cart refresh errors while redirecting to success page.
+          });
           const resolvedOrderCode = orderCode || res.orderCode || "";
           router.replace(
             `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
@@ -170,7 +173,7 @@ export default function QRPaymentContent({
         pollingRef.current = null;
       }
     };
-  }, [orderCode, orderId, router]);
+  }, [orderCode, orderId, refreshCart, router]);
 
   const qrImageUrl = useMemo(() => {
     if (qrUrl) return qrUrl;
@@ -229,6 +232,14 @@ export default function QRPaymentContent({
     try {
       const res = await checkoutApi.getPaymentStatus(orderId);
       if (res.paymentStatus === "PAID") {
+        redirectedRef.current = true;
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        await refreshCart().catch(() => {
+          // Ignore cart refresh errors while redirecting to success page.
+        });
         toast.success("Payment successful!");
         const resolvedOrderCode = orderCode || res.orderCode || "";
         router.replace(
