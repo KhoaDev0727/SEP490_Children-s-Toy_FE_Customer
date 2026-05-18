@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import toast from "react-hot-toast";
 
 const normalizeApiBaseUrl = (url?: string): string => {
   const fallback = "http://localhost:5216/api";
@@ -31,7 +32,17 @@ axiosInstance.interceptors.request.use((config) => {
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => Promise.reject(error),
+  (error: AxiosError) => {
+    if (error.response?.status === 401 && !error.config?.url?.includes("/auth/login")) {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("access_token");
+        window.localStorage.removeItem("account_info");
+        window.dispatchEvent(new Event("auth:logout"));
+      }
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+    return Promise.reject(error);
+  },
 );
 
 type RequestConfig = Omit<AxiosRequestConfig, "url" | "method" | "data">;
