@@ -33,6 +33,7 @@ const TOP_UP_QUICK_AMOUNTS = [
   2000, 20000, 50000, 100000, 200000, 500000,
 ] as const;
 const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
+const TRANSACTION_HISTORY_PAGE_SIZE = 10;
 const SEP_BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "SePay";
 const SEP_BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
 const SEP_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
@@ -54,6 +55,12 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<UiTransaction[]>([]);
   const [isWalletLoading, setIsWalletLoading] = useState(true);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
+  const [transactionPageNumber, setTransactionPageNumber] = useState(1);
+  const [transactionTotalPages, setTransactionTotalPages] = useState(1);
+  const [transactionTotalCount, setTransactionTotalCount] = useState(0);
+  const [hasPreviousTransactionPage, setHasPreviousTransactionPage] =
+    useState(false);
+  const [hasNextTransactionPage, setHasNextTransactionPage] = useState(false);
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<PinModalMode>("activate");
@@ -93,40 +100,54 @@ export default function WalletPage() {
     [transactions],
   );
 
+  const loadTransactionPage = useCallback(async (pageNumber: number) => {
+    setIsTransactionsLoading(true);
+    try {
+      const transactionResponse = await walletApi.getTransactions(
+        pageNumber,
+        TRANSACTION_HISTORY_PAGE_SIZE,
+      );
+      setTransactions(transactionResponse.items.map(mapWalletTransactionToUi));
+      setTransactionPageNumber(transactionResponse.pageNumber);
+      setTransactionTotalPages(transactionResponse.totalPages || 1);
+      setTransactionTotalCount(transactionResponse.totalCount);
+      setHasPreviousTransactionPage(transactionResponse.hasPreviousPage);
+      setHasNextTransactionPage(transactionResponse.hasNextPage);
+    } catch (transactionError) {
+      const transactionApiError = getApiError(transactionError);
+      setTransactions([]);
+      toast.error(
+        transactionApiError.message ?? "Unable to load transaction history.",
+      );
+    } finally {
+      setIsTransactionsLoading(false);
+    }
+  }, []);
+
   const loadWalletData = useCallback(async () => {
     setIsWalletLoading(true);
 
     try {
       const walletResponse = await walletApi.getMyWallet();
       setWallet(walletResponse);
-
-      setIsTransactionsLoading(true);
-      try {
-        const transactionResponse = await walletApi.getTransactions(1, 10);
-        setTransactions(
-          transactionResponse.items.map(mapWalletTransactionToUi),
-        );
-      } catch (transactionError) {
-        const transactionApiError = getApiError(transactionError);
-        setTransactions([]);
-        toast.error(
-          transactionApiError.message ?? "Unable to load transaction history.",
-        );
-      } finally {
-        setIsTransactionsLoading(false);
-      }
+      await loadTransactionPage(1);
     } catch (error) {
       const apiError = getApiError(error);
       if (apiError.status === 404 || apiError.code === "NOT_FOUND") {
         setWallet(null);
         setTransactions([]);
+        setTransactionPageNumber(1);
+        setTransactionTotalPages(1);
+        setTransactionTotalCount(0);
+        setHasPreviousTransactionPage(false);
+        setHasNextTransactionPage(false);
       } else {
         toast.error(apiError.message ?? "Unable to load wallet information.");
       }
     } finally {
       setIsWalletLoading(false);
     }
-  }, []);
+  }, [loadTransactionPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -134,6 +155,12 @@ export default function WalletPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadWalletData]);
+
+  const handleTransactionPageChange = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > transactionTotalPages) return;
+    if (nextPage === transactionPageNumber) return;
+    void loadTransactionPage(nextPage);
+  };
 
   const resetPinModalFields = () => {
     setPin("");
@@ -460,6 +487,11 @@ export default function WalletPage() {
             totalCredit={totalCredit}
             transactions={transactions}
             isTransactionsLoading={isTransactionsLoading}
+            transactionPageNumber={transactionPageNumber}
+            transactionTotalPages={transactionTotalPages}
+            transactionTotalCount={transactionTotalCount}
+            hasPreviousTransactionPage={hasPreviousTransactionPage}
+            hasNextTransactionPage={hasNextTransactionPage}
             onTopUp={() => openPinModal("topup")}
             onToggleBalanceVisibility={() => {
               if (isBalanceVisible) {
@@ -469,6 +501,7 @@ export default function WalletPage() {
               openPinModal("viewBalance");
             }}
             onChangePin={() => openPinModal("changePin")}
+            onTransactionPageChange={handleTransactionPageChange}
           />
         )}
       </section>
