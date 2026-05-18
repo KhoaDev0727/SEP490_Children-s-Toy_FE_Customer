@@ -12,6 +12,11 @@ const NAV_ITEMS = [
     href: "/profile/wallet",
   },
   { label: "My Orders", icon: "package_2", href: "/profile/orders" },
+  {
+    label: "My Refund",
+    icon: "assignment_return",
+    href: "/profile/refunds",
+  },
   { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
   {
     label: "My Little Ones",

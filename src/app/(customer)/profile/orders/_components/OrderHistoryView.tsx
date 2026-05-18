@@ -7,9 +7,11 @@ import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
 import OrderPagination from "./OrderPagination";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import CreateRefundModal from "@/app/(customer)/profile/refunds/_components/CreateRefundModal";
 import { Order, OrderStatus } from "./OrderCard";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import axiosClient from "@/configs/axios-client";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
 
 const ORDERS_PER_PAGE = 3;
@@ -23,10 +25,15 @@ export default function OrderHistoryView() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasWallet, setHasWallet] = useState(false);
 
-  // Modal state
+  // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+
+  // Refund modal state
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [orderToRefund, setOrderToRefund] = useState<Order | null>(null);
 
   const mapStatusNameToUi = useCallback(
     (statusName?: string | null): OrderStatus => {
@@ -72,6 +79,7 @@ export default function OrderHistoryView() {
         total: item.totalAmount,
         paymentMethod: item.paymentMethod,
         rawStatusName: item.statusName,
+        hasActiveRefund: item.hasActiveRefund,
       };
     },
     [mapStatusNameToUi],
@@ -106,6 +114,20 @@ export default function OrderHistoryView() {
     void loadOrders();
   }, [loadOrders]);
 
+  // Check wallet status once on mount
+  useEffect(() => {
+    axiosClient
+      .get<{ success?: boolean; data?: { status?: string } | null } | null>("/wallets/me")
+      .then((res) => {
+        const anyRes = res as { success?: boolean; data?: { status?: string } | null } | null;
+        const walletStatus = anyRes?.data?.status;
+        setHasWallet(
+          typeof walletStatus === "string" && walletStatus.toLowerCase() === "active",
+        );
+      })
+      .catch(() => setHasWallet(false));
+  }, []);
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -138,6 +160,11 @@ export default function OrderHistoryView() {
     },
     [router],
   );
+
+  const handleRequestRefund = useCallback((order: Order) => {
+    setOrderToRefund(order);
+    setIsRefundModalOpen(true);
+  }, []);
 
   const confirmCancel = async () => {
     if (!orderToCancel) return;
@@ -191,6 +218,7 @@ export default function OrderHistoryView() {
             orders={orders}
             onPrimaryAction={handlePrimaryAction}
             onSecondaryAction={handleSecondaryAction}
+            onRequestRefund={handleRequestRefund}
           />
         )}
       </div>
@@ -208,6 +236,21 @@ export default function OrderHistoryView() {
         cancelText="Close"
         type="danger"
       />
+
+      {orderToRefund && (
+        <CreateRefundModal
+          isOpen={isRefundModalOpen}
+          orderId={orderToRefund.orderId}
+          orderCode={orderToRefund.orderCode}
+          orderTotal={orderToRefund.total}
+          hasWallet={hasWallet}
+          onClose={() => {
+            setIsRefundModalOpen(false);
+            setOrderToRefund(null);
+          }}
+          onSuccess={() => void loadOrders()}
+        />
+      )}
 
       {/* Pagination */}
       <OrderPagination
