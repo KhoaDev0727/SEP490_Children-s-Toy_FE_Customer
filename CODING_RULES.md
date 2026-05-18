@@ -122,4 +122,24 @@ src/
 
 ---
 
+## 9. ⏳ Date & Time Handling
+
+Để đảm bảo tính nhất quán và tránh lỗi múi giờ, dự án sử dụng bộ utility tập trung tại `src/utils/date-utils.ts`.
+
+### Quy tắc bắt buộc
+- **Sử dụng `smartParseDate`**: Tuyệt đối không parse date thủ công bằng `new Date()`. Hàm này tự động xử lý các trường hợp server trả về thiếu 'Z' hoặc dùng khoảng trắng.
+- **Format hiển thị**: Sử dụng `formatFullDateTime` cho các thông tin chi tiết và `formatTimeAgo` cho các mốc thời gian gần (review, thông báo).
+- **Xử lý Form**: Nếu có xử lý ngày tháng trong form, sử dụng `formatUTCtoLocal` và `formatLocalToUTC`.
+
+### Các hàm tiện ích chính
+| Hàm | Mục đích | Output |
+| :--- | :--- | :--- |
+| `formatFullDateTime` | Hiển thị ngày giờ đầy đủ | `HH:mm - dd/MM/yyyy` |
+| `formatTimeAgo` | Hiển thị thời gian tương đối | `X minutes ago`, `Just now` |
+| `smartParseDate` | Parse chuỗi ngày tháng an toàn | `Date` object |
+| `formatUTCtoLocal` | UTC -> Local (Input) | `yyyy-MM-ddTHH:mm` |
+| `formatLocalToUTC` | Local -> UTC String (API) | ISO String (Z) |
+
+---
+
 *Tài liệu này là bắt buộc cho tất cả thành viên tham gia phát triển dự án Customer FE.*

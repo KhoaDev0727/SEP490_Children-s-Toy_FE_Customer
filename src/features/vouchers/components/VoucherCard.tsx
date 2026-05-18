@@ -180,7 +180,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
         <div className="flex flex-col items-center justify-center w-18 shrink-0 pl-3">
           <button
             onClick={copyCode}
-            className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 ${
+            className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 hover:cursor-pointer ${
               isCopied
                 ? "border-green-700 text-green-700 bg-green-50"
                 : "border-orange-500 text-orange-500 hover:bg-orange-50"
