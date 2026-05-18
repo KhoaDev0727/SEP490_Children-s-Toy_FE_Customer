@@ -28,6 +28,7 @@ export interface Order {
   total: number;
   paymentMethod?: string;
   rawStatusName?: string;
+  hasActiveRefund?: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -76,9 +77,10 @@ interface OrderCardProps {
   onPrimaryAction?: (order: Order) => void;
   onSecondaryAction?: (order: Order) => void;
   onViewDetails?: (order: Order) => void;
+  onRequestRefund?: (order: Order) => void;
 }
 
-export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }: OrderCardProps) {
+export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund }: OrderCardProps) {
   const { label, className, primaryLabel } = useMemo(() => {
     const config = STATUS_CONFIG[order.status];
     const actions = ACTION_BUTTONS[order.status];
@@ -208,6 +210,19 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
           >
             {primaryLabel}
           </button>
+          {order.rawStatusName?.toLowerCase() === "completed" && onRequestRefund && (
+            <button
+              onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
+              disabled={order.hasActiveRefund}
+              className={`flex-1 sm:flex-none px-6 py-2.5 border-2 text-sm font-bold rounded-xl transition-colors ${
+                order.hasActiveRefund
+                  ? "border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed"
+                  : "border-[#ff6a00]/30 text-[#ff6a00] hover:bg-[#ff6a00]/5"
+              }`}
+            >
+              {order.hasActiveRefund ? "Refund Requested" : "Request Refund"}
+            </button>
+          )}
         </div>
       </div>
     </div>
