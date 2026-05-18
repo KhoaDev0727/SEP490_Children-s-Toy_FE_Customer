@@ -21,7 +21,7 @@ export default function OrderTabs({ activeTab, onChange }: OrderTabsProps) {
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
-          className={`px-6 py-4 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
+          className={`px-6 py-4 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors hover:cursor-pointer ${
             activeTab === tab.value
               ? "text-[#ff6a00] border-[#ff6a00]"
               : "text-[#5a4136] hover:text-[#ff6a00] border-transparent"

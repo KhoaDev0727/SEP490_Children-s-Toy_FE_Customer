@@ -28,48 +28,54 @@ export default function OrderHistoryView() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
 
-  const mapStatusNameToUi = useCallback((statusName?: string | null): OrderStatus => {
-    if (!statusName) return "pending";
+  const mapStatusNameToUi = useCallback(
+    (statusName?: string | null): OrderStatus => {
+      if (!statusName) return "pending";
 
-    switch (statusName.toLowerCase()) {
-      case "pending":
-        return "pending";
-      case "confirmed":
-      case "processing":
-      case "shipped":
-        return "shipping";
-      case "delivering":
-        return "delivering";
-      case "delivered":
-      case "completed":
-        return "completed";
-      case "cancelled":
-        return "cancelled";
-      default:
-        return "pending";
-    }
-  }, []);
+      switch (statusName.toLowerCase()) {
+        case "pending":
+          return "pending";
+        case "confirmed":
+        case "processing":
+        case "shipped":
+          return "shipping";
+        case "delivering":
+          return "delivering";
+        case "delivered":
+        case "completed":
+          return "completed";
+        case "cancelled":
+          return "cancelled";
+        default:
+          return "pending";
+      }
+    },
+    [],
+  );
 
-  const mapOrderItem = useCallback((item: CustomerOrderListItem): Order => {
-    const fallbackImage = "/assets/images/tinitoy.png";
+  const mapOrderItem = useCallback(
+    (item: CustomerOrderListItem): Order => {
+      const fallbackImage = "/assets/images/tinitoy.png";
 
-    return {
-      orderId: item.orderId,
-      orderCode: item.orderCode,
-      status: mapStatusNameToUi(item.statusName),
-      items: (item.items || []).map((p) => ({
-        name: p.productName,
-        variant: p.variant ?? "",
-        categoryName: p.categoryName ?? "",
-        quantity: p.quantity,
-        price: p.unitPrice,
-        image: p.productImage || fallbackImage,
-      })),
-      total: item.totalAmount,
-      paymentMethod: item.paymentMethod,
-      rawStatusName: item.statusName,
-    };
-  }, [mapStatusNameToUi]);
+      return {
+        orderId: item.orderId,
+        orderCode: item.orderCode,
+        status: mapStatusNameToUi(item.statusName),
+        items: (item.items || []).map((p) => ({
+          name: p.productName,
+          variant: p.variant ?? "",
+          categoryName: p.categoryName ?? "",
+          quantity: p.quantity,
+          price: p.unitPrice,
+          image: p.productImage || fallbackImage,
+        })),
+        total: item.totalAmount,
+        paymentMethod: item.paymentMethod,
+        rawStatusName: item.statusName,
+      };
+    },
+    [mapStatusNameToUi],
+  );
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -86,7 +92,9 @@ export default function OrderHistoryView() {
       setOrders(response.items.map(mapOrderItem));
       setTotalPages(Math.max(1, response.totalPages));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not load orders.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not load orders.",
+      );
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -108,22 +116,28 @@ export default function OrderHistoryView() {
     setCurrentPage(1);
   };
 
-  const handlePrimaryAction = useCallback((order: Order) => {
-    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
-      router.push(`/checkout/payment?orderId=${order.orderId}`);
-    } else {
-      router.push(`/profile/orders/${order.orderId}`);
-    }
-  }, [router]);
+  const handlePrimaryAction = useCallback(
+    (order: Order) => {
+      if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
+        router.push(`/checkout/payment?orderId=${order.orderId}`);
+      } else {
+        router.push(`/profile/orders/${order.orderId}`);
+      }
+    },
+    [router],
+  );
 
-  const handleSecondaryAction = useCallback((order: Order) => {
-    if (order.status === "pending") {
-      setOrderToCancel(order);
-      setIsCancelModalOpen(true);
-    } else {
-      router.push(`/profile/orders/${order.orderId}`);
-    }
-  }, [router]);
+  const handleSecondaryAction = useCallback(
+    (order: Order) => {
+      if (order.status === "pending") {
+        setOrderToCancel(order);
+        setIsCancelModalOpen(true);
+      } else {
+        router.push(`/profile/orders/${order.orderId}`);
+      }
+    },
+    [router],
+  );
 
   const confirmCancel = async () => {
     if (!orderToCancel) return;
@@ -131,7 +145,9 @@ export default function OrderHistoryView() {
       await checkoutApi.cancelOrder(orderToCancel.orderId);
       await loadOrders();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to cancel order.",
+      );
     } finally {
       setIsCancelModalOpen(false);
       setOrderToCancel(null);
@@ -142,9 +158,7 @@ export default function OrderHistoryView() {
     <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">
-          Order Management
-        </h1>
+        <h1 className="text-2xl font-bold text-[#261812]">Order history</h1>
         <p className="mt-1 text-sm text-[#5a4136]">
           View and track your order history.
         </p>
@@ -173,8 +187,8 @@ export default function OrderHistoryView() {
             <p className="text-base font-bold">Loading orders...</p>
           </div>
         ) : (
-          <OrderList 
-            orders={orders} 
+          <OrderList
+            orders={orders}
             onPrimaryAction={handlePrimaryAction}
             onSecondaryAction={handleSecondaryAction}
           />

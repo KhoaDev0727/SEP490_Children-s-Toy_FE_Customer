@@ -7,27 +7,31 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { label: "Profile", icon: "person", href: "/profile" },
   {
-    label: "Wallet Management",
+    label: "My Wallet",
     icon: "account_balance_wallet",
     href: "/profile/wallet",
   },
-  { label: "Order Management", icon: "package_2", href: "/profile/orders" },
+  { label: "My Orders", icon: "package_2", href: "/profile/orders" },
   { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
   {
-    label: "Birthday Management",
+    label: "My Little Ones",
     icon: "cake",
     href: "/profile/birthday-management",
   },
   { label: "Address", icon: "location_on", href: "/profile/address" },
   { label: "Change Password", icon: "lock", href: "/profile/password" },
-  { label: "Notifications", icon: "notifications", href: "/profile/notifications" },
+  {
+    label: "Notifications",
+    icon: "notifications",
+    href: "/profile/notifications",
+  },
   {
     label: "Notification Settings",
     icon: "settings",
     href: "/profile/setting-notifications",
   },
   {
-    label: "Kho Voucher",
+    label: "My Vouchers",
     icon: "confirmation_number",
     href: "/profile/vouchers",
   },
@@ -38,9 +42,7 @@ export default function ProfileSidebar() {
   const pathname = usePathname();
 
   const avatarUrl = isHydrated ? account?.imageUrl : undefined;
-  const name = isHydrated
-    ? (account?.accountName ?? "User")
-    : "User";
+  const name = isHydrated ? (account?.accountName ?? "User") : "User";
 
   const initials = name
     .split(" ")

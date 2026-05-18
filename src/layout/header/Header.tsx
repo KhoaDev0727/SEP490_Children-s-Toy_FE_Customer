@@ -161,26 +161,29 @@ function UserDropdown() {
           </div>
 
           <div className="py-1">
-            <a
-              href="#"
+            <Link
+              href="/profile/orders"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
             >
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 package_2
               </span>
               Orders
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              href="/profile/wallet"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
             >
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
                 account_balance_wallet
               </span>
               Wallet
-            </a>
+            </Link>
             <Link
               href="/profile"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
             >
               <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>

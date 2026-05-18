@@ -107,7 +107,10 @@ export default function AddressList() {
   return (
     <>
       <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">My Addresses</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[#261812]">My Addresses</h1>
+          <p className="mt-1 text-sm text-[#5a4136]">Manage your delivery addresses for fast checkout.</p>
+        </div>
         <button
           onClick={() => {
             if (isMaxAddresses) return;
