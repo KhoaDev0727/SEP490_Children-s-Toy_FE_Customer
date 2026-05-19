@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AxiosError } from "axios";
-import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { notificationPreferencesApi } from "@/features/profile/services/notification-preferences-api";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import ChannelSettings from "./_components/ChannelSettings";
@@ -133,7 +132,9 @@ export default function NotificationSettingsPage() {
     setSaveError(null);
 
     try {
-      const savedData = await notificationPreferencesApi.updateMy(mapFormToPayload(channels, content));
+      const savedData = await notificationPreferencesApi.updateMy(
+        mapFormToPayload(channels, content),
+      );
       const mapped = mapApiToForm(savedData);
       setChannels(mapped.channels);
       setContent(mapped.content);
@@ -149,26 +150,16 @@ export default function NotificationSettingsPage() {
 
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-      {/* Breadcrumb (full width) */}
-      <div className="col-span-full mb-2">
-        <Breadcrumbs
-          items={[
-            { label: "Account", href: "/profile" },
-            { label: "Notification Settings" },
-          ]}
-        />
-      </div>
-
       {/* Sidebar */}
       <ProfileSidebar />
 
       {/* Main panel */}
       <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-        <div className="px-6 py-6 border-b border-[#e2bfb0]/30 bg-white">
-          <h1 className="text-[24px] leading-[1.2] tracking-[-0.025em] font-extrabold text-[#261812] mb-1">
+        <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
+          <h1 className="text-2xl font-bold text-[#261812]">
             Notification Settings
           </h1>
-          <p className="text-[14px] text-[#5a4136]">
+          <p className="mt-1 text-sm text-[#5a4136]">
             Customize how you want to receive notifications from ShopX
           </p>
         </div>
@@ -176,18 +167,26 @@ export default function NotificationSettingsPage() {
         {/* Settings List */}
         <div className="px-6 py-8 flex flex-col gap-8">
           {isLoading ? (
-            <p className="text-[14px] text-[#5a4136]">Loading your preferences…</p>
+            <p className="text-[14px] text-[#5a4136]">
+              Loading your preferences…
+            </p>
           ) : loadError ? (
             <p className="text-[14px] text-red-700" role="alert">
               {loadError}
             </p>
           ) : (
             <>
-              <ChannelSettings values={channels} onChange={handleChannelChange} />
+              <ChannelSettings
+                values={channels}
+                onChange={handleChannelChange}
+              />
 
               <div className="border-t border-[#e2bfb0]/40" />
 
-              <ContentSettings values={content} onChange={handleContentChange} />
+              <ContentSettings
+                values={content}
+                onChange={handleContentChange}
+              />
 
               {saveError ? (
                 <p className="text-[14px] text-red-700" role="alert">
@@ -195,7 +194,11 @@ export default function NotificationSettingsPage() {
                 </p>
               ) : null}
 
-              <SaveButton onSave={handleSave} isSaving={isSaving} saved={saved} />
+              <SaveButton
+                onSave={handleSave}
+                isSaving={isSaving}
+                saved={saved}
+              />
             </>
           )}
         </div>

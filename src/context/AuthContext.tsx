@@ -57,6 +57,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccount(null);
   }, []);
 
+  useEffect(() => {
+    const handleLogout = () => {
+      clearAuth();
+    };
+    window.addEventListener("auth:logout", handleLogout);
+    return () => {
+      window.removeEventListener("auth:logout", handleLogout);
+    };
+  }, [clearAuth]);
+
   const updateAccount = useCallback((partial: Partial<AccountInfo>) => {
     setAccount((current) => {
       if (!current) {

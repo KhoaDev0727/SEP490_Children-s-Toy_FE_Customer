@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Breadcrumbs from "@/components/common/Breadcrumbs";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import NotificationTabs from "./_components/NotificationTabs";
 import NotificationList from "./_components/NotificationList";
@@ -179,16 +178,6 @@ export default function NotificationsPage() {
 
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-      {/* Breadcrumb (full width) */}
-      <div className="col-span-full mb-2">
-        <Breadcrumbs
-          items={[
-            { label: "Account", href: "/profile" },
-            { label: "Notifications" }
-          ]}
-        />
-      </div>
-
       {/* Sidebar */}
       <ProfileSidebar />
 
@@ -196,7 +185,10 @@ export default function NotificationsPage() {
       <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-          <h1 className="text-xl font-bold text-[#261812]">My Notifications</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-[#261812]">My Notifications</h1>
+            <p className="mt-1 text-sm text-[#5a4136]">View and manage your account and promotional notifications.</p>
+          </div>
           <div className="flex items-center gap-4">
             <button
               onClick={handleMarkAllRead}

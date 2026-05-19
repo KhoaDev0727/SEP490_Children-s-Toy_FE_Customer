@@ -26,6 +26,7 @@ export interface CustomerOrderListItem {
   paymentMethod: string;
   paymentStatus: string;
   totalItems: number;
+  hasActiveRefund?: boolean;
   items: CustomerOrderListItemProduct[];
 }
 
@@ -84,6 +85,7 @@ export interface CustomerOrderDetail {
   paymentMethod: string;
   paymentStatus: string;
   paidAt?: string | null;
+  hasActiveRefund?: boolean;
   statusHistory: CustomerOrderStatusHistory[];
   shipping?: CustomerShippingTransaction | null;
 }

@@ -26,7 +26,7 @@ export default function ReviewTabs() {
               onClick={() =>
                 setActiveTab(tab.value as "unreviewed" | "reviewed")
               }
-              className={`relative py-4 text-sm font-medium transition-all ${
+              className={`relative py-4 text-sm font-medium transition-all hover:cursor-pointer ${
                 isActive
                   ? "text-orange-500 font-semibold"
                   : "text-slate-600 hover:text-orange-500"
