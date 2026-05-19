@@ -61,6 +61,9 @@ export default function NotificationPopup() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const markAll = async () => {
     await notificationApi.markAllAsRead();
     void loadItems();
@@ -132,10 +135,10 @@ export default function NotificationPopup() {
         aria-label="Notifications"
       >
         <span className="material-symbols-outlined">notifications</span>
-        {unreadCount > 0 && (
+        {mounted && unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-950 animate-ping" />
         )}
-        {unreadCount > 0 && (
+        {mounted && unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-950" />
         )}
       </button>

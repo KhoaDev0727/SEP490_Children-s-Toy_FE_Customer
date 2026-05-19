@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import QRPaymentContent from "@/app/(customer)/checkout/payment/components/QRPaymentContent";
 
 export const metadata: Metadata = {
@@ -11,81 +10,25 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Breadcrumb ────────────────────────────────────────────────────────────────
-function Breadcrumb() {
-  const crumbs = [
-    { label: "Home", href: "/" },
-    { label: "Order", href: "/profile" },
-    { label: "Checkout", href: "/checkout" },
-    { label: "QR Payment", href: null },
-  ];
-
-  return (
-    <nav aria-label="breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-400 mb-8">
-      {crumbs.map((crumb, i) => (
-        <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && (
-            <svg className="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          )}
-          {crumb.href ? (
-            <Link
-              href={crumb.href}
-              className="hover:text-orange-500 transition-colors font-medium"
-            >
-              {crumb.label}
-            </Link>
-          ) : (
-            <span className="text-slate-700 dark:text-slate-200 font-semibold">
-              {crumb.label}
-            </span>
-          )}
-        </span>
-      ))}
-    </nav>
-  );
-}
-
-// ─── Order Summary Badge ────────────────────────────────────────────────────────
+// ─── Page ──────────────────────────────────────────────────────────────────────
 interface QRPaymentPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-function OrderBadge({ orderCode }: { orderCode?: string }) {
-  const displayOrderCode = orderCode?.trim() || "SPX_MADONHANG";
-  return (
-    <div className="inline-flex items-center gap-2 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-full px-4 py-1.5 mb-4">
-      <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-      <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-widest">
-        Awaiting Payment
-      </span>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
-        · Order{" "}
-        <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">
-          #{displayOrderCode}
-        </span>
-      </span>
-    </div>
-  );
-}
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
 export default async function QRPaymentPage({ searchParams }: QRPaymentPageProps) {
   const resolvedParams = await searchParams;
-  const orderId   = typeof resolvedParams?.orderId === "string" ? Number(resolvedParams.orderId) : undefined;
-  const orderCode = typeof resolvedParams?.orderCode === "string" ? resolvedParams.orderCode : undefined;
-  const amount    = typeof resolvedParams?.amount === "string" ? Number(resolvedParams.amount) : undefined;
-  const attemptCode = typeof resolvedParams?.attemptCode === "string" ? resolvedParams.attemptCode : undefined;
-  const qrUrl     = typeof resolvedParams?.qrUrl === "string" ? decodeURIComponent(resolvedParams.qrUrl) : undefined;
+  const orderId = typeof resolvedParams?.orderId === "string" ? Number(resolvedParams.orderId) : undefined;
 
   return (
     <div className="max-w-[1280px] mx-auto w-full px-4 md:px-8 py-10 bg-slate-50 dark:bg-slate-950 min-h-screen">
-      <Breadcrumb />
-
       {/* Page heading */}
       <div className="mb-8">
-        <OrderBadge orderCode={orderCode} />
+        <div className="inline-flex items-center gap-2 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-full px-4 py-1.5 mb-4">
+          <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+          <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-widest">
+            Awaiting Payment
+          </span>
+        </div>
         <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
           Order Payment
         </h1>
@@ -96,13 +39,7 @@ export default async function QRPaymentPage({ searchParams }: QRPaymentPageProps
 
       {/* 2-col grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <QRPaymentContent
-          orderId={orderId}
-          orderCode={orderCode}
-          amount={amount}
-          initialAttemptCode={attemptCode}
-          initialQrUrl={qrUrl}
-        />
+        <QRPaymentContent orderId={orderId} />
       </div>
 
       {/* Security note */}

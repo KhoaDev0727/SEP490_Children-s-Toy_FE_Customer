@@ -59,13 +59,13 @@ const STATUS_CONFIG: Record<
 
 const ACTION_BUTTONS: Record<
   OrderStatus,
-  { secondary: string; primary: string }
+  { secondary?: string; primary: string }
 > = {
-  delivering: { secondary: "Contact Seller", primary: "Track Order" },
-  completed: { secondary: "Review", primary: "Reorder" },
-  pending: { secondary: "Cancel Order", primary: "Pay Now" },
-  shipping: { secondary: "Contact Seller", primary: "Track Order" },
-  cancelled: { secondary: "View Details", primary: "Reorder" },
+  delivering: { primary: "View Details" },
+  completed: { secondary: "Review", primary: "View Details" },
+  pending: { secondary: "Cancel Order", primary: "View Details" },
+  shipping: { primary: "View Details" },
+  cancelled: { primary: "View Details" },
 };
 
 function formatPrice(price: number): string {
@@ -181,27 +181,29 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           </span>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
-          {order.status === "cancelled" ? (
-            <Link
-              href={`/profile/orders/${order.orderId}`}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
-            >
-              {actions.secondary}
-            </Link>
-          ) : (order.status === "pending" && !canCancel) ? (
-            <Link
-              href={`/profile/orders/${order.orderId}`}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
-            >
-              View Details
-            </Link>
-          ) : (
-            <button
-              onClick={() => onSecondaryAction?.(order)}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors"
-            >
-              {actions.secondary}
-            </button>
+          {actions.secondary && (
+            order.status === "cancelled" ? (
+              <Link
+                href={`/profile/orders/${order.orderId}`}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
+              >
+                {actions.secondary}
+              </Link>
+            ) : (order.status === "pending" && !canCancel) ? (
+              <Link
+                href={`/profile/orders/${order.orderId}`}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
+              >
+                View Details
+              </Link>
+            ) : (
+              <button
+                onClick={() => onSecondaryAction?.(order)}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                {actions.secondary}
+              </button>
+            )
           )}
           <button
             onClick={() => onPrimaryAction?.(order)}

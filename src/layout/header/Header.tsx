@@ -223,6 +223,11 @@ export default function Header() {
   const { cart, addItem } = useCart();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const cartCount = cart?.totalQuantity ?? 0;
+  
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const currentTerm = searchParams.get("searchTerm") ?? "";
@@ -498,7 +503,7 @@ export default function Header() {
               <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
                 shopping_cart
               </span>
-              {cartCount > 0 && (
+              {mounted && cartCount > 0 && (
                 <span
                   className="absolute top-1 right-1 w-4 h-4 text-white text-[10px] flex items-center justify-center rounded-full font-bold"
                   style={{ backgroundColor: "#ff6a00" }}
@@ -518,7 +523,7 @@ export default function Header() {
               <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
                 favorite
               </span>
-              {wishlistCount > 0 && (
+              {mounted && wishlistCount > 0 && (
                 <span
                   className="absolute top-1 right-1 w-4 h-4 text-white text-[10px] flex items-center justify-center rounded-full font-bold"
                   style={{ backgroundColor: "#ff6a00" }}

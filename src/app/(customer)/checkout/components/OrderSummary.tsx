@@ -12,6 +12,8 @@ import { useCart } from "@/features/cart/context/CartContext";
 import type { CheckoutFormData } from "@/app/(customer)/checkout/components/CheckoutForm";
 import { voucherApi } from "@/features/vouchers/services/voucher-api";
 import type { IVoucher } from "@/features/vouchers/types/voucher";
+import { walletApi } from "@/features/wallet/services/wallet-api";
+import WalletPinModal from "@/components/common/WalletPinModal";
 
 const FALLBACK_IMAGE = "https://placehold.co/80x80/png?text=Toy";
 
@@ -48,6 +50,13 @@ export default function OrderSummary({
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [hasLoadedVouchers, setHasLoadedVouchers] = useState(false);
   const [bestApplyingTarget, setBestApplyingTarget] = useState<"ORDER_TOTAL" | "SHIPPING_FEE" | null>(null);
+
+  // Wallet PIN modal state
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isPinVerifying, setIsPinVerifying] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinRemainingAttempts, setPinRemainingAttempts] = useState<number | null>(null);
+  const [pinLockedUntil, setPinLockedUntil] = useState<string | null>(null);
   const addresses = externalAddresses ?? [];
   const isAddressLoading = externalLoading ?? false;
   const [preview, setPreview] = useState<CheckoutPreviewResponse | null>(null);
@@ -181,24 +190,24 @@ export default function OrderSummary({
         ?? (target === "ORDER_TOTAL" ? orderVoucherCode : shippingVoucherCode).trim();
 
       if (!code) {
-        toast.error("Vui lòng nhập mã voucher.");
+        toast.error("Please enter a voucher code.");
         return;
       }
       // ... (giữ nguyên validation FE)
       if (target === "ORDER_TOTAL" && code === appliedShippingVoucherCode) {
-        setOrderVoucherError("Không thể áp dụng cùng một mã cho đơn hàng và vận chuyển.");
+        setOrderVoucherError("Cannot apply the same voucher code for both order and shipping.");
         return;
       }
       if (target === "SHIPPING_FEE" && code === appliedOrderVoucherCode) {
-        setShippingVoucherError("Không thể áp dụng cùng một mã cho đơn hàng và vận chuyển.");
+        setShippingVoucherError("Cannot apply the same voucher code for both order and shipping.");
         return;
       }
       if (target === "SHIPPING_FEE" && shipping <= 0) {
-        setShippingVoucherError("Chưa tính được phí vận chuyển. Vui lòng chọn địa chỉ hợp lệ.");
+        setShippingVoucherError("Shipping fee not calculated yet. Please select a valid address.");
         return;
       }
       if (formData.addressId <= 0 || checkoutLines.length === 0) {
-        toast.error("Vui lòng chọn địa chỉ giao hàng.");
+        toast.error("Please select a shipping address.");
         return;
       }
 
@@ -233,7 +242,7 @@ export default function OrderSummary({
           data.itemErrors.forEach((e) => toast.error(e.error));
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Voucher không hợp lệ.";
+        const msg = err instanceof Error ? err.message : "Invalid voucher.";
         if (target === "ORDER_TOTAL") setOrderVoucherError(msg);
         else setShippingVoucherError(msg);
       } finally {
@@ -281,7 +290,7 @@ export default function OrderSummary({
       setVoucherList(activeVouchers);
       setHasLoadedVouchers(true);
     } catch (err) {
-      setVoucherError("Không thể tải voucher. Vui lòng thử lại.");
+      setVoucherError("Unable to load vouchers. Please try again.");
     } finally {
       setVoucherLoading(false);
     }
@@ -373,9 +382,9 @@ export default function OrderSummary({
         } else {
           // No eligible voucher produced a non-zero discount — show brief info
           if (target === "ORDER_TOTAL") {
-            setOrderVoucherError("Không có voucher đơn hàng nào phù hợp với đơn hiện tại.");
+            setOrderVoucherError("No matching order vouchers for this order.");
           } else {
-            setShippingVoucherError("Không có voucher vận chuyển nào phù hợp với đơn hiện tại.");
+            setShippingVoucherError("No matching shipping vouchers for this order.");
           }
         }
       } finally {
@@ -416,6 +425,50 @@ export default function OrderSummary({
 
     const paymentMethod = PAYMENT_METHOD_MAP[formData.payment] ?? "SHIP_COD";
 
+    // Wallet payment requires PIN verification first
+    if (paymentMethod === "WALLET") {
+      setPinError(null);
+      setPinRemainingAttempts(null);
+      setPinLockedUntil(null);
+      setIsPinModalOpen(true);
+      return;
+    }
+
+    await placeOrder(paymentMethod);
+  };
+
+  const handlePinConfirm = async (pin: string) => {
+    if (pin.length < 6) return;
+    setIsPinVerifying(true);
+    setPinError(null);
+    try {
+      const res = await walletApi.verifyPin({ pin, actionType: "PAYMENT" });
+
+      if (res.lockedUntil) {
+        setPinLockedUntil(res.lockedUntil);
+        setPinError(null);
+        return;
+      }
+
+      if (!res.isVerified) {
+        setPinRemainingAttempts(res.remainingAttempts);
+        setPinError("Incorrect PIN. Please try again.");
+        return;
+      }
+
+      // PIN correct — proceed to place order
+      setIsPinModalOpen(false);
+      await placeOrder("WALLET");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "PIN verification failed. Please try again.";
+      setPinError(msg);
+    } finally {
+      setIsPinVerifying(false);
+    }
+  };
+
+  const placeOrder = async (paymentMethod: string) => {
+    if (!activeAddress) return;
     setIsOrdering(true);
     try {
       const response = await checkoutApi.confirmCheckout({
@@ -430,27 +483,9 @@ export default function OrderSummary({
       });
 
       if (paymentMethod === "SE_PAY") {
-        try {
-          if (typeof window !== "undefined") {
-            window.sessionStorage.setItem(
-              `sepay_checkout_${response.orderId}`,
-              JSON.stringify({
-                attemptCode: response.paymentAttemptCode ?? "",
-                qrUrl: response.qrImageUrl ?? "",
-              }),
-            );
-          }
-        } catch {
-          /* ignore quota */
-        }
-        const params = new URLSearchParams({
-          orderId: String(response.orderId),
-          orderCode: response.orderCode ?? "",
-          amount: String(Math.round(Number(response.totalAmount))),
-          ...(response.paymentAttemptCode ? { attemptCode: response.paymentAttemptCode } : {}),
-          ...(response.qrImageUrl ? { qrUrl: encodeURIComponent(response.qrImageUrl) } : {}),
-        });
-        router.push(`/checkout/payment?${params.toString()}`);
+        // Navigate with only orderId — sensitive data (QR URL, amount, attemptCode)
+        // is fetched client-side via GET /orders/:orderId/payment-info
+        router.push(`/checkout/payment?orderId=${response.orderId}`);
       } else {
         // COD / WALLET — trang thành công
         router.push(`/checkout/success?orderId=${response.orderId}&orderCode=${encodeURIComponent(response.orderCode ?? "")}`);
@@ -521,7 +556,7 @@ export default function OrderSummary({
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-            Voucher đơn hàng
+            Order Voucher
           </p>
           <div className="flex items-center gap-3">
             <button
@@ -530,7 +565,7 @@ export default function OrderSummary({
               onClick={() => void applyBestVoucherForTarget("ORDER_TOTAL")}
               className="text-[11px] font-bold text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-60"
             >
-              Tự chọn tốt nhất
+              Auto Select Best
             </button>
             <button
               type="button"
@@ -540,7 +575,7 @@ export default function OrderSummary({
               }}
               className="text-[11px] font-bold text-[#ff6a00] hover:text-[#ff4500] transition-colors"
             >
-              Chọn voucher
+              Select Voucher
             </button>
           </div>
         </div>
@@ -563,7 +598,7 @@ export default function OrderSummary({
 
         <div className="flex items-center justify-between pt-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-            Voucher vận chuyển
+            Shipping Voucher
           </p>
           <div className="flex items-center gap-3">
             <button
@@ -572,7 +607,7 @@ export default function OrderSummary({
               onClick={() => void applyBestVoucherForTarget("SHIPPING_FEE")}
               className="text-[11px] font-bold text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-60"
             >
-              Tự chọn tốt nhất
+              Auto Select Best
             </button>
             <button
               type="button"
@@ -582,19 +617,19 @@ export default function OrderSummary({
               }}
               className="text-[11px] font-bold text-[#ff6a00] hover:text-[#ff4500] transition-colors"
             >
-              Chọn voucher
+              Select Voucher
             </button>
           </div>
         </div>
         <CouponInput
-          label="Mã giảm phí vận chuyển"
-          placeholder="Nhập mã voucher..."
+          label="Shipping Discount Code"
+          placeholder="Enter voucher code..."
           value={shippingVoucherCode}
           onChange={setShippingVoucherCode}
           onApply={() => void applyVoucher("SHIPPING_FEE")}
           onClear={() => clearVoucher("SHIPPING_FEE")}
           applied={!!appliedShippingVoucherCode}
-          appliedLabel={shippingDiscount > 0 ? `-${fmt(shippingDiscount)}` : isPreviewLoading ? "Đang tính..." : "Đã áp dụng"}
+          appliedLabel={shippingDiscount > 0 ? `-${fmt(shippingDiscount)}` : isPreviewLoading ? "Calculating..." : "Applied"}
           disabled={isPreviewLoading}
         />
         {shippingVoucherError && (
@@ -672,7 +707,7 @@ export default function OrderSummary({
 
       {(preview?.itemErrors?.length ?? 0) > 0 && (
         <p className="text-xs text-center text-red-600 font-semibold mt-3">
-          Vui lòng kiểm tra lại sản phẩm — có mặt hàng không khả dụng.
+          Please check your items — some products are unavailable.
         </p>
       )}
 
@@ -701,6 +736,22 @@ export default function OrderSummary({
           }}
         />
       )}
+
+      {/* Wallet PIN Modal */}
+      <WalletPinModal
+        isOpen={isPinModalOpen}
+        isVerifying={isPinVerifying}
+        errorMessage={pinError}
+        remainingAttempts={pinRemainingAttempts}
+        lockedUntil={pinLockedUntil}
+        onConfirm={(pin) => void handlePinConfirm(pin)}
+        onCancel={() => {
+          if (!isPinVerifying) {
+            setIsPinModalOpen(false);
+            setPinError(null);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -757,7 +808,7 @@ function CouponInput({
             onClick={onClear}
             className="ml-auto text-[11px] font-bold text-green-700 hover:text-green-800"
           >
-            Bỏ voucher
+            Remove
           </button>
         </div>
       ) : (
@@ -817,16 +868,16 @@ function VoucherModal({
   };
 
   const filteredVouchers = vouchers.filter((v) => v.discountTarget === target);
-  const targetLabel = target === "ORDER_TOTAL" ? "Đơn hàng" : "Vận chuyển";
+  const targetLabel = target === "ORDER_TOTAL" ? "order" : "shipping";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
-            <h3 className="text-lg font-extrabold text-gray-900">Chọn voucher</h3>
+            <h3 className="text-lg font-extrabold text-gray-900">Select Voucher</h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              Chỉ hiển thị voucher đang hoạt động cho {targetLabel.toLowerCase()}.
+              Only showing active vouchers for {targetLabel}.
             </p>
           </div>
           <button
@@ -841,13 +892,13 @@ function VoucherModal({
 
         <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
           {loading && (
-            <p className="text-sm text-gray-400">Đang tải voucher...</p>
+            <p className="text-sm text-gray-400">Loading vouchers...</p>
           )}
           {error && (
             <p className="text-sm text-red-500">{error}</p>
           )}
           {!loading && !error && filteredVouchers.length === 0 && (
-            <p className="text-sm text-gray-400">Không có voucher khả dụng.</p>
+            <p className="text-sm text-gray-400">No vouchers available.</p>
           )}
           <div className="space-y-3">
             {filteredVouchers.map((voucher) => {
@@ -867,15 +918,15 @@ function VoucherModal({
                       {voucher.voucherName}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Mã: <span className="font-mono font-bold text-orange-600">{voucher.voucherCode}</span>
+                      Code: <span className="font-mono font-bold text-orange-600">{voucher.voucherCode}</span>
                     </p>
                     <p className="text-xs text-gray-500">
-                      Giảm: <span className="font-semibold">{discountLabel}</span>
+                      Discount: <span className="font-semibold">{discountLabel}</span>
                       {voucher.minOrderAmount
-                        ? ` · Đơn tối thiểu ${formatCurrency(voucher.minOrderAmount)}`
+                        ? ` · Min Order ${formatCurrency(voucher.minOrderAmount)}`
                         : ""}
                     </p>
-                    <p className="text-[11px] text-gray-400">HSD: {formatDate(voucher.endDate)}</p>
+                    <p className="text-[11px] text-gray-400">Expiry: {formatDate(voucher.endDate)}</p>
                   </div>
                   <button
                     disabled={!eligible || isSelected}
@@ -888,7 +939,7 @@ function VoucherModal({
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    {isSelected ? "Đã chọn" : eligible ? "Áp dụng" : "Chưa đủ điều kiện"}
+                    {isSelected ? "Selected" : eligible ? "Apply" : "Ineligible"}
                   </button>
                 </div>
               );

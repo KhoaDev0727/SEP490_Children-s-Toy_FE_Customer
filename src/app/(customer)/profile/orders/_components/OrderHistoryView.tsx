@@ -6,6 +6,7 @@ import OrderTabs from "./OrderTabs";
 import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
 import OrderPagination from "./OrderPagination";
+import CancelOrderModal from "@/components/common/CancelOrderModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import CreateRefundModal from "@/app/(customer)/profile/refunds/_components/CreateRefundModal";
 import { Order, OrderStatus } from "./OrderCard";
@@ -30,6 +31,7 @@ export default function OrderHistoryView() {
   // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Refund modal state
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
@@ -166,16 +168,18 @@ export default function OrderHistoryView() {
     setIsRefundModalOpen(true);
   }, []);
 
-  const confirmCancel = async () => {
+  const confirmCancel = async (reason: string) => {
     if (!orderToCancel) return;
+    setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(orderToCancel.orderId);
+      await checkoutApi.cancelOrder(orderToCancel.orderId, reason);
       await loadOrders();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to cancel order.",
       );
     } finally {
+      setIsCancelling(false);
       setIsCancelModalOpen(false);
       setOrderToCancel(null);
     }
@@ -223,18 +227,15 @@ export default function OrderHistoryView() {
         )}
       </div>
 
-      <ConfirmModal
+      <CancelOrderModal
         isOpen={isCancelModalOpen}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel order #${orderToCancel?.orderCode}? This action cannot be undone.`}
+        orderCode={orderToCancel?.orderCode ?? ""}
         onConfirm={confirmCancel}
         onCancel={() => {
           setIsCancelModalOpen(false);
           setOrderToCancel(null);
         }}
-        confirmText="Confirm Cancel"
-        cancelText="Close"
-        type="danger"
+        isSubmitting={isCancelling}
       />
 
       {orderToRefund && (

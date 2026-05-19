@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
 import { useCart } from "@/features/cart/context/CartContext";
@@ -96,6 +96,7 @@ const FALLBACK_IMAGE = "https://placehold.co/64x64/png?text=Toy";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const orderId = searchParams.get("orderId");
   const orderCode = searchParams.get("orderCode") || "N/A";
 
@@ -114,10 +115,15 @@ function OrderSuccessContent() {
 
   useEffect(() => {
     if (!orderId) return;
-    ordersApi.getOrderDetail(Number(orderId)).then(setOrder).catch(() => {
+    ordersApi.getOrderDetail(Number(orderId)).then((data) => {
+      setOrder(data);
+      if (data && data.paymentMethod === "SE_PAY" && data.paymentStatus !== "PAID") {
+        router.replace(`/checkout/payment?orderId=${orderId}`);
+      }
+    }).catch(() => {
       // Fallback to no order — page still shows success message
     });
-  }, [orderId]);
+  }, [orderId, router]);
 
   useEffect(() => {
     void refreshCart().catch(() => {
