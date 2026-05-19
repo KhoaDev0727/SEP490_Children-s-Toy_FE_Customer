@@ -59,7 +59,7 @@ export default function CancelOrderModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop with elegant blur */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-slate-950/60 transition-opacity duration-300"
         onClick={isSubmitting ? undefined : onCancel}
       />
 
@@ -115,8 +115,8 @@ export default function CancelOrderModal({
               placeholder="Please enter a specific reason why you want to cancel this order..."
               maxLength={200}
               className={`w-full px-4 py-3 rounded-xl border bg-slate-50/50 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff6a00] focus:border-[#ff6a00] transition-all resize-none ${error
-                  ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50/10"
-                  : "border-slate-200"
+                ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50/10"
+                : "border-slate-200"
                 }`}
             />
             {/* Character count */}

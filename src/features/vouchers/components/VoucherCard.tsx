@@ -30,6 +30,10 @@ const getDaysUntilExpiry = (endDateString: string) => {
 };
 
 export default function VoucherCard({ voucher }: VoucherCardProps) {
+  const remainingUsage = voucher.maxUsagePerUser !== null
+    ? Math.max(0, voucher.maxUsagePerUser - (voucher.currentUserUsageCount ?? 0))
+    : null;
+
   const daysUntilExpiry = getDaysUntilExpiry(voucher.endDate);
   const isExpiringSoon = daysUntilExpiry <= 3 && daysUntilExpiry >= 0;
 
@@ -114,10 +118,10 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
         </div>
 
         {/* Max Usage Ribbon - Shopee Style at Top Right */}
-        {voucher.maxUsagePerUser && voucher.maxUsagePerUser > 1 && (
+        {remainingUsage !== null && (
           <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
-            <div className="bg-red-50 text-red-600 text-[11px] px-3 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap">
-              x{voucher.maxUsagePerUser}
+            <div className="bg-red-50 text-red-600 text-[11px] px-3 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
+              x{remainingUsage}
             </div>
             {/* The Fold - Below for top-right position */}
             <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
@@ -180,11 +184,10 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
         <div className="flex flex-col items-center justify-center w-18 shrink-0 pl-3">
           <button
             onClick={copyCode}
-            className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 hover:cursor-pointer ${
-              isCopied
-                ? "border-green-700 text-green-700 bg-green-50"
-                : "border-orange-500 text-orange-500 hover:bg-orange-50"
-            }`}
+            className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 hover:cursor-pointer ${isCopied
+              ? "border-green-700 text-green-700 bg-green-50"
+              : "border-orange-500 text-orange-500 hover:bg-orange-50"
+              }`}
           >
             {isCopied ? "Saved" : "Copy"}
           </button>

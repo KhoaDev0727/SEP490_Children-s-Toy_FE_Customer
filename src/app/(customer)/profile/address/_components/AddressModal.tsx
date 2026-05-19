@@ -124,7 +124,7 @@ export default function AddressModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-950/60" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">{editingAddress ? "Edit address" : "Add new address"}</h2>

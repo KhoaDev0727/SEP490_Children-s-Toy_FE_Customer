@@ -8,6 +8,7 @@ import { productApi } from "@/features/products/services/product-api";
 import { ProductDetail, ProductList } from "@/features/products/types/product";
 import {
   formatCurrency,
+  formatMysteryPrice,
   formatDateTime,
 } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
@@ -200,7 +201,7 @@ export default function ProductDetailsView({
         const result = await productApi.getProducts({
           pageNumber: 1,
           pageSize: 8,
-          status: "Active",
+          status: "Active,ComingSoon",
         });
         if (!active) return;
         const items = result.items
@@ -321,7 +322,7 @@ export default function ProductDetailsView({
       { label: "Age range", value: product.ageRange ?? "Updating" },
       { label: "Gender", value: product.sexName ?? "Updating" },
       { label: "Origin", value: product.originName ?? "Updating" },
-      { label: "Remaining stock", value: product.quantity.toString() },
+      { label: "Remaining stock", value: product.productStatus === "ComingSoon" ? "Updating" : product.quantity.toString() },
     ];
   }, [product]);
 
@@ -500,11 +501,10 @@ export default function ProductDetailsView({
                 <button
                   key={img}
                   onClick={() => setActiveImage(img)}
-                  className={`aspect-square rounded-lg border-2 overflow-hidden bg-white shadow-sm relative ${
-                    img === safeImage
-                      ? "border-[#ff6a00]"
-                      : "border-slate-200 hover:border-[#ff6a00]"
-                  }`}
+                  className={`aspect-square rounded-lg border-2 overflow-hidden bg-white shadow-sm relative ${img === safeImage
+                    ? "border-[#ff6a00]"
+                    : "border-slate-200 hover:border-[#ff6a00]"
+                    }`}
                 >
                   <Image
                     className="object-cover"
@@ -522,13 +522,12 @@ export default function ProductDetailsView({
         <div className="flex flex-col">
           <div className="mb-2 flex gap-2">
             <span
-              className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                product.productStatus === "ComingSoon"
-                  ? "bg-blue-100 text-blue-700"
-                  : inStock
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-200 text-slate-600"
-              }`}
+              className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${product.productStatus === "ComingSoon"
+                ? "bg-blue-100 text-blue-700"
+                : inStock
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-slate-200 text-slate-600"
+                }`}
             >
               {product.productStatus === "ComingSoon"
                 ? "Coming soon"
@@ -597,7 +596,16 @@ export default function ProductDetailsView({
                 </span>
               </div>
             )}
-            {product.discountedPrice != null ? (
+            {product.productStatus === "ComingSoon" ? (
+              <div className="flex items-baseline gap-4 mb-2">
+                <span className="text-4xl font-black text-[#ff6a00]">
+                  {formatMysteryPrice(product.price)}
+                </span>
+                <span className="text-sm text-slate-400">
+                  Price to be announced
+                </span>
+              </div>
+            ) : product.discountedPrice != null ? (
               <div className="mb-2">
                 <div className="flex items-center gap-4 mb-1">
                   <span className="text-4xl font-black text-[#ff6a00]">
@@ -673,53 +681,54 @@ export default function ProductDetailsView({
             </div>
           </div>
 
-          <div className="space-y-6 mb-8">
-            <div>
-              <p className="text-sm font-bold mb-3 uppercase tracking-tight">
-                Quantity:
-              </p>
-              <div className="flex items-center border border-slate-200 w-fit rounded-lg overflow-hidden">
-                <button
-                  className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                  onClick={() => setQuantity(Math.max(1, selectedQuantity - 1))}
-                >
-                  <span className="material-symbols-outlined text-base">
-                    remove
-                  </span>
-                </button>
-                <input
-                  className="w-14 text-center border-x border-slate-200 py-2 bg-transparent focus:ring-0 outline-none"
-                  type="text"
-                  value={selectedQuantity}
-                  readOnly
-                />
-                <button
-                  className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                  onClick={() =>
-                    setQuantity(
-                      Math.min(maxSelectableQuantity, selectedQuantity + 1),
-                    )
-                  }
-                  disabled={
-                    !canAddToCart || selectedQuantity >= maxSelectableQuantity
-                  }
-                >
-                  <span className="material-symbols-outlined text-base">
-                    add
-                  </span>
-                </button>
+          {product.productStatus !== "ComingSoon" && (
+            <div className="space-y-6 mb-8">
+              <div>
+                <p className="text-sm font-bold mb-3 uppercase tracking-tight">
+                  Quantity:
+                </p>
+                <div className="flex items-center border border-slate-200 w-fit rounded-lg overflow-hidden">
+                  <button
+                    className="px-3 py-2 hover:bg-slate-100 transition-colors"
+                    onClick={() => setQuantity(Math.max(1, selectedQuantity - 1))}
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      remove
+                    </span>
+                  </button>
+                  <input
+                    className="w-14 text-center border-x border-slate-200 py-2 bg-transparent focus:ring-0 outline-none"
+                    type="text"
+                    value={selectedQuantity}
+                    readOnly
+                  />
+                  <button
+                    className="px-3 py-2 hover:bg-slate-100 transition-colors"
+                    onClick={() =>
+                      setQuantity(
+                        Math.min(maxSelectableQuantity, selectedQuantity + 1),
+                      )
+                    }
+                    disabled={
+                      !canAddToCart || selectedQuantity >= maxSelectableQuantity
+                    }
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      add
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             {product.productStatus === "ComingSoon" || !inStock ? (
               <button
-                className={`flex-1 px-8 py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${
-                  isFollowed
-                    ? "bg-slate-100 text-slate-600 border-2 border-slate-200 hover:bg-slate-200"
-                    : "bg-[#ff6a00] text-white hover:bg-[#e05e00] shadow-lg shadow-orange-200"
-                }`}
+                className={`flex-1 px-8 py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${isFollowed
+                  ? "bg-slate-100 text-slate-600 border-2 border-slate-200 hover:bg-slate-200"
+                  : "bg-[#ff6a00] text-white hover:bg-[#e05e00] shadow-lg shadow-orange-200"
+                  }`}
                 type="button"
                 onClick={handleToggleFollow}
                 disabled={isFollowUpdating}
@@ -794,31 +803,28 @@ export default function ProductDetailsView({
         <div className="border-b border-slate-200 flex items-center gap-8 mb-8 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("description")}
-            className={`pb-4 border-b-2 font-bold whitespace-nowrap ${
-              activeTab === "description"
-                ? "border-[#ff6a00] text-[#ff6a00]"
-                : "border-transparent text-slate-500 hover:text-slate-900"
-            }`}
+            className={`pb-4 border-b-2 font-bold whitespace-nowrap ${activeTab === "description"
+              ? "border-[#ff6a00] text-[#ff6a00]"
+              : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
           >
             Product description
           </button>
           <button
             onClick={() => setActiveTab("specs")}
-            className={`pb-4 border-b-2 font-semibold whitespace-nowrap ${
-              activeTab === "specs"
-                ? "border-[#ff6a00] text-[#ff6a00]"
-                : "border-transparent text-slate-500 hover:text-slate-900"
-            }`}
+            className={`pb-4 border-b-2 font-semibold whitespace-nowrap ${activeTab === "specs"
+              ? "border-[#ff6a00] text-[#ff6a00]"
+              : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
           >
             Specifications
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`pb-4 border-b-2 font-semibold whitespace-nowrap ${
-              activeTab === "reviews"
-                ? "border-[#ff6a00] text-[#ff6a00]"
-                : "border-transparent text-slate-500 hover:text-slate-900"
-            }`}
+            className={`pb-4 border-b-2 font-semibold whitespace-nowrap ${activeTab === "reviews"
+              ? "border-[#ff6a00] text-[#ff6a00]"
+              : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
           >
             Customer reviews
           </button>
@@ -904,11 +910,10 @@ export default function ProductDetailsView({
                       setReviewsFilter({});
                       setReviewsPage(1);
                     }}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                      !reviewsFilter.rating && !reviewsFilter.hasImage
-                        ? "bg-[#ff6a00] text-white border-[#ff6a00]"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${!reviewsFilter.rating && !reviewsFilter.hasImage
+                      ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                      }`}
                   >
                     All
                   </button>
@@ -919,11 +924,10 @@ export default function ProductDetailsView({
                         setReviewsFilter({ rating: star });
                         setReviewsPage(1);
                       }}
-                      className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors flex items-center gap-1 ${
-                        reviewsFilter.rating === star
-                          ? "bg-[#ff6a00] text-white border-[#ff6a00]"
-                          : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
-                      }`}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors flex items-center gap-1 ${reviewsFilter.rating === star
+                        ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                        }`}
                     >
                       {star} Sao
                     </button>
@@ -933,11 +937,10 @@ export default function ProductDetailsView({
                       setReviewsFilter({ hasImage: true });
                       setReviewsPage(1);
                     }}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                      reviewsFilter.hasImage
-                        ? "bg-[#ff6a00] text-white border-[#ff6a00]"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${reviewsFilter.hasImage
+                      ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                      }`}
                   >
                     With images
                   </button>

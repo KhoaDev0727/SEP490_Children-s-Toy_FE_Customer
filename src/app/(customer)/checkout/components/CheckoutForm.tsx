@@ -390,20 +390,6 @@ export default function CheckoutForm({
               <ChevronIcon />
             </div>
           </div>
-
-          {/* Note */}
-          <div className="md:col-span-2 mt-2">
-            <label className={labelBase} htmlFor="note">Order note (optional)</label>
-            <textarea
-              id="note"
-              name="note"
-              rows={2}
-              placeholder="Extra note for the delivery person..."
-              className={`${inputBase} resize-none`}
-              value={form.note}
-              onChange={handleFieldChange}
-            />
-          </div>
         </div>
       </section>
 

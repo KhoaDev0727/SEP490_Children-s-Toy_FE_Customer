@@ -252,8 +252,8 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
 
       {replyTarget && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setReplyTarget(null)} />
-          <div className="relative w-full max-w-[620px] rounded-xl bg-white p-5 shadow-xl lg:p-6">
+          <div className="absolute inset-0 bg-slate-950/60" onClick={() => setReplyTarget(null)} />
+          <div className="relative z-10 w-full max-w-[620px] rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 lg:p-6 animate-in fade-in zoom-in duration-200">
             <div className="space-y-3">
               <p className="text-sm font-semibold text-[#261812]">{replyTarget.label}</p>
               <textarea

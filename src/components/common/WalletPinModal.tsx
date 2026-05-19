@@ -36,6 +36,14 @@ export default function WalletPinModal({
     }
   }, [isOpen]);
 
+  // Làm rỗng và focus lại ô đầu tiên khi có thông báo lỗi (PIN sai)
+  useEffect(() => {
+    if (errorMessage) {
+      setDigits(Array(PIN_LENGTH).fill(""));
+      setTimeout(() => inputRefs.current[0]?.focus(), 80);
+    }
+  }, [errorMessage]);
+
   // Prevent scroll
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
@@ -107,7 +115,7 @@ export default function WalletPinModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/60"
         onClick={isVerifying ? undefined : onCancel}
       />
 
@@ -141,6 +149,7 @@ export default function WalletPinModal({
                 type="password"
                 inputMode="numeric"
                 maxLength={6}
+                autoComplete="one-time-code"
                 value={digits[i]}
                 disabled={isVerifying || isLocked}
                 onChange={(e) => handleChange(i, e.target.value)}

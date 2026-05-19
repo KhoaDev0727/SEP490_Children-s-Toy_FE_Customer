@@ -27,7 +27,9 @@ export default function VoucherList() {
           const now = new Date().getTime();
           const activeVouchers = res.items.filter((v) => {
             const endDate = new Date(v.endDate).getTime();
-            return endDate > now;
+            if (endDate <= now) return false;
+            if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
+            return true;
           });
           setVouchers(activeVouchers);
         }

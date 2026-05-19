@@ -122,7 +122,7 @@ export default function EditReviewModal({
     } catch (error: any) {
       toast.error(
         error.response?.data?.message ||
-          "An error occurred while updating the review",
+        "An error occurred while updating the review",
       );
     } finally {
       setIsSubmitting(false);
@@ -130,7 +130,7 @@ export default function EditReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 transition-all">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
@@ -193,11 +193,10 @@ export default function EditReviewModal({
                   className="focus:outline-none group transition-transform active:scale-90"
                 >
                   <span
-                    className={`material-symbols-outlined text-[48px] transition-all duration-300 ${
-                      star <= rating
+                    className={`material-symbols-outlined text-[48px] transition-all duration-300 ${star <= rating
                         ? "text-orange-400 drop-shadow-sm"
                         : "text-slate-200 group-hover:text-orange-200"
-                    }`}
+                      }`}
                     style={{
                       fontVariationSettings:
                         star <= rating ? "'FILL' 1" : "'FILL' 0",
