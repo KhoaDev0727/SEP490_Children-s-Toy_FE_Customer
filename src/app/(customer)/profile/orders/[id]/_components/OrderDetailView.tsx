@@ -6,7 +6,7 @@ import ShippingTracker, { type ShippingEvent } from "./ShippingTracker";
 import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
-import ConfirmModal from "@/components/common/ConfirmModal";
+import CancelOrderModal from "@/components/common/CancelOrderModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
@@ -90,7 +90,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       if (detail.statusHistory?.length) {
         detail.statusHistory.forEach((h) => {
           let note = h.note || h.statusName;
-          
+
           // Simple inline translation for legacy Vietnamese notes
           const n = note.toLowerCase();
           if (n.includes("chờ lấy hàng")) note = "Ready to pick";
@@ -187,12 +187,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     return status === "delivered";
   }, [order]);
 
-  const handleCancel = useCallback(async () => {
+  const handleCancel = useCallback(async (reason: string) => {
     if (!order) return;
 
     setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(order.orderId);
+      await checkoutApi.cancelOrder(order.orderId, reason);
       await loadOrder();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
@@ -279,15 +279,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         ) : null}
       </div>
 
-      <ConfirmModal
+      <CancelOrderModal
         isOpen={isCancelModalOpen}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel order #${order.orderCode}? This action cannot be undone.`}
+        orderCode={order.orderCode}
         onConfirm={handleCancel}
         onCancel={() => setIsCancelModalOpen(false)}
-        confirmText={isCancelling ? "Processing..." : "Confirm Cancel"}
-        cancelText="Close"
-        type="danger"
+        isSubmitting={isCancelling}
       />
 
       {/* Two-column grid */}

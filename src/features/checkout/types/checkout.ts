@@ -93,3 +93,13 @@ export interface ApiResponse<T> {
   data: T | null;
   errors?: string[] | null;
 }
+
+/** Thông tin thanh toán nhạy cảm — fetch từ API thay vì lấy từ URL */
+export interface OrderPaymentInfo {
+  orderId: number;
+  orderCode: string;
+  amount: number;
+  paymentAttemptCode: string;
+  qrImageUrl: string;
+  expiresAt?: string | null;
+}

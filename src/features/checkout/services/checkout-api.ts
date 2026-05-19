@@ -5,6 +5,7 @@ import type {
   CheckoutConfirmResponse,
   CheckoutPreviewRequest,
   CheckoutPreviewResponse,
+  OrderPaymentInfo,
   PaymentStatusResponse,
   RetryPaymentResponse,
   OrderTrackingResponse,
@@ -136,13 +137,30 @@ export const checkoutApi = {
       );
     }
   },
-  /** Cancel đơn hàng. */
-  cancelOrder: async (orderId: number, reason?: string): Promise<void> => {
+  /** Cancel đơn hàng.
+   * @param restoreCart true = khôi phục giỏ hàng sau cancel (dùng cho luồng Payment QR).
+   *                    false (mặc định) = KHÔNG khôi phục giỏ hàng (Order Detail / History).
+   */
+  cancelOrder: async (orderId: number, reason?: string, restoreCart = false): Promise<void> => {
     try {
-      await axiosClient.post(`/orders/${orderId}/cancel`, { reason });
+      await axiosClient.post(`/orders/${orderId}/cancel`, { reason, restoreCart });
     } catch (error) {
       throw new Error(
         extractCheckoutErrorMessage(error, "Unable to cancel order. Please contact support."),
+      );
+    }
+  },
+
+  /** Lấy thông tin thanh toán nhạy cảm (QR, amount, attemptCode) từ API thay vì URL. */
+  getPaymentInfo: async (orderId: number): Promise<OrderPaymentInfo> => {
+    try {
+      const response = await axiosClient.get<
+        OrderPaymentInfo | ApiResponse<OrderPaymentInfo>
+      >(`/orders/${orderId}/payment-info`);
+      return unwrap(response);
+    } catch (error) {
+      throw new Error(
+        extractCheckoutErrorMessage(error, "Unable to retrieve payment information."),
       );
     }
   },

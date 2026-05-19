@@ -6,7 +6,7 @@ import OrderTabs from "./OrderTabs";
 import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
 import OrderPagination from "./OrderPagination";
-import ConfirmModal from "@/components/common/ConfirmModal";
+import CancelOrderModal from "@/components/common/CancelOrderModal";
 import { Order, OrderStatus } from "./OrderCard";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
@@ -27,6 +27,7 @@ export default function OrderHistoryView() {
   // Modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const mapStatusNameToUi = useCallback((statusName?: string | null): OrderStatus => {
     if (!statusName) return "pending";
@@ -109,11 +110,7 @@ export default function OrderHistoryView() {
   };
 
   const handlePrimaryAction = useCallback((order: Order) => {
-    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
-      router.push(`/checkout/payment?orderId=${order.orderId}`);
-    } else {
-      router.push(`/profile/orders/${order.orderId}`);
-    }
+    router.push(`/profile/orders/${order.orderId}`);
   }, [router]);
 
   const handleSecondaryAction = useCallback((order: Order) => {
@@ -125,14 +122,16 @@ export default function OrderHistoryView() {
     }
   }, [router]);
 
-  const confirmCancel = async () => {
+  const confirmCancel = async (reason: string) => {
     if (!orderToCancel) return;
+    setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(orderToCancel.orderId);
+      await checkoutApi.cancelOrder(orderToCancel.orderId, reason);
       await loadOrders();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
     } finally {
+      setIsCancelling(false);
       setIsCancelModalOpen(false);
       setOrderToCancel(null);
     }
@@ -173,26 +172,23 @@ export default function OrderHistoryView() {
             <p className="text-base font-bold">Loading orders...</p>
           </div>
         ) : (
-          <OrderList 
-            orders={orders} 
+          <OrderList
+            orders={orders}
             onPrimaryAction={handlePrimaryAction}
             onSecondaryAction={handleSecondaryAction}
           />
         )}
       </div>
 
-      <ConfirmModal
+      <CancelOrderModal
         isOpen={isCancelModalOpen}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel order #${orderToCancel?.orderCode}? This action cannot be undone.`}
+        orderCode={orderToCancel?.orderCode ?? ""}
         onConfirm={confirmCancel}
         onCancel={() => {
           setIsCancelModalOpen(false);
           setOrderToCancel(null);
         }}
-        confirmText="Confirm Cancel"
-        cancelText="Close"
-        type="danger"
+        isSubmitting={isCancelling}
       />
 
       {/* Pagination */}
