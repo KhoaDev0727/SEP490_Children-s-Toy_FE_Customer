@@ -45,7 +45,7 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       // Ensure we send the date correctly without timezone shifts
       // backend expects DateTime, so we can send YYYY-MM-DDT00:00:00Z
       const isoDob = `${dob}T00:00:00Z`;
-      
+
       await onSave({
         fullName: fullName.trim(),
         nickName: nickName.trim() || null,
@@ -66,9 +66,8 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/60"
         onClick={onClose}
       />
 
@@ -157,11 +156,10 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
                   type="button"
                   onClick={() => setSexId(g.id)}
                   disabled={isSubmitting}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${
-                    sexId === g.id
-                      ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-sm"
-                      : "bg-white text-[#5a4136] border-[#e2bfb0] hover:border-[#ff6a00] hover:text-[#ff6a00]"
-                  } disabled:opacity-50`}
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${sexId === g.id
+                    ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-sm"
+                    : "bg-white text-[#5a4136] border-[#e2bfb0] hover:border-[#ff6a00] hover:text-[#ff6a00]"
+                    } disabled:opacity-50`}
                 >
                   <span className="mr-1">{g.icon}</span>
                   {g.label}

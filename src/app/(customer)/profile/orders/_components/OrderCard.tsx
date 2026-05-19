@@ -9,7 +9,8 @@ export type OrderStatus =
   | "completed"
   | "pending"
   | "shipping"
-  | "cancelled";
+  | "cancelled"
+  | "refunded";
 
 export interface OrderItem {
   name: string;
@@ -55,6 +56,10 @@ const STATUS_CONFIG: Record<
     label: "CANCELLED",
     className: "text-error",
   },
+  refunded: {
+    label: "REFUNDED",
+    className: "text-blue-600",
+  },
 };
 
 const ACTION_BUTTONS: Record<
@@ -66,6 +71,7 @@ const ACTION_BUTTONS: Record<
   pending: { secondary: "Cancel Order", primary: "View Details" },
   shipping: { primary: "View Details" },
   cancelled: { primary: "View Details" },
+  refunded: { primary: "View Details" },
 };
 
 function formatPrice(price: number): string {
@@ -85,6 +91,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
     const config = STATUS_CONFIG[order.status];
     const actions = ACTION_BUTTONS[order.status];
     let finalLabel = config.label;
+    let finalClassName = config.className;
     let finalPrimaryLabel = actions.primary;
 
     if (order.status === "pending") {
@@ -98,7 +105,12 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
       finalLabel = "CONFIRMED";
     }
 
-    return { label: finalLabel, className: config.className, primaryLabel: finalPrimaryLabel };
+    if (order.hasActiveRefund) {
+      finalLabel = "REFUND REQUESTED";
+      finalClassName = "text-blue-600";
+    }
+
+    return { label: finalLabel, className: finalClassName, primaryLabel: finalPrimaryLabel };
   }, [order]);
 
   const actions = ACTION_BUTTONS[order.status];

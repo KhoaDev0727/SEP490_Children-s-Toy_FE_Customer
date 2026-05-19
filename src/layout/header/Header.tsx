@@ -4,8 +4,9 @@ import { useCart } from "@/features/cart/context/CartContext";
 import { authApi } from "@/features/auth/services/auth-api";
 import { productApi } from "@/features/products/services/product-api";
 import type { ProductDetail } from "@/features/products/types/product";
-import { formatCurrency } from "@/features/products/utils/format";
+import { formatCurrency, formatMysteryPrice } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
+import { followApi } from "@/features/products/services/follow-api";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -53,162 +54,12 @@ interface WishlistPreviewItem {
 
 const FALLBACK_IMAGE = "https://placehold.co/200x200/png?text=Toy";
 
-function UserDropdown() {
-  const { account, isAuthenticated, isHydrated, clearAuth } = useAuthContext();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+import dynamic from "next/dynamic";
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // Ignore logout API errors — always clear local state
-    }
-    clearAuth();
-    setOpen(false);
-    toast.success("Logged out.");
-    router.push("/");
-  };
-
-  if (!isHydrated) {
-    return <div className="h-10 w-[110px]" aria-hidden="true" />;
-  }
-
-  if (!isAuthenticated || !account) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link
-          href="/login"
-          className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-[#ff6a00] transition-colors"
-        >
-          Log in
-        </Link>
-        <Link
-          href="/register"
-          className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-opacity hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
-        >
-          Sign up
-        </Link>
-      </div>
-    );
-  }
-
-  const initials = account.accountName
-    .split(" ")
-    .map((w: string) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <div className="relative" ref={ref}>
-      {/* Trigger: avatar + name + chevron — matches HTML's group pattern */}
-      <div
-        className="relative group flex items-center gap-2 h-full py-4 cursor-pointer"
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex-shrink-0">
-          {account.imageUrl ? (
-            <img
-              src={account.imageUrl}
-              alt={account.accountName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center text-white text-xs font-bold"
-              style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
-            >
-              {initials}
-            </div>
-          )}
-        </div>
-        <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300 max-w-[120px] truncate">
-          {account.accountName}
-        </span>
-        <span
-          className="material-symbols-outlined text-slate-400 transition-transform duration-200"
-          style={{
-            fontSize: 16,
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        >
-          expand_more
-        </span>
-      </div>
-
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 top-full w-48 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-slate-100 dark:border-slate-800 py-2 z-50">
-          {/* User info header */}
-          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-              {account.accountName}
-            </p>
-            <p className="text-xs text-slate-500 truncate mt-0.5">{account.email}</p>
-          </div>
-
-          <div className="py-1">
-            <Link
-              href="/profile/orders"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
-            >
-              <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
-                package_2
-              </span>
-              Orders
-            </Link>
-            <Link
-              href="/profile/wallet"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
-            >
-              <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
-                account_balance_wallet
-              </span>
-              Wallet
-            </Link>
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-[#ff6a00] transition-colors"
-            >
-              <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
-                manage_accounts
-              </span>
-              Account
-            </Link>
-          </div>
-
-          <div className="border-t border-slate-100 dark:border-slate-800 py-1">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-left"
-            >
-              <span className="material-symbols-outlined opacity-70" style={{ fontSize: 20 }}>
-                logout
-              </span>
-              Sign out
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+const UserDropdown = dynamic(() => import("./UserDropdown"), {
+  ssr: false,
+  loading: () => <div className="h-10 w-[110px]" aria-hidden="true" />,
+});
 
 export default function Header() {
   const router = useRouter();
@@ -218,6 +69,7 @@ export default function Header() {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [wishlistItems, setWishlistItems] = useState<WishlistPreviewItem[]>([]);
+  const [followedProductIds, setFollowedProductIds] = useState<Set<number>>(new Set());
   const [updatingWishlistProductId, setUpdatingWishlistProductId] = useState<number | null>(null);
   const [addingWishlistProductId, setAddingWishlistProductId] = useState<number | null>(null);
   const { cart, addItem } = useCart();
@@ -251,7 +103,11 @@ export default function Header() {
 
     setWishlistLoading(true);
     try {
-      const rawWishlistItems = await wishlistApi.getMyWishlist();
+      const [rawWishlistItems, myFollows] = await Promise.all([
+        wishlistApi.getMyWishlist(),
+        followApi.getMyFollows().catch(() => [] as number[])
+      ]);
+      setFollowedProductIds(new Set(myFollows));
       const productResults = await Promise.allSettled(
         rawWishlistItems.map((item) => productApi.getProductById(item.productId)),
       );
@@ -344,6 +200,31 @@ export default function Header() {
       toast.error(message);
     } finally {
       setAddingWishlistProductId(null);
+    }
+  };
+
+  const handleToggleFollow = async (productId: number) => {
+    try {
+      if (followedProductIds.has(productId)) {
+        await followApi.unfollowProduct(productId);
+        setFollowedProductIds((prev) => {
+          const next = new Set(prev);
+          next.delete(productId);
+          return next;
+        });
+        toast.success("Unfollowed product.");
+      } else {
+        await followApi.followProduct(productId);
+        setFollowedProductIds((prev) => {
+          const next = new Set(prev);
+          next.add(productId);
+          return next;
+        });
+        toast.success("You will be notified when the product launches!");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to complete the action.";
+      toast.error(message);
     }
   };
 
@@ -585,8 +466,11 @@ export default function Header() {
                 </div>
               ) : (
                 wishlistItems.map((item) => {
+                  const isComingSoon = item.product.productStatus === "ComingSoon";
                   const inStock = item.product.quantity > 0 && item.product.productStatus === "Active";
                   const displayPrice = item.product.discountedPrice ?? item.product.price;
+                  const statusLabel = isComingSoon ? "Coming soon" : inStock ? "In stock" : "Out of stock";
+                  const statusBadgeClass = isComingSoon ? "bg-blue-100 text-blue-700" : inStock ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600";
                   return (
                     <div key={item.productId} className="bg-white rounded-xl border border-slate-200 p-3">
                       <div className="flex gap-3">
@@ -610,23 +494,33 @@ export default function Header() {
                             {item.product.productName}
                           </Link>
                           <p className="text-xl font-black text-slate-900 leading-tight mt-1">
-                            {formatCurrency(displayPrice)}
+                            {isComingSoon ? formatMysteryPrice(displayPrice) : formatCurrency(displayPrice)}
                           </p>
-                          <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1 ${inStock ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
-                            {inStock ? "In stock" : "Out of stock"}
+                          <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1 ${statusBadgeClass}`}>
+                            {statusLabel}
                           </span>
                         </div>
                       </div>
 
                       <div className="mt-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleAddWishlistItemToCart(item)}
-                          disabled={!inStock || addingWishlistProductId === item.productId}
-                          className="flex-1 py-2 px-3 rounded-lg bg-[#ff7a00] text-white text-sm font-semibold hover:bg-[#e06c00] disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          {addingWishlistProductId === item.productId ? "Adding..." : "Add to cart"}
-                        </button>
+                        {isComingSoon ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleToggleFollow(item.productId)}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-colors ${followedProductIds.has(item.productId) ? "bg-slate-100 text-slate-600 border-slate-200" : "bg-white text-[#ff6a00] border-[#ff6a00] hover:bg-[#ff6a00] hover:text-white"}`}
+                          >
+                            {followedProductIds.has(item.productId) ? "Following" : "Follow"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void handleAddWishlistItemToCart(item)}
+                            disabled={!inStock || addingWishlistProductId === item.productId}
+                            className="flex-1 py-2 px-3 rounded-lg bg-[#ff7a00] text-white text-sm font-semibold hover:bg-[#e06c00] disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {addingWishlistProductId === item.productId ? "Adding..." : "Add to cart"}
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => void handleRemoveWishlistItem(item.productId)}

@@ -55,6 +55,8 @@ export default function OrderHistoryView() {
           return "completed";
         case "cancelled":
           return "cancelled";
+        case "refunded":
+          return "refunded";
         default:
           return "pending";
       }

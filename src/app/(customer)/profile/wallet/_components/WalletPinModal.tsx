@@ -60,6 +60,7 @@ function PinInput({
         <input
           type={isVisible ? "text" : "password"}
           maxLength={6}
+          autoComplete="new-password"
           value={value}
           onChange={(event) => onValueChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
           className="w-full h-11 rounded-xl border border-slate-200 px-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-orange-200"
@@ -114,11 +115,16 @@ export default function WalletPinModal({
   const isActionLocked = isSubmittingPin || isSendingForgotOtp || isResettingPin;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/45 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-slate-950/60" 
+        onClick={isActionLocked ? undefined : onClose} 
+      />
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5"
+        className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 animate-in fade-in zoom-in duration-200"
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
@@ -151,6 +157,7 @@ export default function WalletPinModal({
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
+                autoComplete="one-time-code"
                 value={otpCode}
                 onChange={(event) => onOtpCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-200"

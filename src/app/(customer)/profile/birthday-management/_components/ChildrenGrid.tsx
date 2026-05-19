@@ -117,11 +117,10 @@ export default function ChildrenGrid() {
           }}
           disabled={children.length >= 4}
           title={children.length >= 4 ? "Maximum limit of 4 children reached" : "Add new child"}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all ${
-            children.length >= 4 
-              ? "bg-[#ff6a00]/50 cursor-not-allowed" 
+          className={`px-4 py-2 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all ${children.length >= 4
+              ? "bg-[#ff6a00]/50 cursor-not-allowed"
               : "bg-[#ff6a00] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
-          }`}
+            }`}
         >
           <span className="material-symbols-outlined text-lg">
             {children.length >= 4 ? "lock" : "add"}
@@ -181,7 +180,7 @@ export default function ChildrenGrid() {
       {deleteConfirm !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
           />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">

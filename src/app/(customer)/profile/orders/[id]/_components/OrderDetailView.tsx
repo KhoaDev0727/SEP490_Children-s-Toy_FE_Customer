@@ -291,7 +291,11 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: tracker + products */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <ShippingTracker currentStatus={order.statusName} events={trackingEvents} />
+          <ShippingTracker
+            currentStatus={order.statusName}
+            events={trackingEvents}
+            hasActiveRefund={order.hasActiveRefund}
+          />
           <OrderProductList products={products} />
         </div>
 

@@ -167,17 +167,17 @@ export default function AddressList() {
 
       {deleteConfirmId && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteConfirmId(null)} />
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl p-6">
+          <div className="absolute inset-0 bg-slate-950/60" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative z-10 bg-white w-full max-w-sm mx-4 rounded-2xl p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
             <div className="mb-4">
-              <h3 className="font-semibold text-slate-900">Delete address</h3>
-              <p className="text-sm text-slate-500">Are you sure you want to delete this address?</p>
+              <h3 className="font-bold text-[#261812] text-lg">Delete address</h3>
+              <p className="text-sm text-[#5a4136] mt-1">Are you sure you want to delete this address?</p>
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm">
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
                 Cancel
               </button>
-              <button onClick={confirmDelete} className="px-4 py-2 rounded-lg bg-[#ba1a1a] text-white text-sm">
+              <button onClick={confirmDelete} className="px-4 py-2 rounded-lg bg-[#ba1a1a] text-white text-sm font-bold shadow-md shadow-[#ba1a1a]/20 hover:-translate-y-0.5 transition-all">
                 Delete
               </button>
             </div>
