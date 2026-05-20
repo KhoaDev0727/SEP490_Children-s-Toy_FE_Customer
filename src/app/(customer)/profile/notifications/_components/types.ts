@@ -50,7 +50,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     category: "system",
     read: true,
     title: "Account verification successful",
-    description: "Your account is now secured with two-factor authentication. Thank you for trusting ShopX.",
+    description: "Your account is now secured with two-factor authentication. Thank you for trusting Toy Store.",
     timestamp: "21:00 - 08/05/2024",
     icon: "security",
     iconBg: "bg-green-100",

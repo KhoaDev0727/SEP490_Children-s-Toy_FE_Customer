@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import QRPaymentContent from "@/app/(customer)/checkout/payment/components/QRPaymentContent";
 
 export const metadata: Metadata = {
-  title: "Checkout QR — ShopX Velocity",
+  title: "Checkout QR — Toy Store Velocity",
   description: "Scan the QR code to complete your order.",
 };
 

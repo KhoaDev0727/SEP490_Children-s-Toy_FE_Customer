@@ -2,7 +2,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import PasswordForm from "./_components/PasswordForm";
 
 export const metadata = {
-  title: "Change Password - ShopX",
+  title: "Change Password - Toy Store",
 };
 
 export default function PasswordPage() {

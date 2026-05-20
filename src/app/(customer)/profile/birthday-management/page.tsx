@@ -2,7 +2,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import ChildrenGrid from "./_components/ChildrenGrid";
 
 export const metadata = {
-  title: "Children's Birthdays - ShopX",
+  title: "Children's Birthdays - Toy Store",
 };
 
 export default function ChildrenBirthdayPage() {
