@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Header from "@/layout/header/Header";
 import Footer from "@/layout/Footer";
-import ChatWidget from "@/layout/ChatWidget";
 
 export default function CustomerLayout({
   children,
@@ -17,7 +16,6 @@ export default function CustomerLayout({
         {children}
       </main>
       <Footer />
-      <ChatWidget />
     </div>
   );
 }

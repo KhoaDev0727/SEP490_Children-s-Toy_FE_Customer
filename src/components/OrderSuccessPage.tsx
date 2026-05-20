@@ -260,7 +260,7 @@ function OrderSuccessContent() {
                 style={{ animationDelay: "0.18s" }}
               >
                 Thank you for shopping at{" "}
-                <span className="font-bold text-orange-500">ShopX</span>. Order{" "}
+                <span className="font-bold text-orange-500">Toy Store</span>. Order{" "}
                 <span className="font-bold text-zinc-800">#{orderCode}</span> has been received
                 and is being processed.
               </p>

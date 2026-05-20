@@ -2,7 +2,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import AddressList from "./_components/AddressList";
 
 export const metadata = {
-  title: "My Address - ShopX",
+  title: "My Address - Toy Store",
 };
 
 export default function AddressPage() {
