@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { productApi } from "@/features/products/services/product-api";
-import { ProductDetail, ProductList } from "@/features/products/types/product";
+import { ProductDetail } from "@/features/products/types/product";
 import {
   formatCurrency,
   formatMysteryPrice,
@@ -16,6 +16,9 @@ import { followApi } from "@/features/products/services/follow-api";
 import Image from "next/image";
 import { reviewApi } from "@/features/reviews/services/review-api";
 import { ReviewProductListDto } from "@/features/reviews/types/review.types";
+import RecommendationWidget from "@/components/recommendation/RecommendationWidget";
+import { WIDGET_CODES } from "@/features/recommendation/types/recommendation";
+import { useProductDetailViewTracking, useTracking } from "@/hooks/useTracking";
 
 const FALLBACK_IMAGE = "https://placehold.co/900x900/png?text=Toy";
 
@@ -140,13 +143,15 @@ export default function ProductDetailsView({
 }) {
   const { addItem, cart } = useCart();
   const { isAuthenticated, isHydrated } = useAuthContext();
+  const { trackAddToCart, trackAddToWishlist } = useTracking();
+  // Tự gửi event product_view + product_view_long (>30s) khi user xem trang
+  useProductDetailViewTracking(productId);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [similarProducts, setSimilarProducts] = useState<ProductList[]>([]);
   const [wishlistProductIds, setWishlistProductIds] = useState<Set<number>>(
     new Set(),
   );
@@ -188,32 +193,6 @@ export default function ProductDetailsView({
     };
 
     fetchProduct();
-    return () => {
-      active = false;
-    };
-  }, [productId]);
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchSimilar = async () => {
-      try {
-        const result = await productApi.getProducts({
-          pageNumber: 1,
-          pageSize: 8,
-          status: "Active,ComingSoon",
-        });
-        if (!active) return;
-        const items = result.items
-          .filter((item) => item.productId !== productId)
-          .slice(0, 5);
-        setSimilarProducts(items);
-      } catch {
-        if (active) setSimilarProducts([]);
-      }
-    };
-
-    fetchSimilar();
     return () => {
       active = false;
     };
@@ -391,6 +370,8 @@ export default function ProductDetailsView({
     try {
       setIsAddingToCart(true);
       await addItem(product.productId, selectedQuantity);
+      // Tracking add_to_cart cho hệ recommendation
+      trackAddToCart(product.productId, { quantity: selectedQuantity });
       toast.success("Added to cart successfully.");
     } catch (error) {
       const message =
@@ -423,6 +404,8 @@ export default function ProductDetailsView({
         toast.success("Removed from wishlist.");
       } else {
         await wishlistApi.addItem(product.productId);
+        // Tracking add_to_wishlist
+        trackAddToWishlist(product.productId);
         setWishlistProductIds((previous) => {
           const next = new Set(previous);
           next.add(product.productId);
@@ -1101,72 +1084,23 @@ export default function ProductDetailsView({
         )}
       </div>
 
-      <section className="relative mt-24 mb-16 flow-root lg:mt-28">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-black">Similar products</h2>
-          <Link
-            href="/products"
-            className="text-[#ff6a00] font-bold flex items-center gap-1 hover:gap-2 transition-all"
-          >
-            View all{" "}
-            <span className="material-symbols-outlined text-sm">
-              arrow_forward
-            </span>
-          </Link>
-        </div>
-        {similarProducts.length === 0 ? (
-          <div className="text-slate-500">No product suggestions yet.</div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {similarProducts.map((item) => (
-              <Link
-                key={item.productId}
-                href={`/products/${item.productId}`}
-                className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all group"
-              >
-                <div className="aspect-square relative overflow-hidden">
-                  <Image
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    src={item.mainImageUrl || FALLBACK_IMAGE}
-                    alt={item.productName}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-bold line-clamp-2 mb-2 group-hover:text-[#ff6a00] transition-colors">
-                    {item.productName}
-                  </h3>
-                  <div className="mt-auto">
-                    {item.discountedPrice != null ? (
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-black text-[#ff6a00]">
-                            {formatCurrency(item.discountedPrice)}
-                          </span>
-                          {item.discountPercent != null &&
-                            item.discountPercent > 0 && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
-                                -{item.discountPercent}%
-                              </span>
-                            )}
-                        </div>
-                        <span className="text-xs text-slate-400 line-through block">
-                          {formatCurrency(item.price)}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-lg font-black text-[#ff6a00]">
-                        {formatCurrency(item.price)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <RecommendationWidget
+        widgetCode={WIDGET_CODES.PDP_SIMILAR}
+        productId={product.productId}
+        title="Sản phẩm tương tự"
+        subtitle="Các sản phẩm có đặc điểm gần với sản phẩm bạn đang xem"
+        source={`pdp:${product.productId}`}
+        className="relative mt-24 mb-12 flow-root lg:mt-28"
+      />
+
+      <RecommendationWidget
+        widgetCode={WIDGET_CODES.PDP_ALSO_BOUGHT}
+        productId={product.productId}
+        title="Khách hàng cũng mua"
+        subtitle="Những sản phẩm thường được mua kèm"
+        source={`pdp_also_bought:${product.productId}`}
+        className="relative mb-16 flow-root"
+      />
     </div>
   );
 }

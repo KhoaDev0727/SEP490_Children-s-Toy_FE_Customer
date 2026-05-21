@@ -6,6 +6,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useTracking } from "@/hooks/useTracking";
+import RecommendationWidget from "@/components/recommendation/RecommendationWidget";
+import { WIDGET_CODES } from "@/features/recommendation/types/recommendation";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
@@ -104,8 +107,22 @@ function OrderSuccessContent() {
   const [visible, setVisible] = useState(false);
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
   const { cart, refreshCart, removeItem, updateQuantity } = useCart();
+  const { trackPurchase } = useTracking();
   const syncedOrderIdRef = useRef<number | null>(null);
   const isSyncingCartRef = useRef(false);
+  const purchasedTrackedOrderIdRef = useRef<number | null>(null);
+
+  // Bắn event purchase 1 lần cho mỗi line item của order vừa thanh toán xong
+  useEffect(() => {
+    if (!order) return;
+    if (purchasedTrackedOrderIdRef.current === order.orderId) return;
+    purchasedTrackedOrderIdRef.current = order.orderId;
+
+    const productIds = order.items.map((item) => item.productId);
+    if (productIds.length > 0) {
+      trackPurchase(productIds, order.orderId);
+    }
+  }, [order, trackPurchase]);
 
   useEffect(() => {
     setMounted(true);
@@ -360,6 +377,18 @@ function OrderSuccessContent() {
               Contact us
             </a>
           </p>
+
+          {order && order.items.length > 0 && (
+            <div className="mt-12 slide-up" style={{ animationDelay: "0.55s" }}>
+              <RecommendationWidget
+                widgetCode={WIDGET_CODES.AFTER_PURCHASE}
+                productId={order.items[0]?.productId}
+                title="Mua tiếp theo"
+                subtitle="Khách hàng đã mua sản phẩm này thường mua thêm các sản phẩm dưới đây"
+                source={`after_purchase:${order.orderId}`}
+              />
+            </div>
+          )}
         </div>
       </main>
     </>

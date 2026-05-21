@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { CartProvider } from "@/features/cart/context/CartContext";
 import { Toaster } from "react-hot-toast";
 import { NotificationRealtimeProvider } from "@/features/notifications/context/NotificationRealtimeContext";
+import TrackingBootstrapper from "@/components/shared/TrackingBootstrapper";
 
 export const metadata: Metadata = {
   title: "ToyStore - High-Quality Children's Toys",
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeProvider>
               <NotificationRealtimeProvider>
                 <SidebarProvider>
+                  <TrackingBootstrapper />
                   {children}
                   <Toaster position="top-right" />
                 </SidebarProvider>
