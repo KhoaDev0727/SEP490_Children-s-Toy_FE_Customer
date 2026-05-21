@@ -4,6 +4,7 @@ import { useRecommendations } from "@/hooks/useRecommendations";
 import type { WidgetCode } from "@/features/recommendation/types/recommendation";
 import ProductCard from "@/components/recommendation/ProductCard";
 import RecommendationSkeleton from "@/components/recommendation/RecommendationSkeleton";
+import { useAuthContext } from "@/context/AuthContext";
 
 interface RecommendationWidgetProps {
   /** Mã widget — quy định bởi backend (SQL.Recommendation.Widgets). */
@@ -31,6 +32,7 @@ interface RecommendationWidgetProps {
  *  - Loading → render skeleton, không layout shift.
  *  - API lỗi → ẨN widget hoàn toàn (không show error).
  *  - Trả về 0 item → ẨN widget nếu hideOnEmpty = true.
+ *  - Widget homepage_personal (Recommended for You) chỉ hiển thị cho authenticated user.
  */
 export default function RecommendationWidget({
   widgetCode,
@@ -42,6 +44,12 @@ export default function RecommendationWidget({
   skeletonCount = 8,
   className,
 }: RecommendationWidgetProps) {
+  const { isAuthenticated, isHydrated } = useAuthContext();
+
+  if (widgetCode === "homepage_personal" && isHydrated && !isAuthenticated) {
+    return null;
+  }
+
   const { items, isLoading, hasError, data } = useRecommendations({
     widgetCode,
     productId,
@@ -58,7 +66,6 @@ export default function RecommendationWidget({
     );
   }
 
-  // Theo spec: API lỗi → ẨN widget hoàn toàn
   if (hasError) return null;
   if (hideOnEmpty && (!items || items.length === 0)) return null;
 
