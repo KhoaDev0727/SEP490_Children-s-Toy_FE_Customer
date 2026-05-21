@@ -10,7 +10,7 @@ interface Message {
 const suggestions = ["Track order", "Product consultation", "Return policy", "Contact support"];
 
 const initialMessages: Message[] = [
-  { id: 1, from: "bot", text: "Hello! Great to see you. How can ShopX help you today?" },
+  { id: 1, from: "bot", text: "Hello! Great to see you. How can Toy Store help you today?" },
   { id: 2, from: "user", text: "I want to check my order status." },
 ];
 
@@ -83,7 +83,7 @@ export default function ChatWidget() {
                   className="w-2 h-2 bg-green-400 rounded-full"
                   style={{ animation: "pulse-dot 1.5s ease-in-out infinite" }}
                 />
-                <span className="text-xs font-medium opacity-90">ShopX Bot is online</span>
+                <span className="text-xs font-medium opacity-90">Toy Store Bot is online</span>
               </div>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function ChatWidget() {
                   <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#ff6a00" }}>smart_toy</span>
                 </div>
                 <div className="flex flex-col gap-1 max-w-[80%]">
-                  <p className="text-[11px] font-medium text-slate-500 ml-1">ShopX Bot</p>
+                  <p className="text-[11px] font-medium text-slate-500 ml-1">Toy Store Bot</p>
                   <div className="rounded-2xl rounded-bl-none px-4 py-3 bg-white text-slate-800 shadow-sm border border-slate-100">
                     <p className="text-sm leading-relaxed">{msg.text}</p>
                   </div>
@@ -184,7 +184,7 @@ export default function ChatWidget() {
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>send</span>
             </button>
           </div>
-          <p className="text-center text-[10px] text-slate-400 mt-3">Powered by ShopX AI Support</p>
+          <p className="text-center text-[10px] text-slate-400 mt-3">Powered by Toy Store AI Support</p>
         </div>
       </div>
     </>

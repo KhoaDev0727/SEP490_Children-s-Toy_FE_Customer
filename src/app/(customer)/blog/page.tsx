@@ -3,8 +3,8 @@ import Link from "next/link";
 import BlogContent from "./_components/BlogContent";
 
 export const metadata: Metadata = {
-  title: "Blog - ShopX Kids",
-  description: "News, guides, and style tips from the ShopX Kids team.",
+  title: "Blog - Toy Store Kids",
+  description: "News, guides, and style tips from the Toy Store Kids team.",
 };
 
 export default function BlogPage() {

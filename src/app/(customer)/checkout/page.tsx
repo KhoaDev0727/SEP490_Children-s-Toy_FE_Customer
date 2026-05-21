@@ -3,7 +3,7 @@ import Link from "next/link";
 import CheckoutClient from "@/app/(customer)/checkout/components/CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "Checkout — ShopX Direct",
+  title: "Checkout — Toy Store Direct",
   description: "Complete your order quickly and securely.",
 };
 

@@ -160,7 +160,7 @@ export default function NotificationSettingsPage() {
             Notification Settings
           </h1>
           <p className="mt-1 text-sm text-[#5a4136]">
-            Customize how you want to receive notifications from ShopX
+            Customize how you want to receive notifications from Toy Store
           </p>
         </div>
 

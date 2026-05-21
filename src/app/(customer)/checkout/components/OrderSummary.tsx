@@ -738,7 +738,7 @@ export default function OrderSummary({
 
       <p className="text-[11px] text-center text-gray-400 mt-4 font-medium">
         By placing an order, you agree to{" "}
-        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Terms of Service</a> of ShopX.
+        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Terms of Service</a> of Toy Store.
       </p>
 
       {isVoucherModalOpen && (

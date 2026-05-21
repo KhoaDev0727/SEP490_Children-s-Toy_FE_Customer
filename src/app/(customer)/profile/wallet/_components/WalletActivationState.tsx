@@ -12,9 +12,9 @@ export default function WalletActivationState({ onActivate }: WalletActivationSt
           account_balance_wallet
         </span>
       </div>
-      <h2 className="text-3xl font-bold text-[#261812] mb-3">Activate ShopX Wallet</h2>
+      <h2 className="text-3xl font-bold text-[#261812] mb-3">Activate Toy Store Wallet</h2>
       <p className="text-sm text-[#5a4136] max-w-[560px] mb-8">
-        Experience lightning-fast, secure payments and unlock exclusive rewards with ShopX Wallet.
+        Experience lightning-fast, secure payments and unlock exclusive rewards with Toy Store Wallet.
       </p>
 
       <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 mb-8 text-left">
