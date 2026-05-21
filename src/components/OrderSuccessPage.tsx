@@ -112,7 +112,6 @@ function OrderSuccessContent() {
   const isSyncingCartRef = useRef(false);
   const purchasedTrackedOrderIdRef = useRef<number | null>(null);
 
-  // Bắn event purchase 1 lần cho mỗi line item của order vừa thanh toán xong
   useEffect(() => {
     if (!order) return;
     if (purchasedTrackedOrderIdRef.current === order.orderId) return;
