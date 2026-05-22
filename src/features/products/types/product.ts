@@ -96,6 +96,8 @@ export interface ProductFilters {
   categoryIds?: number[];
   brandIds?: number[];
   priceRangeIds?: number[];
+  minPrice?: number;
+  maxPrice?: number;
   materialIds?: number[];
   ageIds?: number[];
   sexIds?: number[];

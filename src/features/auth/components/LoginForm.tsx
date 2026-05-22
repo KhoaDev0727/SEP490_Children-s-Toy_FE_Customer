@@ -34,7 +34,11 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const response = await authApi.login(data);
+      const payload: LoginFormValues = {
+        ...data,
+        password: data.password.trim(),
+      };
+      const response = await authApi.login(payload);
       if (response.account.roleId !== CUSTOMER_ROLE_ID) {
         toast.error("Invalid account.");
         return;

@@ -39,7 +39,7 @@ axiosInstance.interceptors.response.use(
         window.localStorage.removeItem("account_info");
         window.dispatchEvent(new Event("auth:logout"));
       }
-      toast.error("Session expired. Please log in again.");
+      toast.error("Session expired. Please login again.");
     }
     return Promise.reject(error);
   },

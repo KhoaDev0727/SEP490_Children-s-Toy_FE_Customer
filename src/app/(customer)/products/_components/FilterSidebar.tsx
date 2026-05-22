@@ -107,6 +107,8 @@ export default function FilterSidebar({
     const safeMax = Math.max(nextMin, nextMax);
     setPriceRange({ min: safeMin, max: safeMax });
 
+    // Lấy price ranges có overlap với khoảng đã chọn (để có kết quả)
+    // Backend sẽ filter thêm theo minPrice/maxPrice để đảm bảo chính xác
     const matchedIds = lookups
       ? lookups.priceRanges
           .filter((range) => range.max >= safeMin && range.min <= safeMax)
@@ -116,6 +118,8 @@ export default function FilterSidebar({
     setDraftFilters((prev) => ({
       ...prev,
       priceRangeIds: matchedIds.length > 0 ? matchedIds : undefined,
+      minPrice: safeMin,
+      maxPrice: safeMax,
     }));
   };
 
