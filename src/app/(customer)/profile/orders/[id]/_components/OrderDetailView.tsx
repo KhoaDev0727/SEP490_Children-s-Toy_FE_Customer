@@ -101,6 +101,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           else if (n.includes("đã hủy")) note = "Cancelled";
           else if (n.includes("order completed")) note = "Order completed";
 
+          // Filter out internal noisy webhook messages
+          if (n.includes("webhook")) return;
+          if (n.includes("marked as delivered")) return;
+
           allEvents.push({
             time: h.createdAt,
             status: h.statusName,
@@ -113,7 +117,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       const uniqueEvents = allEvents
         .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
         .filter((ev, idx, self) =>
-          idx === self.findIndex((t) => t.description === ev.description && t.time === ev.time)
+          idx === self.findIndex((t) => t.description === ev.description)
         );
 
       setTrackingEvents(uniqueEvents);
@@ -310,7 +314,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           />
           <PaymentSummary
             subtotal={order.subTotal}
-            shippingFee={order.actualShippingFee ?? order.estimatedShippingFee}
+            shippingFee={order.estimatedShippingFee}
             discount={order.voucherDiscountAmount}
             paymentMethod={order.paymentMethod}
           />

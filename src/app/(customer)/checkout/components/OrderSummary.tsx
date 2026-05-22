@@ -80,6 +80,7 @@ export default function OrderSummary({
     () => items.filter((i) => i.isSelected).reduce((sum, i) => sum + i.lineTotal, 0),
     [items],
   );
+  const paymentMethod = PAYMENT_METHOD_MAP[formData.payment] ?? "SHIP_COD";
   const subtotal = preview?.subTotal ?? selectedSubtotal;
   const shipping = preview?.shippingFee ?? 0;
 
@@ -137,6 +138,7 @@ export default function OrderSummary({
       try {
         const data = await checkoutApi.previewCheckout({
           addressId,
+          paymentMethod,
           orderVoucherCode: orderCode,
           shippingVoucherCode: shippingCode,
           items: lines.length > 0 ? lines : undefined,
@@ -156,7 +158,7 @@ export default function OrderSummary({
         setIsPreviewLoading(false);
       }
     },
-    [],
+    [paymentMethod],
   );
 
   useEffect(() => {
@@ -219,6 +221,7 @@ export default function OrderSummary({
       try {
         const data = await checkoutApi.previewCheckout({
           addressId: formData.addressId,
+          paymentMethod,
           orderVoucherCode: target === "ORDER_TOTAL" ? code : appliedOrderVoucherCode,
           shippingVoucherCode: target === "SHIPPING_FEE" ? code : appliedShippingVoucherCode,
           items: checkoutLines.length > 0 ? checkoutLines : undefined,
@@ -274,6 +277,7 @@ export default function OrderSummary({
       try {
         const data = await checkoutApi.previewCheckout({
           addressId: formData.addressId,
+          paymentMethod,
           orderVoucherCode: newOrderCode,
           shippingVoucherCode: newShippingCode,
           items: checkoutLines.length > 0 ? checkoutLines : undefined,
@@ -313,7 +317,7 @@ export default function OrderSummary({
         setIsPreviewLoading(false);
       }
     },
-    [formData.addressId, checkoutLines, voucherList],
+    [formData.addressId, checkoutLines, voucherList, paymentMethod],
   );
 
   const clearVoucher = useCallback(
@@ -404,6 +408,7 @@ export default function OrderSummary({
             try {
               const res = await checkoutApi.previewCheckout({
                 addressId: formData.addressId,
+                paymentMethod,
                 orderVoucherCode: target === "ORDER_TOTAL" ? voucher.voucherCode : undefined,
                 shippingVoucherCode: target === "SHIPPING_FEE" ? voucher.voucherCode : undefined,
                 items: checkoutLines.length > 0 ? checkoutLines : undefined,
@@ -454,6 +459,7 @@ export default function OrderSummary({
       voucherList,
       subtotal,
       shipping,
+      paymentMethod,
       appliedOrderVoucherCode,
       appliedShippingVoucherCode,
     ],
@@ -668,7 +674,7 @@ export default function OrderSummary({
       <div className="space-y-3 border-t border-gray-100/80 pt-5 mb-5 text-sm">
         <Row label="Subtotal" value={fmt(subtotal)} />
         <Row
-          label={isPreviewLoading ? "Shipping fee (calculating...)" : "Shipping fee"}
+          label={isPreviewLoading ? "Est. Shipping Fee (calculating...)" : "Est. Shipping Fee"}
           value={
             shipping > 0
               ? fmt(shipping)

@@ -31,6 +31,7 @@ export interface CheckoutConfirmResponse {
 
 export interface CheckoutPreviewRequest {
   addressId: number;
+  paymentMethod?: string;
   orderVoucherCode?: string;
   shippingVoucherCode?: string;
   voucherCode?: string;

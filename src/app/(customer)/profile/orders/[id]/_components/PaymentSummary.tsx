@@ -41,12 +41,14 @@ export default function PaymentSummary({
             {formatPrice(shippingFee)}
           </span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-[#5a4136]">Discount</span>
-          <span className="text-sm font-bold text-green-600">
-            -{formatPrice(discount)}
-          </span>
-        </div>
+        {discount > 0 && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-[#5a4136]">Discount</span>
+            <span className="text-sm font-bold text-green-600">
+              -{formatPrice(discount)}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 flex justify-between items-center mb-4">
