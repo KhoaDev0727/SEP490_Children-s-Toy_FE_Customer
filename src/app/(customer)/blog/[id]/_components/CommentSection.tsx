@@ -14,13 +14,26 @@ interface CommentSectionProps {
   onReload: () => Promise<void>;
 }
 
-const DEFAULT_AVATAR = "/assets/images/d.jpg";
-
 type ApiErrorResponse = {
   message?: string;
   Message?: string;
   errors?: Record<string, string[]>;
   Errors?: Record<string, string[]>;
+};
+
+const translateBlogApiMessage = (message: string) => {
+  const normalizedMessage = message
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d");
+
+  if (normalizedMessage === "tai khoan dang bi khoa comment") {
+    return "Your account is blocked from commenting. Please contact us by email for support.";
+  }
+
+  return message;
 };
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -31,8 +44,9 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
   const data = error.response?.data;
   const validationErrors = data?.errors ?? data?.Errors;
   const firstValidationError = validationErrors ? Object.values(validationErrors).flat()[0] : undefined;
+  const message = data?.message ?? data?.Message ?? firstValidationError;
 
-  return data?.message ?? data?.Message ?? firstValidationError ?? fallback;
+  return message ? translateBlogApiMessage(message) : fallback;
 };
 
 const toTimeText = (value: string) => {
@@ -55,6 +69,13 @@ const getReplyThreadClass = (depth: number) => {
     return "";
   }
   return "border-l-2 border-[#f3d7c6] pl-3";
+};
+
+const getRejectedMessage = (target: "comment" | "reply", reason?: string | null) => {
+  const label = target === "comment" ? "Your comment" : "Your reply";
+  return reason?.trim()
+    ? `${label} was rejected because: ${reason.trim()}.`
+    : `${label} was rejected by the moderation system.`;
 };
 
 const moderationBadge = (status: string) => {
@@ -80,15 +101,35 @@ const flattenReplies = (
 
 function UserAvatar({ imageUrl, name, sizeClass }: { imageUrl?: string | null; name: string; sizeClass: string }) {
   const [failed, setFailed] = useState(false);
-  const source = !failed && imageUrl ? imageUrl : DEFAULT_AVATAR;
+  const normalizedImageUrl = imageUrl?.trim();
+  const source = !failed && normalizedImageUrl ? normalizedImageUrl : null;
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (source) {
+    return (
+      <img
+        src={source}
+        alt={name}
+        onError={() => setFailed(true)}
+        className={`${sizeClass} rounded-full object-cover border border-[#f1ddd2]`}
+      />
+    );
+  }
 
   return (
-    <img
-      src={source}
-      alt={name}
-      onError={() => setFailed(true)}
-      className={`${sizeClass} rounded-full object-cover border border-[#f1ddd2]`}
-    />
+    <div
+      className={`${sizeClass} rounded-full border border-[#f1ddd2] flex items-center justify-center text-white text-xs font-bold`}
+      style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+      aria-label={name}
+      title={name}
+    >
+      {initials}
+    </div>
   );
 }
 
@@ -113,7 +154,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       if (created.moderationStatus === "Approved") {
         toast.success("Comment approved.");
       } else if (created.moderationStatus === "Rejected") {
-        toast.error("Comment rejected by the moderation system.");
+        toast.error(getRejectedMessage("comment", created.banReasonContent));
       } else {
         toast("Comment is under review.");
       }
@@ -156,7 +197,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       if (created.moderationStatus === "Approved") {
         toast.success("Reply approved.");
       } else if (created.moderationStatus === "Rejected") {
-        toast.error("Reply rejected by the moderation system.");
+        toast.error(getRejectedMessage("reply", created.banReasonContent));
       } else {
         toast("Reply is under review.");
       }
@@ -292,7 +333,15 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                     <p className="text-xs text-[#8e7164] mt-0.5">{toTimeText(comment.createdAt)}</p>
                   </div>
                   {account?.accountId === comment.accountId && (
-                    <button type="button" onClick={() => handleDeleteReview(comment.reviewBlogId)} className="text-xs text-red-600 hover:underline">Delete</button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteReview(comment.reviewBlogId)}
+                      className="text-sm font-semibold leading-none text-red-600 hover:underline"
+                      aria-label="Delete comment"
+                      title="Delete comment"
+                    >
+                      X
+                    </button>
                   )}
                 </div>
                 <p className="text-sm text-[#5a4136] mt-2">{comment.comment}</p>
