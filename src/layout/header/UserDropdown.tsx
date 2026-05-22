@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 export default function UserDropdown() {
   const { account, isAuthenticated, isHydrated, clearAuth } = useAuthContext();
   const [open, setOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -22,6 +23,10 @@ export default function UserDropdown() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [account?.imageUrl]);
 
   const handleLogout = async () => {
     try {
@@ -65,6 +70,7 @@ export default function UserDropdown() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const normalizedImageUrl = account.imageUrl?.trim();
 
   return (
     <div className="relative" ref={ref}>
@@ -74,10 +80,11 @@ export default function UserDropdown() {
         onClick={() => setOpen((prev) => !prev)}
       >
         <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex-shrink-0">
-          {account.imageUrl ? (
+          {!avatarFailed && normalizedImageUrl ? (
             <img
-              src={account.imageUrl}
+              src={normalizedImageUrl}
               alt={account.accountName}
+              onError={() => setAvatarFailed(true)}
               className="w-full h-full object-cover"
             />
           ) : (
