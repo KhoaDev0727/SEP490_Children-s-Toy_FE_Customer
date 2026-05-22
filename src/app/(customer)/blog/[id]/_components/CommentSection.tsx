@@ -310,7 +310,15 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                     <p className="text-xs text-[#8e7164] mt-0.5">{toTimeText(comment.createdAt)}</p>
                   </div>
                   {account?.accountId === comment.accountId && (
-                    <button type="button" onClick={() => handleDeleteReview(comment.reviewBlogId)} className="text-xs text-red-600 hover:underline">Delete</button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteReview(comment.reviewBlogId)}
+                      className="text-sm font-semibold leading-none text-red-600 hover:underline"
+                      aria-label="Delete comment"
+                      title="Delete comment"
+                    >
+                      X
+                    </button>
                   )}
                 </div>
                 <p className="text-sm text-[#5a4136] mt-2">{comment.comment}</p>

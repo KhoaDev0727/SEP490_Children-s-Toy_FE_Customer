@@ -7,9 +7,10 @@ interface OrderListProps {
   onPrimaryAction?: (order: Order) => void;
   onSecondaryAction?: (order: Order) => void;
   onRequestRefund?: (order: Order) => void;
+  onCompleteAction?: (order: Order) => void;
 }
 
-export default function OrderList({ orders, onPrimaryAction, onSecondaryAction, onRequestRefund }: OrderListProps) {
+export default function OrderList({ orders, onPrimaryAction, onSecondaryAction, onRequestRefund, onCompleteAction }: OrderListProps) {
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/50 gap-4 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
@@ -32,6 +33,7 @@ export default function OrderList({ orders, onPrimaryAction, onSecondaryAction, 
           onPrimaryAction={onPrimaryAction}
           onSecondaryAction={onSecondaryAction}
           onRequestRefund={onRequestRefund}
+          onCompleteAction={onCompleteAction}
         />
       ))}
     </div>

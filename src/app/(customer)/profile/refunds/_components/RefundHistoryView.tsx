@@ -69,8 +69,8 @@ export default function RefundHistoryView() {
 
   const filteredRefunds = searchQuery.trim()
     ? refunds.filter((r) =>
-        r.orderCode.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      r.orderCode.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
     : refunds;
 
   return (
@@ -78,14 +78,6 @@ export default function RefundHistoryView() {
       {/* Header */}
       <div className="px-6 py-5 border-b border-[#e2bfb0]/30 bg-white">
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
-          >
-            <span className="material-symbols-outlined text-white text-[20px]">
-              assignment_return
-            </span>
-          </div>
           <div>
             <h1 className="text-xl font-bold text-[#261812]">My Refunds</h1>
             <p className="text-sm text-[#5a4136] mt-0.5">
@@ -131,8 +123,8 @@ export default function RefundHistoryView() {
             placeholder="Search by order code..."
             className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-[#261812] outline-none transition-all focus:bg-white"
             onFocus={(e) =>
-              (e.currentTarget.style.boxShadow =
-                "0 0 0 3px rgba(255,106,0,0.12)")
+            (e.currentTarget.style.boxShadow =
+              "0 0 0 3px rgba(255,106,0,0.12)")
             }
             onBlur={(e) =>
               (e.currentTarget.style.boxShadow = "0 0 0 0 transparent")
@@ -203,10 +195,10 @@ export default function RefundHistoryView() {
               style={
                 p === page
                   ? {
-                      background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",
-                      color: "#fff",
-                      boxShadow: "0 4px 12px rgba(255,106,0,0.25)",
-                    }
+                    background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",
+                    color: "#fff",
+                    boxShadow: "0 4px 12px rgba(255,106,0,0.25)",
+                  }
                   : { border: "1px solid #e2e8f0", color: "#5a4136" }
               }
             >

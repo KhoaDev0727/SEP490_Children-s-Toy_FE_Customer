@@ -39,7 +39,7 @@ axiosInstance.interceptors.response.use(
         window.localStorage.removeItem("account_info");
         window.dispatchEvent(new Event("auth:logout"));
       }
-      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      toast.error("Session expired. Please log in again.");
     }
     return Promise.reject(error);
   },
