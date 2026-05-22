@@ -46,11 +46,7 @@ export default function CheckoutPage() {
         {/* ── Page Header ─────────────────────────────────── */}
         <div className="mb-7 pb-5 border-b border-gray-200">
           <h1 className="text-3xl font-black tracking-tight text-gray-900">Checkout</h1>
-          <p className="text-sm text-gray-400 mt-1 font-medium">
-            Complete your info to place your order — just a few seconds 🚀
-          </p>
         </div>
-
         {/* ── Stepper ─────────────────────────────────────── */}
         <div className="flex items-center gap-0 mb-8 max-w-md">
           {[

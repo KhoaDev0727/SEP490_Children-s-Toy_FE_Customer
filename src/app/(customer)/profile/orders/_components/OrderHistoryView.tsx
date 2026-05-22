@@ -37,6 +37,9 @@ export default function OrderHistoryView() {
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [orderToRefund, setOrderToRefund] = useState<Order | null>(null);
 
+  // Complete order state
+  const [isCompletingId, setIsCompletingId] = useState<number | null>(null);
+
   const mapStatusNameToUi = useCallback(
     (statusName?: string | null): OrderStatus => {
       if (!statusName) return "pending";
@@ -187,6 +190,21 @@ export default function OrderHistoryView() {
     }
   };
 
+  const handleCompleteOrder = useCallback(async (order: Order) => {
+    if (isCompletingId) return;
+    setIsCompletingId(order.orderId);
+    try {
+      await ordersApi.completeOrder(order.orderId);
+      await loadOrders();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to complete order.",
+      );
+    } finally {
+      setIsCompletingId(null);
+    }
+  }, [isCompletingId, loadOrders]);
+
   return (
     <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
       {/* Header */}
@@ -225,6 +243,7 @@ export default function OrderHistoryView() {
             onPrimaryAction={handlePrimaryAction}
             onSecondaryAction={handleSecondaryAction}
             onRequestRefund={handleRequestRefund}
+            onCompleteAction={handleCompleteOrder}
           />
         )}
       </div>

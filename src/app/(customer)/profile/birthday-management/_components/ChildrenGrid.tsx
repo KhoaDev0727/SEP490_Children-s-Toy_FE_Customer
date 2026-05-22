@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 import type { AxiosError } from "axios";
 
 export default function ChildrenGrid() {
+  const maxChildProfileEdits = 2;
   const [children, setChildren] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,13 +43,32 @@ export default function ChildrenGrid() {
   };
 
   const openEdit = (child: Child) => {
+    if (child.editCount >= maxChildProfileEdits) {
+      toast.error(`You can only edit a child profile up to ${maxChildProfileEdits} times.`);
+      return;
+    }
     setEditTarget(child);
     setModalOpen(true);
   };
 
   const handleSave = async (data: CreateChildPayload | UpdateChildPayload) => {
     try {
+      const incomingDob = data.dob ? data.dob.split("T")[0] : "";
+      if (incomingDob) {
+        const duplicate = children.some((child) => {
+          if (editTarget && child.childId === editTarget.childId) return false;
+          return child.dob.split("T")[0] === incomingDob;
+        });
+        if (duplicate) {
+          toast("Warning: This date of birth already exists for another child.");
+        }
+      }
+
       if (editTarget) {
+        if (editTarget.editCount >= maxChildProfileEdits) {
+          toast.error(`You can only edit a child profile up to ${maxChildProfileEdits} times.`);
+          return;
+        }
         await childrenApi.updateChild(editTarget.childId, data as UpdateChildPayload);
         toast.success("Updated successfully");
       } else {

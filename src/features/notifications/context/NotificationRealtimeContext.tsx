@@ -17,6 +17,11 @@ interface BellNotificationDto {
   unreadCount: number;
 }
 
+const isErrorNotification = (notification: BellNotificationDto) => {
+  const text = `${notification.title} ${notification.message}`.toLowerCase();
+  return text.includes("rejected") || text.includes("blocked") || text.includes("locked");
+};
+
 interface NotificationRealtimeContextType {
   unreadCount: number;
   refreshUnread: () => Promise<void>;
@@ -85,7 +90,8 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
 
         newConnection.on("ReceiveNotification", (n: BellNotificationDto) => {
           setUnreadCount(n.unreadCount);
-          toast.success(
+          const showToast = isErrorNotification(n) ? toast.error : toast.success;
+          showToast(
             <div>
               <p className="font-semibold">{n.title}</p>
               <p className="text-sm opacity-90">{n.message}</p>

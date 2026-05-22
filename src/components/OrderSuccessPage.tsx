@@ -27,7 +27,7 @@ function CheckIcon() {
         cx="40"
         cy="40"
         r="36"
-        stroke="#f97316"
+        stroke="#ff6a00"
         strokeWidth="3"
         strokeDasharray="226"
         strokeDashoffset="226"
@@ -36,7 +36,7 @@ function CheckIcon() {
       />
       <polyline
         points="22,40 34,52 58,28"
-        stroke="#f97316"
+        stroke="#ff6a00"
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -51,10 +51,10 @@ function CheckIcon() {
 
 // ─── Progress Steps ────────────────────────────────────────────────────────────
 const STEPS = [
-  { label: "Received", icon: "📋" },
-  { label: "Processing", icon: "⚙️" },
-  { label: "Delivering", icon: "🚚" },
-  { label: "Completed", icon: "🎉" },
+  { label: "Placed", icon: "receipt_long" },
+  { label: "Processing", icon: "inventory_2" },
+  { label: "Delivering", icon: "local_shipping" },
+  { label: "Completed", icon: "check_circle" },
 ];
 
 function ProgressBar({ active }: { active: number }) {
@@ -63,29 +63,32 @@ function ProgressBar({ active }: { active: number }) {
       {STEPS.map((step, i) => (
         <div key={i} className="flex-1 flex flex-col items-center relative">
           {i < STEPS.length - 1 && (
-            <div className="absolute top-4 left-1/2 w-full h-0.5 bg-zinc-200 z-0">
+            <div className="absolute top-5 left-1/2 w-full h-0.5 bg-[#e2bfb0]/40 z-0">
               <div
-                className="h-full bg-orange-500 transition-all duration-700"
+                className="h-full bg-[#ff6a00] transition-all duration-700"
                 style={{ width: i < active ? "100%" : "0%" }}
               />
             </div>
           )}
           <div
-            className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm
+            className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center
               border-2 transition-all duration-500
-              ${
-                i < active
-                  ? "bg-orange-500 border-orange-500 text-white"
-                  : i === active
-                  ? "bg-white border-orange-500 text-orange-500 shadow-md shadow-orange-100"
-                  : "bg-white border-zinc-200 text-zinc-300"
+              ${i < active
+                ? "bg-[#ff6a00] border-[#ff6a00] text-white"
+                : i === active
+                  ? "bg-white border-[#ff6a00] text-[#ff6a00] shadow-md shadow-[#ff6a00]/20 scale-110"
+                  : "bg-white border-[#e2bfb0] text-[#e2bfb0]"
               }`}
           >
-            {i < active ? "✓" : step.icon}
+            {i < active ? (
+              <span className="material-symbols-outlined text-[20px] font-bold">check</span>
+            ) : (
+              <span className="material-symbols-outlined text-[20px]">{step.icon}</span>
+            )}
           </div>
           <span
-            className={`mt-1.5 text-[10px] font-semibold tracking-wide text-center leading-tight
-              ${i <= active ? "text-orange-600" : "text-zinc-400"}`}
+            className={`mt-2 text-[11px] font-bold tracking-wide text-center leading-tight
+              ${i <= active ? "text-[#ff6a00]" : "text-[#5a4136]/50"}`}
           >
             {step.label}
           </span>
@@ -233,21 +236,20 @@ function OrderSuccessContent() {
         }
       `}</style>
 
-      <main className="flex-1 bg-[#fff8f6] flex items-center justify-center px-4 py-12 md:py-20">
+      <main className="flex-1 bg-white flex items-center justify-center px-4 py-12 md:py-20">
         <div
-          className={`w-full max-w-2xl transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
+          className={`w-full max-w-2xl transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            }`}
         >
-          <div className="bg-white rounded-2xl shadow-xl shadow-orange-100 border border-orange-100 overflow-hidden">
-            <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-amber-400" />
+          <div className="bg-white rounded-2xl shadow-xl shadow-[#ff6a00]/10 border border-[#e2bfb0]/30 overflow-hidden">
+            <div className="h-1.5 w-full bg-gradient-to-r from-[#ff8c33] via-[#ff6a00] to-[#ffb880]" />
 
             <div className="px-6 md:px-12 py-10 text-center">
               <div
                 className="relative mx-auto mb-6 w-20 h-20 slide-up"
                 style={{ animationDelay: "0.05s" }}
               >
-                {["#f97316","#facc15","#34d399","#60a5fa","#f472b6"].map((c, i) => (
+                {["#f97316", "#facc15", "#34d399", "#60a5fa", "#f472b6"].map((c, i) => (
                   <span
                     key={i}
                     className="confetti-piece"
@@ -265,30 +267,30 @@ function OrderSuccessContent() {
               </div>
 
               <h1
-                className="slide-up text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-900 mb-2"
+                className="slide-up text-3xl md:text-4xl font-extrabold tracking-tight text-[#261812] mb-2"
                 style={{ animationDelay: "0.12s" }}
               >
                 Order placed successfully!
               </h1>
 
               <p
-                className="slide-up text-zinc-500 text-sm md:text-base mb-1 leading-relaxed"
+                className="slide-up text-[#5a4136] text-sm md:text-base mb-1 leading-relaxed"
                 style={{ animationDelay: "0.18s" }}
               >
                 Thank you for shopping at{" "}
-                <span className="font-bold text-orange-500">Toy Store</span>. Order{" "}
-                <span className="font-bold text-zinc-800">#{orderCode}</span> has been received
+                <span className="font-bold text-[#ff6a00]">Toy Store</span>. Order{" "}
+                <span className="font-bold text-[#261812]">#{orderCode}</span> has been received
                 and is being processed.
               </p>
 
               <div
                 className="slide-up inline-flex items-center gap-1.5 mt-3 mb-8 px-4 py-2 rounded-full
-                  bg-orange-50 border border-orange-200 text-sm text-orange-700 font-medium"
+                  bg-[#fff1eb] border border-[#ffdbcc] text-sm text-[#ff6a00] font-medium"
                 style={{ animationDelay: "0.24s" }}
               >
-                <span>🚚</span>
+                <span className="material-symbols-outlined text-[18px]">local_shipping</span>
                 <span>
-                  Estimated delivery: <strong className="text-orange-800">3-5 business days</strong>
+                  Estimated delivery: <strong className="text-[#e65f00]">3-5 business days</strong>
                 </span>
               </div>
 
@@ -297,46 +299,54 @@ function OrderSuccessContent() {
               </div>
 
               <div
-                className="slide-up bg-orange-50/60 border border-orange-100 rounded-xl p-5 mb-8 text-left"
+                className="slide-up bg-[#fff1eb]/60 border border-[#e2bfb0]/30 rounded-xl p-5 mb-8 text-left"
                 style={{ animationDelay: "0.36s" }}
               >
-                <h2 className="font-bold text-zinc-800 text-sm uppercase tracking-widest mb-4 pb-2 border-b border-orange-100">
+                <h2 className="font-bold text-[#261812] text-sm uppercase tracking-widest mb-4 pb-2 border-b border-[#e2bfb0]/30">
                   Order summary
                 </h2>
 
                 {!order ? (
-                  <p className="text-sm text-zinc-400 text-center py-3">Loading order details...</p>
+                  <p className="text-sm text-[#5a4136]/70 text-center py-3">Loading order details...</p>
                 ) : (
                   <>
-                    <ul className="divide-y divide-orange-100">
+                    <ul className="divide-y divide-[#e2bfb0]/30">
                       {order.items.map((item) => (
                         <li key={item.orderDetailId} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                           <img
                             src={item.productImage ?? FALLBACK_IMAGE}
                             alt={item.productName}
-                            className="w-16 h-16 object-cover rounded-lg border border-orange-100 shadow-sm flex-shrink-0"
+                            className="w-16 h-16 object-cover rounded-lg border border-[#e2bfb0]/30 shadow-sm flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-zinc-800 text-sm line-clamp-2">{item.productName}</p>
+                            <p className="font-semibold text-[#261812] text-sm line-clamp-2">{item.productName}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="font-bold text-orange-500 text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
-                            <p className="text-xs text-zinc-400 mt-0.5">×{item.quantity}</p>
+                            <p className="font-bold text-[#ff6a00] text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
+                            <p className="text-xs text-[#5a4136]/70 mt-0.5">×{item.quantity}</p>
                           </div>
                         </li>
                       ))}
                     </ul>
 
-                    <div className="mt-4 pt-3 border-t border-orange-200 space-y-1.5">
+                    <div className="mt-4 pt-3 border-t border-[#e2bfb0]/40 space-y-2">
+                      <div className="flex justify-between items-center text-sm text-[#5a4136]">
+                        <span>Subtotal</span>
+                        <span className="font-semibold">{fmt(order.subTotal)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-[#5a4136]">
+                        <span>Shipping Fee</span>
+                        <span className="font-semibold">{fmt(order.estimatedShippingFee)}</span>
+                      </div>
                       {order.voucherDiscountAmount > 0 && (
-                        <div className="flex justify-between items-center text-sm text-zinc-500">
+                        <div className="flex justify-between items-center text-sm text-[#5a4136]">
                           <span>Voucher Discount</span>
                           <span className="text-emerald-600 font-semibold">-{fmt(order.voucherDiscountAmount)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-semibold text-zinc-600">Total</span>
-                        <span className="text-lg font-extrabold text-orange-500">{fmt(order.totalAmount)}</span>
+                      <div className="pt-2 mt-2 border-t border-[#e2bfb0]/20 flex justify-between items-center">
+                        <span className="text-sm font-semibold text-[#5a4136]">Total</span>
+                        <span className="text-lg font-extrabold text-[#ff6a00]">{fmt(order.totalAmount)}</span>
                       </div>
                     </div>
                   </>
@@ -349,24 +359,23 @@ function OrderSuccessContent() {
               >
                 <Link
                   href="/"
-                  className="w-full sm:w-auto px-7 py-3 rounded-xl border-2 border-orange-400
-                    text-orange-500 font-bold text-sm hover:bg-orange-50
+                  className="w-full sm:w-auto px-7 py-3 rounded-xl border-2 border-[#ff6a00]
+                    text-[#ff6a00] font-bold text-sm hover:bg-[#fff1eb]
                     transition-colors duration-200 text-center"
                 >
                   Continue shopping
                 </Link>
                 <Link
                   href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
-                  className="w-full sm:w-auto px-7 py-3 rounded-xl bg-orange-500 text-white
-                    font-bold text-sm shadow-md shadow-orange-200
-                    hover:bg-orange-600 active:scale-95 transition-all duration-200 text-center"
+                  className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#ff6a00] text-white
+                    font-bold text-sm shadow-md shadow-[#ff6a00]/20
+                    hover:bg-[#e65f00] active:scale-95 transition-all duration-200 text-center"
                 >
                   View orders →
                 </Link>
               </div>
             </div>
           </div>
-
           <p
             className="slide-up text-center text-xs text-zinc-400 mt-5"
             style={{ animationDelay: "0.5s" }}
@@ -382,8 +391,8 @@ function OrderSuccessContent() {
               <RecommendationWidget
                 widgetCode={WIDGET_CODES.AFTER_PURCHASE}
                 productId={order.items[0]?.productId}
-                title="Mua tiếp theo"
-                subtitle="Khách hàng đã mua sản phẩm này thường mua thêm các sản phẩm dưới đây"
+                title="Next purchase"
+                subtitle="Customers who bought this product often purchase the following products as well"
                 source={`after_purchase:${order.orderId}`}
               />
             </div>

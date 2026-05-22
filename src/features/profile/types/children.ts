@@ -5,6 +5,7 @@ export interface Child {
   dob: string; // ISO format from API
   sexId: number | null;
   sexName: string | null;
+  editCount: number;
   createdAt: string;
   updatedAt: string | null;
 }

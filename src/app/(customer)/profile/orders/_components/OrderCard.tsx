@@ -84,9 +84,10 @@ interface OrderCardProps {
   onSecondaryAction?: (order: Order) => void;
   onViewDetails?: (order: Order) => void;
   onRequestRefund?: (order: Order) => void;
+  onCompleteAction?: (order: Order) => void;
 }
 
-export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund }: OrderCardProps) {
+export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund, onCompleteAction }: OrderCardProps) {
   const { label, className, primaryLabel } = useMemo(() => {
     const config = STATUS_CONFIG[order.status];
     const actions = ACTION_BUTTONS[order.status];
@@ -101,8 +102,20 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
       } else {
         finalLabel = "PENDING PAYMENT";
       }
-    } else if (order.status === "shipping" && order.rawStatusName?.toLowerCase() === "confirmed") {
-      finalLabel = "CONFIRMED";
+    } else if (order.status === "shipping") {
+      const raw = order.rawStatusName?.toLowerCase();
+      if (raw === "confirmed") {
+        finalLabel = "CONFIRMED";
+      } else if (raw === "processing") {
+        finalLabel = "PROCESSING";
+      } else if (raw === "shipped") {
+        finalLabel = "SHIPPED";
+      }
+    } else if (order.status === "completed") {
+      if (order.rawStatusName?.toLowerCase() === "delivered") {
+        finalLabel = "DELIVERED";
+        finalClassName = "text-green-600";
+      }
     }
 
     if (order.hasActiveRefund) {
@@ -224,6 +237,17 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           >
             {primaryLabel}
           </button>
+          {order.rawStatusName?.toLowerCase() === "delivered" && onCompleteAction && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onCompleteAction(order);
+              }}
+              className="flex-1 sm:flex-none px-6 py-2.5 bg-[#ff6a00] text-white text-sm font-bold rounded-xl hover:bg-[#e65f00] transition-all hover:scale-105 shadow-lg shadow-[#ff6a00]/10"
+            >
+              Order Received
+            </button>
+          )}
           {order.rawStatusName?.toLowerCase() === "completed" && onRequestRefund && (
             <button
               onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
