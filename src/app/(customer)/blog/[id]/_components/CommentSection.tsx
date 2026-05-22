@@ -14,8 +14,6 @@ interface CommentSectionProps {
   onReload: () => Promise<void>;
 }
 
-const DEFAULT_AVATAR = "/assets/images/d.jpg";
-
 type ApiErrorResponse = {
   message?: string;
   Message?: string;
@@ -80,15 +78,35 @@ const flattenReplies = (
 
 function UserAvatar({ imageUrl, name, sizeClass }: { imageUrl?: string | null; name: string; sizeClass: string }) {
   const [failed, setFailed] = useState(false);
-  const source = !failed && imageUrl ? imageUrl : DEFAULT_AVATAR;
+  const normalizedImageUrl = imageUrl?.trim();
+  const source = !failed && normalizedImageUrl ? normalizedImageUrl : null;
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (source) {
+    return (
+      <img
+        src={source}
+        alt={name}
+        onError={() => setFailed(true)}
+        className={`${sizeClass} rounded-full object-cover border border-[#f1ddd2]`}
+      />
+    );
+  }
 
   return (
-    <img
-      src={source}
-      alt={name}
-      onError={() => setFailed(true)}
-      className={`${sizeClass} rounded-full object-cover border border-[#f1ddd2]`}
-    />
+    <div
+      className={`${sizeClass} rounded-full border border-[#f1ddd2] flex items-center justify-center text-white text-xs font-bold`}
+      style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+      aria-label={name}
+      title={name}
+    >
+      {initials}
+    </div>
   );
 }
 
