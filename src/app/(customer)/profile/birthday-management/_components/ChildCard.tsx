@@ -67,7 +67,7 @@ export default function ChildCard({ child, index, onEdit, onDelete }: Props) {
       </div>
 
       {/* Info row */}
-      <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-[#e2bfb0]/30 relative z-10">
+      <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-[#e2bfb0]/30 relative z-10">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#565e74] mb-1">Date of Birth</p>
           <p className="text-sm font-semibold text-[#261812]">{formattedDob}</p>
@@ -75,6 +75,10 @@ export default function ChildCard({ child, index, onEdit, onDelete }: Props) {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#565e74] mb-1">Gender</p>
           <p className="text-sm font-semibold text-[#261812]">{genderLabel}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[#565e74] mb-1">Edits</p>
+          <p className="text-sm font-semibold text-[#261812]">{child.editCount}/2</p>
         </div>
       </div>
     </div>
