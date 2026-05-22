@@ -1,4 +1,7 @@
-﻿"use client";
+"use client";
+
+import Image from "next/image";
+import logoImage from "@/assets/image/Logo/Logo.png";
 
 export default function Footer() {
   return (
@@ -8,8 +11,14 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 rounded-lg text-white" style={{ backgroundColor: "#ff6a00" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>shopping_bag</span>
+              <div className="rounded-lg text-white" style={{ backgroundColor: "#ff6a00" }}>
+                <Image
+                  src={logoImage}
+                  alt="Toy Store Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-lg"
+                />
               </div>
               <h2 className="text-lg font-bold text-slate-900">Toy Store</h2>
             </div>
