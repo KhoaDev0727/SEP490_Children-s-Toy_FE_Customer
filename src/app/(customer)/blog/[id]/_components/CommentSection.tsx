@@ -23,6 +23,21 @@ type ApiErrorResponse = {
   Errors?: Record<string, string[]>;
 };
 
+const translateBlogApiMessage = (message: string) => {
+  const normalizedMessage = message
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d");
+
+  if (normalizedMessage === "tai khoan dang bi khoa comment") {
+    return "Your account is blocked from commenting. Please contact us by email for support.";
+  }
+
+  return message;
+};
+
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (!isAxiosError<ApiErrorResponse>(error)) {
     return error instanceof Error ? error.message : fallback;
@@ -31,8 +46,9 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
   const data = error.response?.data;
   const validationErrors = data?.errors ?? data?.Errors;
   const firstValidationError = validationErrors ? Object.values(validationErrors).flat()[0] : undefined;
+  const message = data?.message ?? data?.Message ?? firstValidationError;
 
-  return data?.message ?? data?.Message ?? firstValidationError ?? fallback;
+  return message ? translateBlogApiMessage(message) : fallback;
 };
 
 const toTimeText = (value: string) => {
@@ -55,6 +71,13 @@ const getReplyThreadClass = (depth: number) => {
     return "";
   }
   return "border-l-2 border-[#f3d7c6] pl-3";
+};
+
+const getRejectedMessage = (target: "comment" | "reply", reason?: string | null) => {
+  const label = target === "comment" ? "Your comment" : "Your reply";
+  return reason?.trim()
+    ? `${label} was rejected because: ${reason.trim()}.`
+    : `${label} was rejected by the moderation system.`;
 };
 
 const moderationBadge = (status: string) => {
@@ -113,7 +136,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       if (created.moderationStatus === "Approved") {
         toast.success("Comment approved.");
       } else if (created.moderationStatus === "Rejected") {
-        toast.error("Comment rejected by the moderation system.");
+        toast.error(getRejectedMessage("comment", created.banReasonContent));
       } else {
         toast("Comment is under review.");
       }
@@ -156,7 +179,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       if (created.moderationStatus === "Approved") {
         toast.success("Reply approved.");
       } else if (created.moderationStatus === "Rejected") {
-        toast.error("Reply rejected by the moderation system.");
+        toast.error(getRejectedMessage("reply", created.banReasonContent));
       } else {
         toast("Reply is under review.");
       }
