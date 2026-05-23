@@ -28,6 +28,16 @@ const getIconMeta = (type: string) => {
   }
 };
 
+const isBlogRelatedNotification = (notification: Notification) => {
+  const actionTarget = notification.actionTarget ?? "";
+  const text = `${notification.title} ${notification.description}`.toLowerCase();
+
+  return notification.notificationType === "BLOG"
+    || notification.actionType === "BLOG"
+    || actionTarget.startsWith("/blog")
+    || text.includes("blog comment");
+};
+
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<NotificationCategory>("all");
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -48,6 +58,7 @@ export default function NotificationsPage() {
         return {
           id: n.deliveryId.toString(),
           category: mapCategory(n.notificationType),
+          notificationType: n.notificationType,
           read: n.status !== "Unread",
           title: n.title,
           description: n.message,
@@ -92,11 +103,11 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleDelete = (id: string, type: string) => {
+  const handleDelete = (notification: Notification) => {
     const doDelete = async () => {
       try {
-        await notificationApi.deleteNotification(Number(id));
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        await notificationApi.deleteNotification(Number(notification.id));
+        setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
         void refreshUnread();
       } catch (e) {
         console.error(e);
@@ -104,7 +115,7 @@ export default function NotificationsPage() {
       setConfirmModal((prev) => ({ ...prev, show: false }));
     };
 
-    if (type === "SYSTEM") {
+    if (notification.notificationType === "SYSTEM" && !isBlogRelatedNotification(notification)) {
       setConfirmModal({
         show: true,
         title: "Confirm deletion",
