@@ -15,6 +15,7 @@ import { voucherApi } from "@/features/vouchers/services/voucher-api";
 import type { IVoucher } from "@/features/vouchers/types/voucher";
 import { walletApi } from "@/features/wallet/services/wallet-api";
 import WalletPinModal from "@/components/common/WalletPinModal";
+import { smartParseDate } from "@/utils/date-utils";
 
 const FALLBACK_IMAGE = "https://placehold.co/80x80/png?text=Toy";
 
@@ -344,7 +345,7 @@ export default function OrderSummary({
       const res = await voucherApi.getVouchers({ status: "Active", pageSize: 100 });
       const now = Date.now();
       const activeVouchers = res.items.filter((v) => {
-        if (new Date(v.endDate).getTime() <= now) return false;
+        if (smartParseDate(v.endDate).getTime() <= now) return false;
         if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
         return true;
       });
@@ -801,68 +802,6 @@ function Row({
   );
 }
 
-function CouponInput({
-  label,
-  placeholder,
-  value,
-  onChange,
-  onApply,
-  onClear,
-  applied,
-  appliedLabel,
-  disabled,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  onApply: () => void;
-  onClear: () => void;
-  applied: boolean;
-  appliedLabel: string;
-  disabled?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{label}</p>
-      {applied ? (
-        <div className="flex items-center gap-2 p-2.5 bg-green-50 rounded-xl border border-green-200">
-          <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-xs font-bold text-green-700">{appliedLabel}</span>
-          <button
-            type="button"
-            onClick={onClear}
-            className="ml-auto text-[11px] font-bold text-green-700 hover:text-green-800"
-          >
-            Remove
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder={placeholder}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            className="flex-1 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#ff6a00] focus:ring-2 focus:ring-[#ff6a00]/20 px-3 py-2.5 outline-none transition-all font-medium placeholder:text-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
-          />
-          <button
-            type="button"
-            onClick={onApply}
-            disabled={disabled}
-            className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 text-xs font-bold rounded-xl transition-colors whitespace-nowrap"
-          >
-            Apply
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function UnifiedVoucherModal({
   subtotal,
   vouchers,
@@ -886,10 +825,12 @@ function UnifiedVoucherModal({
   const [selectedShippingCode, setSelectedShippingCode] = useState<string | undefined>(initialShippingCode);
   const [typedCode, setTypedCode] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
 
   const formatCurrency = (value: number) => value.toLocaleString("vi-VN") + " ₫";
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = smartParseDate(dateString);
+    if (isNaN(date.getTime())) return "---";
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
@@ -897,8 +838,7 @@ function UnifiedVoucherModal({
   };
 
   const isEligible = (voucher: IVoucher) => {
-    const now = Date.now();
-    if (new Date(voucher.startDate).getTime() > now) return false;
+    if (smartParseDate(voucher.startDate).getTime() > now) return false;
     if (voucher.minOrderAmount && subtotal < voucher.minOrderAmount) return false;
     return true;
   };
@@ -965,56 +905,109 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative flex flex-row min-h-[110px] h-auto py-1 bg-white rounded-xl shadow-sm border transition-all ${!eligible ? "opacity-60 grayscale cursor-not-allowed border-gray-100" :
-          isSelected ? "border-[#ff6a00] ring-1 ring-[#ff6a00] cursor-pointer" : "border-gray-200 hover:border-gray-300 cursor-pointer hover:shadow-md"
+        className={`relative group flex flex-row h-[116px] w-full transition-all z-0 hover:z-30 filter ${!eligible
+          ? "opacity-60 grayscale cursor-not-allowed border-gray-100"
+          : isSelected
+            ? "hover:-translate-y-1 hover:z-30 cursor-pointer drop-shadow-[0_4px_12px_rgba(249,115,22,0.15)]"
+            : "hover:-translate-y-1 hover:z-30 cursor-pointer drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:drop-shadow-[0_8px_20px_rgba(249,115,22,0.1)]"
           }`}
       >
-        {remainingUsage !== null && (
-          <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
-            <div className="bg-red-50 text-red-600 text-[10px] px-2 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
-              x{remainingUsage}
+        {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
+        <div
+          className="relative w-[116px] shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden rounded-l-md"
+          style={{
+            maskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            WebkitMaskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            maskSize: "100% 12px",
+            WebkitMaskSize: "100% 12px",
+            maskRepeat: "repeat-y",
+            WebkitMaskRepeat: "repeat-y",
+          }}
+        >
+          {voucher.imageUrl ? (
+            <Image
+              src={voucher.imageUrl}
+              alt={voucher.voucherName}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          ) : (
+            <div className={`w-full h-full ${voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"} flex flex-col items-center justify-center text-white px-2`}>
+              <span className="material-symbols-outlined text-4xl">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+              </span>
+              <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "Discount" : "Shipping"}
+              </span>
             </div>
-            <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
-          </div>
-        )}
-        {/* Left Ribbon */}
-        <div className={`w-28 flex flex-col items-center justify-center border-r border-dashed shrink-0 relative overflow-hidden rounded-l-xl ${isSelected ? "bg-[#ff6a00]/10 border-[#ff6a00]/30 text-[#ff6a00]" : "bg-emerald-50 border-emerald-200 text-emerald-600"
-          }`}>
-          <span className="material-symbols-outlined text-3xl mb-1">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "sell" : "local_shipping"}
-          </span>
-          <span className="text-[10px] font-bold tracking-wider uppercase">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "Discount" : "Shipping"}
-          </span>
-          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full border-l border-dashed border-gray-200/0"></div>
+          )}
         </div>
 
         {/* Right Content */}
-        <div className="flex-1 p-3 flex flex-col justify-center min-w-0 pr-10">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[9px] font-black bg-orange-50 text-[#ff6a00] px-1.5 py-0.5 rounded border border-orange-100 uppercase tracking-wider shrink-0">
-              {voucher.voucherCode}
-            </span>
-          </div>
-          <p className="text-xs font-extrabold text-gray-900 line-clamp-2 leading-snug" title={voucher.voucherName}>
-            {voucher.voucherName}
-          </p>
-          <p className="text-[11px] font-medium text-gray-500 mt-1">
-            Min. spend: {voucher.minOrderAmount ? formatCurrency(voucher.minOrderAmount) : "0 ₫"}
-          </p>
-          <p className={`text-[10px] mt-1 flex items-center gap-1 ${new Date(voucher.startDate).getTime() > Date.now() ? "text-red-500 font-bold" : "text-gray-400"}`}>
-            <span className="material-symbols-outlined text-[12px]">schedule</span>
-            {new Date(voucher.startDate).getTime() > Date.now()
-              ? `Starts: ${formatDate(voucher.startDate)}`
-              : `Exp: ${formatDate(voucher.endDate)}`}
-          </p>
-        </div>
+        <div
+          className={`grow bg-white p-3 flex flex-row relative min-w-0 border rounded-r-md transition-all ${isSelected
+            ? "border-[#ff6a00] ring-1 ring-[#ff6a00]"
+            : "border-slate-200"
+            }`}
+        >
+          {/* Info Column */}
+          <div className="grow flex flex-col justify-between min-w-0 pr-2">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                <span className="text-[9px] font-black bg-orange-50 text-[#ff6a00] px-1.5 py-0.5 rounded border border-orange-100 uppercase tracking-wider shrink-0">
+                  {voucher.voucherCode}
+                </span>
+              </div>
+              <h3
+                className="text-slate-900 text-sm font-bold leading-tight line-clamp-2"
+                title={voucher.voucherName}
+              >
+                {voucher.voucherName}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 truncate">
+                Min. spend: {voucher.minOrderAmount ? formatCurrency(voucher.minOrderAmount) : "0 ₫"}
+              </p>
+            </div>
 
-        {/* Radio Button */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-[#ff6a00] bg-[#ff6a00]" : "border-gray-300"
-            }`}>
-            {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+            <div className="flex items-center gap-1">
+              <span
+                className="material-symbols-outlined text-slate-400"
+                style={{
+                  fontSize: "20px",
+                  fontVariationSettings: '"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 20',
+                }}
+              >
+                schedule
+              </span>
+              <p className={`text-xs ${smartParseDate(voucher.startDate).getTime() > now ? "text-red-500 font-bold" : "text-slate-500"}`}>
+                {smartParseDate(voucher.startDate).getTime() > now
+                  ? `Starts: ${formatDate(voucher.startDate)}`
+                  : `HSD: ${formatDate(voucher.endDate)}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Max Usage Ribbon - Shopee Style at Top Right */}
+          {remainingUsage !== null && (
+            <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
+              <div className="bg-red-50 text-red-600 text-[11px] px-3 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
+                x{remainingUsage}
+              </div>
+              <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
+            </div>
+          )}
+
+
+
+          {/* Action Column - Radio selector */}
+          <div className="flex flex-col items-center justify-center w-10 shrink-0 pl-2 border-l border-slate-100">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-[#ff6a00] bg-[#ff6a00]" : "border-gray-300"
+              }`}>
+              {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+            </div>
           </div>
         </div>
       </div>
@@ -1028,24 +1021,27 @@ function UnifiedVoucherModal({
 
       {/* Card */}
       <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]">
-        {/* Header gradient */}
-        <div className="bg-gradient-to-br from-[#ff6a00] to-[#ff4500] px-6 py-5 text-white">
+        {/* Header */}
+        <div className="bg-slate-800 px-6 py-5 text-white border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white text-[22px]">
+              <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-[#ff6a00] text-[22px] font-semibold">
                   confirmation_number
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-extrabold leading-tight">Platform Vouchers</h3>
-                <p className="text-xs text-white/75 font-medium mt-0.5">
+                <h3 className="text-lg font-extrabold leading-tight tracking-wide">Platform Vouchers</h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
                   Select up to 1 voucher per category
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors">
-              <span className="material-symbols-outlined text-white text-[20px]">close</span>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
         </div>
