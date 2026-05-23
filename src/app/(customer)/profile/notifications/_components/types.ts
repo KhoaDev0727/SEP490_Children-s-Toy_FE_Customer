@@ -3,6 +3,7 @@ export type NotificationCategory = "all" | "promotion" | "order" | "system";
 export interface Notification {
   id: string;
   category: NotificationCategory;
+  notificationType: string;
   read: boolean;
   title: string;
   description: string;
@@ -26,6 +27,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "1",
     category: "order",
+    notificationType: "ORDER",
     read: false,
     title: "Order #SX789012 is being delivered",
     description: "The driver is on the way with your LEGO Technic Ferrari order. Please keep your phone available.",
@@ -37,6 +39,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "2",
     category: "promotion",
+    notificationType: "PROMOTION",
     read: false,
     title: "Voucher 50K is expiring soon!",
     description: "Don't forget to use your 50K voucher for orders from 500K. Valid until today.",
@@ -48,6 +51,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "3",
     category: "system",
+    notificationType: "SYSTEM",
     read: true,
     title: "Account verification successful",
     description: "Your account is now secured with two-factor authentication. Thank you for trusting Toy Store.",
@@ -59,6 +63,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "4",
     category: "order",
+    notificationType: "ORDER",
     read: true,
     title: "Delivered successfully",
     description: "Order #SX789001 has been delivered successfully. Leave a review now to receive 200 Coins!",
