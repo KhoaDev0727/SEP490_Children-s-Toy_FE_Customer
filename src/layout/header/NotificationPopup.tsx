@@ -10,11 +10,11 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 
 const getIconMeta = (type: string) => {
   switch (type) {
-    case "ORDER": return { icon: "local_shipping", bg: "bg-blue-100 dark:bg-blue-900/30", color: "text-blue-600 dark:text-blue-400" };
-    case "PROMOTION": return { icon: "sell", bg: "bg-orange-100 dark:bg-orange-900/30", color: "text-orange-500" };
-    case "STOCK": return { icon: "bolt", bg: "bg-red-100 dark:bg-red-900/30", color: "text-red-600" };
-    case "BLOG": return { icon: "article", bg: "bg-green-100 dark:bg-green-900/30", color: "text-green-600 dark:text-green-400" };
-    default: return { icon: "info", bg: "bg-slate-100 dark:bg-slate-800", color: "text-slate-500" };
+    case "ORDER": return { icon: "local_shipping", bg: "bg-blue-100", color: "text-blue-600" };
+    case "PROMOTION": return { icon: "sell", bg: "bg-orange-100", color: "text-orange-500" };
+    case "STOCK": return { icon: "bolt", bg: "bg-red-100", color: "text-red-600" };
+    case "BLOG": return { icon: "article", bg: "bg-green-100", color: "text-green-600" };
+    default: return { icon: "info", bg: "bg-gray-100", color: "text-gray-500" };
   }
 };
 
@@ -87,13 +87,16 @@ export default function NotificationPopup() {
       } else if (target.startsWith("/")) {
         router.push(target);
       } else {
+        const actionType = notif.actionType?.toUpperCase();
         // If it's just an ID
-        if (notif.actionType === "PRODUCT") {
+        if (actionType === "PRODUCT") {
           router.push(`/products/${target}`);
-        } else if (notif.actionType === "BLOG") {
+        } else if (actionType === "BLOG") {
           router.push(`/blog/${target}`);
-        } else if (notif.actionType === "VOUCHER") {
-          router.push(`/profile/wallet`);
+        } else if (actionType === "VOUCHER") {
+          router.push(`/profile/vouchers`);
+        } else if (actionType === "SALE") {
+          router.push(`/`); // Flash sales are on the home page
         } else {
           router.push(target);
         }
@@ -131,33 +134,33 @@ export default function NotificationPopup() {
       {/* Bell button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full relative text-slate-600 dark:text-slate-300 transition-colors"
+        className="p-2 hover:bg-gray-100 rounded-full relative text-gray-600 transition-colors"
         aria-label="Notifications"
       >
         <span className="material-symbols-outlined">notifications</span>
         {mounted && unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-950 animate-ping" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ff4f00] rounded-full border-2 border-white animate-ping" />
         )}
         {mounted && unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-950" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ff4f00] rounded-full border-2 border-white" />
         )}
       </button>
 
       {/* Popup */}
       {visible && (
         <div
-          className={`absolute top-full right-0 mt-2 w-80 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-[60]
+          className={`absolute top-full right-0 mt-2 w-80 bg-white shadow-xl rounded-xl border border-gray-200/80 overflow-hidden z-[60]
             transition-all duration-200
             ${open ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"}
           `}
           style={{ transformOrigin: "top right" }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Notifications</h4>
+              <h4 className="text-sm font-bold text-gray-900">Notifications</h4>
               {unreadCount > 0 && (
-                <span className="bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                <span className="bg-[#ff4f00] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
                   {unreadCount}
                 </span>
               )}
@@ -172,9 +175,9 @@ export default function NotificationPopup() {
           </div>
 
           {/* List */}
-          <ul className="max-h-[340px] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800 no-scrollbar">
+          <ul className="max-h-[340px] overflow-y-auto divide-y divide-gray-50 no-scrollbar">
             {items.length === 0 ? (
-              <li className="py-6 text-center text-sm text-slate-400">No notifications yet</li>
+              <li className="py-6 text-center text-sm font-medium text-gray-400">No notifications yet</li>
             ) : items.map((n) => {
               const meta = getIconMeta(n.notificationType);
               const isUnread = n.status === "Unread";
@@ -193,11 +196,11 @@ export default function NotificationPopup() {
 
                   {/* Text */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-slate-800 dark:text-slate-200 leading-snug">
-                      <span className="font-bold block">{n.title}</span>
-                      <span className="opacity-90">{n.message}</span>
+                    <p className="text-[13px] text-gray-800 leading-[1.4]">
+                      <span className="font-bold block text-gray-900">{n.title}</span>
+                      <span className="text-gray-500 font-medium">{n.message}</span>
                     </p>
-                    <span className="text-[10px] text-slate-400 mt-1 block">{formatTimeAgo(n.createdAt)}</span>
+                    <span className="text-[10px] text-gray-400 font-medium mt-1 block">{formatTimeAgo(n.createdAt)}</span>
                   </div>
 
                   {/* Actions */}
@@ -225,7 +228,7 @@ export default function NotificationPopup() {
           <Link
             href="/profile/notifications"
             onClick={() => setOpen(false)}
-            className="block w-full py-3 text-center text-xs font-bold text-slate-500 hover:text-primary border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors"
+            className="block w-full py-3 text-center text-xs font-bold text-gray-500 hover:text-[#ff4f00] border-t border-gray-100 bg-white transition-colors"
           >
             View all notifications
           </Link>

@@ -16,15 +16,15 @@ interface OrderTabsProps {
 
 export default function OrderTabs({ activeTab, onChange }: OrderTabsProps) {
   return (
-    <div className="flex overflow-x-auto border-b border-[#e2bfb0]/30 px-6 no-scrollbar bg-white">
+    <div className="flex overflow-x-auto border-b border-gray-200/80 px-6 no-scrollbar bg-white">
       {TABS.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
           className={`px-6 py-4 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors hover:cursor-pointer ${
             activeTab === tab.value
-              ? "text-[#ff6a00] border-[#ff6a00]"
-              : "text-[#5a4136] hover:text-[#ff6a00] border-transparent"
+              ? "text-[#ff4f00] border-[#ff4f00]"
+              : "text-gray-500 hover:text-[#ff4f00] border-transparent"
           }`}
         >
           {tab.label}

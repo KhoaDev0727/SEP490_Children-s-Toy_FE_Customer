@@ -162,13 +162,16 @@ export default function NotificationsPage() {
       } else if (target.startsWith("/")) {
         router.push(target);
       } else {
+        const actionType = notif.actionType?.toUpperCase();
         // If it's just an ID
-        if (notif.actionType === "PRODUCT") {
+        if (actionType === "PRODUCT") {
           router.push(`/products/${target}`);
-        } else if (notif.actionType === "BLOG") {
+        } else if (actionType === "BLOG") {
           router.push(`/blog/${target}`);
-        } else if (notif.actionType === "VOUCHER") {
-          router.push(`/profile/wallet`);
+        } else if (actionType === "VOUCHER") {
+          router.push(`/profile/vouchers`);
+        } else if (actionType === "SALE") {
+          router.push(`/`); // Flash sales are on the home page
         } else {
           router.push(target);
         }

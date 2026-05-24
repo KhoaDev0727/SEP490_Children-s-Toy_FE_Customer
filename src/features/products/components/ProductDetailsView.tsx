@@ -728,26 +728,21 @@ export default function ProductDetailsView({
                       : "Notify when in stock"}
               </button>
             ) : (
-              <>
-                <button
-                  className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={!canAddToCart || isAddingToCart}
-                >
-                  <span className="material-symbols-outlined">
-                    add_shopping_cart
-                  </span>
-                  {isAddingToCart
-                    ? "Adding..."
-                    : !canAddToCart
-                      ? "Max stock reached in cart"
-                      : "Add to cart"}
-                </button>
-                <button className="flex-1 px-8 py-4 bg-[#ff6a00] text-white font-bold rounded-xl hover:bg-[#e05e00] shadow-lg shadow-orange-200 transition-all flex items-center justify-center gap-2">
-                  Buy now
-                </button>
-              </>
+              <button
+                className="flex-1 px-8 py-4 border-2 border-[#ff6a00] text-[#ff6a00] font-bold rounded-xl hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canAddToCart || isAddingToCart}
+              >
+                <span className="material-symbols-outlined">
+                  add_shopping_cart
+                </span>
+                {isAddingToCart
+                  ? "Adding..."
+                  : !canAddToCart
+                    ? "Max stock reached in cart"
+                    : "Add to cart"}
+              </button>
             )}
           </div>
 

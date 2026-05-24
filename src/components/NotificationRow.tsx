@@ -25,10 +25,10 @@ export default function NotificationRow({
     <>
       <div className="flex items-center justify-between gap-4 py-1">
         <div className="flex-1 min-w-0">
-          <h3 className="text-[14px] leading-[1.4] font-semibold text-[#261812]">
+          <h3 className="text-[14px] leading-[1.4] font-semibold text-gray-900">
             {title}
           </h3>
-          <p className="text-[14px] leading-[1.5] font-normal text-[#5a4136] mt-0.5">
+          <p className="text-[14px] leading-[1.5] font-normal text-gray-500 mt-0.5">
             {description}
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function NotificationRow({
         />
       </div>
       {showDivider && (
-        <div className="border-t border-[#e2bfb0]/30 my-1" />
+        <div className="border-t border-gray-100 my-1" />
       )}
     </>
   );

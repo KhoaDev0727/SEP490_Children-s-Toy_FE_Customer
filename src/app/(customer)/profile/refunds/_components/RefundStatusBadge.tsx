@@ -55,36 +55,10 @@ export default function RefundStatusBadge({
   const config =
     STATUS_CONFIG[status as RefundStatus] ?? { ...FALLBACK, label: status };
 
-  const padding = size === "sm" ? "4px 10px" : "5px 14px";
-  const fontSize = size === "sm" ? "11px" : "12px";
-  const dotSize = size === "sm" ? "6px" : "7px";
+  const textSize = size === "sm" ? "text-xs" : "text-sm";
 
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        padding,
-        borderRadius: "9999px",
-        backgroundColor: config.bg,
-        color: config.text,
-        fontSize,
-        fontWeight: 700,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span
-        style={{
-          width: dotSize,
-          height: dotSize,
-          borderRadius: "50%",
-          backgroundColor: config.dot,
-          flexShrink: 0,
-        }}
-      />
+    <span className={`${textSize} font-bold uppercase`} style={{ color: config.text }}>
       {config.label}
     </span>
   );

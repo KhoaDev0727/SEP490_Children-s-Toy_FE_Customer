@@ -45,14 +45,14 @@ export default function PaymentPanel({
 
   const paymentFields: PaymentField[] = [
     { label: "Bank", value: bankName },
-    { label: "Account number", value: accountNumber, copyable: true },
+    { label: "Account number", value: accountNumber },
     { label: "Account holder", value: accountName },
     { label: "Amount", value: formatCurrency(amount), accent: true },
-    { label: "Transfer note", value: content, copyable: true, mono: true },
+    { label: "Transfer note", value: content, mono: true },
   ];
 
   const handleCopy = (value: string) => {
-    navigator.clipboard.writeText(value).catch(() => {});
+    navigator.clipboard.writeText(value).catch(() => { });
     setCopied(value);
     setTimeout(() => setCopied(null), 1800);
   };
@@ -81,36 +81,36 @@ export default function PaymentPanel({
   };
 
   return (
-    <div className="flex flex-col gap-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 w-full">
+    <div className="flex flex-col gap-6 bg-white border border-gray-200/80 rounded-xl p-8 w-full shadow-sm">
       {/* Header */}
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      <div className="border-b border-gray-100 pb-4">
+        <h2 className="text-xs font-black uppercase tracking-wider text-gray-900">
           Transfer details
         </h2>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+        <p className="text-xs text-gray-400 font-semibold mt-1">
           Order will be confirmed once the system receives payment.
         </p>
       </div>
 
       {/* Fields */}
-      <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="flex flex-col divide-y divide-gray-100">
         {paymentFields.map((field) => (
           <div
             key={field.label}
-            className="flex justify-between items-center py-3 gap-4"
+            className="flex justify-between items-center py-3.5 gap-4"
           >
-            <span className="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-500 shrink-0">
               {field.label}
             </span>
             <div className="flex items-center gap-2 min-w-0">
               <span
                 className={[
-                  "text-sm font-semibold truncate",
+                  "text-sm font-extrabold truncate",
                   field.accent
-                    ? "text-orange-600 dark:text-orange-400 text-base font-bold"
-                    : "text-slate-800 dark:text-slate-100",
+                    ? "text-[#ff4f00] text-base font-black"
+                    : "text-gray-900",
                   field.mono
-                    ? "font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs"
+                    ? "font-mono bg-gray-55 border border-gray-200 px-2 py-0.5 rounded text-xs"
                     : "",
                 ].join(" ")}
               >
@@ -119,15 +119,15 @@ export default function PaymentPanel({
               {field.copyable && (
                 <button
                   onClick={() => handleCopy(field.value)}
-                  className="shrink-0 text-slate-400 hover:text-orange-500 transition-colors"
+                  className="shrink-0 text-gray-400 hover:text-[#ff4f00] transition-colors"
                   title="Copy"
                 >
                   {copied === field.value ? (
-                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-4 12h6a2 2 0 002-2v-8a2 2 0 00-2-2h-6a2 2 0 00-2 2v8a2 2 0 002 2z"
                       />
@@ -141,17 +141,17 @@ export default function PaymentPanel({
       </div>
 
       {/* Instructions */}
-      <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-xl p-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-3">
+      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-5 relative overflow-hidden">
+        <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-3">
           Payment guide
         </p>
-        <ol className="space-y-2">
+        <ol className="space-y-3">
           {steps.map((step, i) => (
-            <li key={i} className="flex gap-3 items-start text-sm text-slate-600 dark:text-slate-300">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+            <li key={i} className="flex gap-3 items-start text-xs text-gray-600 font-semibold">
+              <span className="shrink-0 w-5 h-5 rounded-xl bg-gray-900 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
                 {i + 1}
               </span>
-              <span>{step}</span>
+              <span className="pt-0.5">{step}</span>
             </li>
           ))}
         </ol>
@@ -163,10 +163,10 @@ export default function PaymentPanel({
           onClick={handleInternalConfirm}
           disabled={isConfirming || isCancelling || hasConfirmed}
           className={[
-            "flex-1 py-3 px-6 rounded-xl text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2",
+            "flex-1 py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider font-black transition-all active:scale-95 flex items-center justify-center gap-2",
             hasConfirmed
-              ? "bg-green-500 text-white cursor-default"
-              : "bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 dark:shadow-orange-900/30",
+              ? "bg-green-600 text-white cursor-default"
+              : "bg-[#ff4f00] hover:bg-[#ff5f1a] text-white shadow-sm",
             isConfirming ? "opacity-80" : "",
           ].join(" ")}
         >
@@ -187,11 +187,11 @@ export default function PaymentPanel({
         <button
           onClick={handleInternalCancel}
           disabled={isConfirming || isCancelling || hasConfirmed}
-          className="flex-1 py-3 px-6 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider font-black border border-gray-300 text-gray-700 bg-transparent hover:bg-gray-50 hover:border-gray-400 transition-all active:scale-95 disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isCancelling ? (
             <>
-              <svg className="animate-spin h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
