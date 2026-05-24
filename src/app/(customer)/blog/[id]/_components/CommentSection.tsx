@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { customerBlogApi } from "@/features/blog/services/blog-api";
 import { BlogReview, BlogReviewReply } from "@/features/blog/types/blog";
+import { formatFullDateTime } from "@/utils/date-utils";
 import ReactionPicker from "./ReactionPicker";
 
 interface CommentSectionProps {
@@ -50,11 +51,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const toTimeText = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Just now";
-  }
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date);
+  return formatFullDateTime(value, "Just now");
 };
 
 const getReplyIndentClass = (depth: number) => {
