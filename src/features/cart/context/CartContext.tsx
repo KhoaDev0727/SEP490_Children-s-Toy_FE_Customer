@@ -5,7 +5,11 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { cartApi } from "@/features/cart/services/cart-api";
-import type { CartData, CartRealtimeEnvelope } from "@/features/cart/types/cart";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
+import type { CartData, CartItem, CartRealtimeEnvelope } from "@/features/cart/types/cart";
 
 
 interface CartContextValue {
@@ -66,6 +70,38 @@ const extractEnvelope = (payload: unknown): { cart: CartData | null; message?: s
   return { cart: data ?? null, message };
 };
 
+const normalizeCart = (value: CartData): CartData => {
+  const items = [...value.items].sort((a, b) => {
+    const aTime = Date.parse(a.addedAt);
+    const bTime = Date.parse(b.addedAt);
+
+    if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    return b.cartItemId - a.cartItemId;
+  });
+
+  return {
+    ...value,
+    items,
+  };
+};
+
+const resolveUnitPrice = (item: CartItem): number => {
+  if (typeof item.currentPrice === "number" && Number.isFinite(item.currentPrice) && item.currentPrice > 0) {
+    return item.currentPrice;
+  }
+
+  return item.priceAtThatTime;
+};
+
+const assertCartSubtotalWithinLimit = (projectedSubTotal: number): void => {
+  if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+    throw new Error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
+  }
+};
+
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuthContext();
@@ -82,7 +118,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const response = await cartApi.getMyCart();
-      setCart(response);
+      setCart(normalizeCart(response));
     } catch {
       // Ignore realtime refresh errors, normal API flows will still work.
     }
@@ -119,7 +155,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await cartApi.getMyCart();
-      setCart(response);
+      setCart(normalizeCart(response));
     } catch {
       setCart(null);
     } finally {
@@ -155,11 +191,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const { cart: nextCart, message } = extractEnvelope(payload);
       if (nextCart) {
-        setCart(nextCart);
+        setCart(normalizeCart(nextCart));
+      } else {
+        queueRealtimeRefresh();
       }
-
-
-      queueRealtimeRefresh();
 
 
       if (eventName === "CartOutOfStock") {
@@ -291,26 +326,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 
   const addItem = useCallback(async (productId: number, quantity = 1) => {
-    const response = await cartApi.addItem({ productId, quantity });
-    setCart(response);
-  }, []);
+    const normalizedQuantity = Math.max(1, Math.floor(quantity));
+    const existingItem = cart?.items.find((item) => item.productId === productId);
+    if (existingItem) {
+      const projectedSubTotal = (cart?.subTotal ?? 0) + resolveUnitPrice(existingItem) * normalizedQuantity;
+      assertCartSubtotalWithinLimit(projectedSubTotal);
+    }
+
+    const response = await cartApi.addItem({ productId, quantity: normalizedQuantity });
+    setCart(normalizeCart(response));
+  }, [cart]);
 
 
   const updateQuantity = useCallback(async (cartItemId: number, quantity: number) => {
+    const targetItem = cart?.items.find((item) => item.cartItemId === cartItemId);
+    if (targetItem) {
+      const projectedSubTotal =
+        (cart?.subTotal ?? 0) - targetItem.lineTotal + resolveUnitPrice(targetItem) * quantity;
+      assertCartSubtotalWithinLimit(projectedSubTotal);
+    }
+
     const response = await cartApi.updateQuantity(cartItemId, { quantity });
-    setCart(response);
-  }, []);
+    setCart(normalizeCart(response));
+  }, [cart]);
 
 
   const removeItem = useCallback(async (cartItemId: number) => {
     const response = await cartApi.removeItem(cartItemId);
-    setCart(response);
+    setCart(normalizeCart(response));
   }, []);
 
 
   const clearCart = useCallback(async () => {
     const response = await cartApi.clearCart();
-    setCart(response);
+    setCart(normalizeCart(response));
   }, []);
 
 

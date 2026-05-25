@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductDetail } from "@/features/products/types/product";
 import {
@@ -305,13 +309,12 @@ export default function ProductDetailsView({
     ];
   }, [product]);
 
-  const quantityInCart = useMemo(() => {
-    if (!product) return 0;
-    return (
-      cart?.items.find((item) => item.productId === product.productId)
-        ?.quantity ?? 0
-    );
+  const cartItemForProduct = useMemo(() => {
+    if (!product) return null;
+    return cart?.items.find((item) => item.productId === product.productId) ?? null;
   }, [cart?.items, product]);
+
+  const quantityInCart = useMemo(() => cartItemForProduct?.quantity ?? 0, [cartItemForProduct]);
 
   const remainingStock = useMemo(() => {
     if (!product) return 0;
@@ -364,6 +367,16 @@ export default function ProductDetailsView({
 
     if (selectedQuantity > remainingStock) {
       toast.error(`You can only add up to ${remainingStock} more item(s).`);
+      return;
+    }
+
+    const fallbackUnitPrice = product.discountedPrice ?? product.price;
+    const unitPrice = cartItemForProduct
+      ? (cartItemForProduct.currentPrice > 0 ? cartItemForProduct.currentPrice : cartItemForProduct.priceAtThatTime)
+      : fallbackUnitPrice;
+    const projectedSubTotal = (cart?.subTotal ?? 0) + unitPrice * selectedQuantity;
+    if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+      toast.error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
       return;
     }
 

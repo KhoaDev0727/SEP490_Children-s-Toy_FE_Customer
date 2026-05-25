@@ -447,6 +447,10 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
 import { productApi } from "@/features/products/services/product-api";
 import {
   PaginatedResponse,
@@ -856,6 +860,16 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     const remainingStock = Math.max(product.quantity - quantityInCart, 0);
     if (remainingStock <= 0) {
       toast.error("Cart quantity has reached the maximum available stock.");
+      return;
+    }
+
+    const currentCartItem = cart?.items.find((item) => item.productId === product.productId);
+    const unitPrice = currentCartItem
+      ? (currentCartItem.currentPrice > 0 ? currentCartItem.currentPrice : currentCartItem.priceAtThatTime)
+      : (product.discountedPrice ?? product.price);
+    const projectedSubTotal = (cart?.subTotal ?? 0) + unitPrice;
+    if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+      toast.error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
       return;
     }
 
