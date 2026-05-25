@@ -15,6 +15,7 @@ import { voucherApi } from "@/features/vouchers/services/voucher-api";
 import type { IVoucher } from "@/features/vouchers/types/voucher";
 import { walletApi } from "@/features/wallet/services/wallet-api";
 import WalletPinModal from "@/components/common/WalletPinModal";
+import { smartParseDate } from "@/utils/date-utils";
 
 const FALLBACK_IMAGE = "https://placehold.co/80x80/png?text=Toy";
 
@@ -350,7 +351,7 @@ export default function OrderSummary({
       const res = await voucherApi.getVouchers({ status: "Active", pageSize: 100 });
       const now = Date.now();
       const activeVouchers = res.items.filter((v) => {
-        if (new Date(v.endDate).getTime() <= now) return false;
+        if (smartParseDate(v.endDate).getTime() <= now) return false;
         if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
         return true;
       });
@@ -890,10 +891,12 @@ function UnifiedVoucherModal({
   const [selectedShippingCode, setSelectedShippingCode] = useState<string | undefined>(initialShippingCode);
   const [typedCode, setTypedCode] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
 
   const formatCurrency = (value: number) => value.toLocaleString("vi-VN") + " ₫";
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = smartParseDate(dateString);
+    if (isNaN(date.getTime())) return "---";
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
@@ -901,8 +904,7 @@ function UnifiedVoucherModal({
   };
 
   const isEligible = (voucher: IVoucher) => {
-    const now = Date.now();
-    if (new Date(voucher.startDate).getTime() > now) return false;
+    if (smartParseDate(voucher.startDate).getTime() > now) return false;
     if (voucher.minOrderAmount && subtotal < voucher.minOrderAmount) return false;
     return true;
   };

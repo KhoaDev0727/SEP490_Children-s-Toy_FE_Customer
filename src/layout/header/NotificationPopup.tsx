@@ -18,6 +18,16 @@ const getIconMeta = (type: string) => {
   }
 };
 
+const isBlogRelatedNotification = (notification: Delivery) => {
+  const actionTarget = notification.actionTarget ?? "";
+  const text = `${notification.title} ${notification.message}`.toLowerCase();
+
+  return notification.notificationType === "BLOG"
+    || notification.actionType === "BLOG"
+    || actionTarget.startsWith("/blog")
+    || text.includes("blog comment");
+};
+
 export default function NotificationPopup() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Delivery[]>([]);
@@ -105,11 +115,11 @@ export default function NotificationPopup() {
     }
   };
 
-  const handleDelete = (id: number, type: string) => {
+  const handleDelete = (notification: Delivery) => {
     const doDelete = async () => {
       try {
-        await notificationApi.deleteNotification(id);
-        setItems((prev) => prev.filter((n) => n.deliveryId !== id));
+        await notificationApi.deleteNotification(notification.deliveryId);
+        setItems((prev) => prev.filter((n) => n.deliveryId !== notification.deliveryId));
         void refreshUnread();
       } catch (e) {
         console.error(e);
@@ -117,7 +127,7 @@ export default function NotificationPopup() {
       setConfirmModal((prev) => ({ ...prev, show: false }));
     };
 
-    if (type === "SYSTEM") {
+    if (notification.notificationType === "SYSTEM" && !isBlogRelatedNotification(notification)) {
       setConfirmModal({
         show: true,
         title: "Confirm deletion",
@@ -211,7 +221,7 @@ export default function NotificationPopup() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        void handleDelete(n.deliveryId, n.notificationType);
+                        void handleDelete(n);
                       }}
                       className="p-1 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       title="Delete notification"
