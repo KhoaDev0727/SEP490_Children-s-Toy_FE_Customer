@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ShippingTracker, { type ShippingEvent } from "./ShippingTracker";
 import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
@@ -52,6 +52,7 @@ const formatDate = (value?: string | null): string => {
 };
 
 export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
+  const router = useRouter();
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
   const [trackingEvents, setTrackingEvents] = useState<ShippingEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +60,14 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleBack = () => {
+    if (window.history.length > 2) {
+      router.back();
+    } else {
+      router.push("/profile/orders");
+    }
+  };
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -246,12 +255,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30">
         <div className="flex items-center gap-4">
-          <Link
-            href="/profile/orders"
+          <button
+            onClick={handleBack}
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all hover:scale-105"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </button>
           <div>
             <h1 className="text-xl font-bold text-[#261812]">
               Order Details <span className="text-[#ff6a00]">#{order.orderCode}</span>

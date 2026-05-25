@@ -524,7 +524,7 @@ function ProductCard({
   const inStock = product.quantity > 0 && product.productStatus === "Active";
   const remainingStock = inStock ? Math.max(product.quantity - quantityInCart, 0) : 0;
   const canAddToCart = inStock && remainingStock > 0;
-  
+
   // Determine the display label
   let statusLabel = "";
   if (isComingSoon) {
@@ -634,14 +634,13 @@ function ProductCard({
               )}
             </div>
           )}
-          
+
           {isComingSoon || !inStock ? (
             <button
-              className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
-                isFollowed 
-                  ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200" 
+              className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${isFollowed
+                  ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
                   : "bg-white text-[#ff6a00] border border-[#ff6a00] hover:bg-[#ff6a00] hover:text-white"
-              }`}
+                }`}
               type="button"
               onClick={() => onToggleFollow(product.productId)}
               disabled={isFollowUpdating}
@@ -707,11 +706,10 @@ function Pagination({
           )}
           <button
             onClick={() => onChange(p)}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors border ${
-              current === p
+            className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors border ${current === p
                 ? "bg-[#ff6a00] text-white border-[#ff6a00]"
                 : "border-slate-200 text-slate-700 hover:border-[#ff6a00] hover:text-[#ff6a00]"
-            }`}
+              }`}
           >
             {p}
           </button>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { addressApi } from "@/features/address/services/address-api";
 import type { AddressItem, DistrictOption, ProvinceOption, WardOption } from "@/features/address/types/address";
+import { useCart } from "@/features/cart/context/CartContext";
 
 const paymentOptions = [
   {
@@ -48,14 +49,26 @@ interface CheckoutFormProps {
   onFormChange?: (data: CheckoutFormData) => void;
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
+  orderTotal?: number | null;
 }
 
-export default function CheckoutForm({ 
+export default function CheckoutForm({
   onFormChange,
   externalAddresses,
-  externalLoading 
+  externalLoading,
+  orderTotal
 }: CheckoutFormProps) {
   const { isAuthenticated, isHydrated } = useAuthContext();
+  const { cart } = useCart();
+
+  const selectedSubtotal = useMemo(
+    () => cart?.items?.filter((i) => i.isSelected).reduce((sum, i) => sum + i.lineTotal, 0) ?? 0,
+    [cart]
+  );
+  
+  const currentTotal = orderTotal !== null && orderTotal !== undefined ? orderTotal : selectedSubtotal;
+  const isCodDisabled = currentTotal > 50000000;
+
   const [form, setForm] = useState<CheckoutFormData>({
     addressId: 0,
     fullname: "",
@@ -64,9 +77,17 @@ export default function CheckoutForm({
     provinceId: 0,
     districtId: 0,
     wardCode: "",
-    payment: "cod",
+    payment: isCodDisabled ? "sepay" : "cod",
     note: "",
   });
+
+  useEffect(() => {
+    if (isCodDisabled && form.payment === "cod") {
+      const updated = { ...form, payment: "sepay" };
+      setForm(updated);
+      onFormChange?.(updated);
+    }
+  }, [isCodDisabled, form.payment, form, onFormChange]);
   const [selectedAddressId, setSelectedAddressId] = useState<number>(0);
   const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
   const [districts, setDistricts] = useState<DistrictOption[]>([]);
@@ -100,7 +121,7 @@ export default function CheckoutForm({
     const timer = setTimeout(() => {
       const defaultAddr = addrs.find((a) => a.isDefault) ?? addrs[0];
       setSelectedAddressId(defaultAddr.addressId);
-      
+
       const updated = {
         ...form,
         addressId: defaultAddr.addressId,
@@ -111,11 +132,11 @@ export default function CheckoutForm({
         districtId: defaultAddr.districtId ?? 0,
         wardCode: defaultAddr.wardCode ?? "",
       };
-      
+
       setForm(updated);
       onFormChange?.(updated);
       isInitialized.current = true;
-      
+
       // Load districts & wards
       if (defaultAddr.provinceId) {
         addressApi.getDistricts(defaultAddr.provinceId).then(dList => setDistricts(dList ?? []));
@@ -238,32 +259,29 @@ export default function CheckoutForm({
   };
 
   const inputBase =
-    "w-full rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff6a00] focus:ring-4 focus:ring-[#ff6a00]/10 text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-gray-100/50";
-  const labelBase = "block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1";
+    "w-full rounded-xl border border-gray-200 bg-white focus:border-[#ff4f00] focus:ring-2 focus:ring-[#ff4f00]/10 text-gray-900 text-sm p-4 outline-none transition-all placeholder:text-gray-400 font-semibold disabled:opacity-75 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-900 disabled:border-gray-200/50";
+  const labelBase = "block text-xs font-black uppercase tracking-wider text-gray-500 mb-2 ml-1";
 
   return (
     <div className="flex flex-col gap-6 xl:gap-8">
       {/* ── Step 1: Shipping Info ─────────────────────────── */}
-      <section className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-6 md:p-8 xl:p-10 relative overflow-hidden">
-        {/* Subtle decorative gradient background */}
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#ff6a00]/5 to-transparent pointer-events-none" />
-
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 md:p-8 xl:p-10 relative">
         <div className="flex items-start sm:items-center justify-between mb-8 flex-col sm:flex-row gap-4 relative">
           <h2 className="flex items-center gap-4 text-xl font-extrabold text-gray-900 tracking-tight">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff6a00] to-[#ff4500] shadow-lg shadow-[#ff6a00]/20 text-white flex items-center justify-center font-black text-lg">
+            <span className="w-10 h-10 rounded-xl bg-[#ff4f00] text-white flex items-center justify-center font-black text-lg">
               1
             </span>
             Shipping Information
           </h2>
           <div className="flex flex-col items-start sm:items-end gap-1.5 w-full sm:w-auto">
             {externalLoading ? (
-              <div className="h-10 w-full sm:w-56 bg-gray-200 animate-pulse rounded-xl" />
+              <div className="h-10 w-full sm:w-56 bg-gray-200/50 animate-pulse rounded-xl" />
             ) : (
               <div className="flex items-center gap-3 w-full">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">Address Book</label>
+                <label className="text-xs font-black uppercase tracking-wider text-gray-400 whitespace-nowrap">Address Book</label>
                 <div className="relative flex-1 sm:w-56">
                   <select
-                    className="w-full appearance-none rounded-xl border border-[#ff6a00]/20 bg-[#ff6a00]/5 hover:bg-[#ff6a00]/10 text-sm font-bold text-[#ff6a00] px-4 py-2.5 pr-10 cursor-pointer outline-none transition-colors"
+                    className="w-full appearance-none rounded-xl border border-gray-200 bg-white hover:border-[#ff4f00] text-sm font-bold text-gray-900 px-4 py-2.5 pr-10 cursor-pointer outline-none transition-all"
                     value={selectedAddressId}
                     onChange={handleSelectAddress}
                     disabled={!isHydrated || !isAuthenticated || addresses.length === 0}
@@ -275,13 +293,13 @@ export default function CheckoutForm({
                       </option>
                     ))}
                   </select>
-                  <ChevronIcon className="text-[#ff6a00]" />
+                  <ChevronIcon className="text-gray-900" />
                 </div>
               </div>
             )}
             {isHydrated && isAuthenticated && !externalLoading && (
-              <a href="/profile/address" className="text-[11px] font-semibold text-gray-400 hover:text-[#ff6a00] transition-colors ml-auto sm:ml-0 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+              <a href="/profile/address" className="text-xs font-black text-gray-500 hover:text-[#ff4f00] transition-colors ml-auto sm:ml-0 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                 Add/Edit New Address
               </a>
             )}
@@ -400,9 +418,9 @@ export default function CheckoutForm({
       </section>
 
       {/* ── Step 2: Payment Method ────────────────────────── */}
-      <section className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-6 md:p-8 xl:p-10 relative overflow-hidden">
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 md:p-8 xl:p-10 relative overflow-hidden">
         <h2 className="flex items-center gap-4 text-xl font-extrabold text-gray-900 tracking-tight mb-8">
-          <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff6a00] to-[#ff4500] shadow-lg shadow-[#ff6a00]/20 text-white flex items-center justify-center font-black text-lg">
+          <span className="w-10 h-10 rounded-xl bg-[#ff4f00] text-white flex items-center justify-center font-black text-lg">
             2
           </span>
           Payment Method
@@ -410,15 +428,17 @@ export default function CheckoutForm({
 
         <div className="space-y-4">
           {paymentOptions.map((opt) => {
+            const disabled = opt.id === "cod" && isCodDisabled;
             const checked = form.payment === opt.id;
             return (
               <label
                 key={opt.id}
-                className={`group flex items-center gap-5 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-                  checked
-                    ? "border-[#ff6a00] bg-gradient-to-r from-[#ff6a00]/5 to-transparent shadow-md shadow-[#ff6a00]/10"
-                    : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-lg hover:-translate-y-0.5"
-                }`}
+                className={`group flex items-center gap-5 p-5 rounded-xl border-2 transition-all duration-200 ${disabled
+                    ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+                    : checked
+                      ? "border-[#ff4f00] bg-white shadow-sm cursor-pointer"
+                      : "border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-400 cursor-pointer"
+                  }`}
               >
                 <div className="relative flex items-center justify-center w-5 h-5 flex-shrink-0">
                   <input
@@ -427,22 +447,29 @@ export default function CheckoutForm({
                     value={opt.id}
                     checked={checked}
                     onChange={handleFieldChange}
-                    className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-[#ff6a00] transition-colors cursor-pointer"
+                    disabled={disabled}
+                    className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-[#ff4f00] disabled:border-gray-200 disabled:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed"
                   />
                   {checked && (
-                    <span className="absolute w-2.5 h-2.5 bg-[#ff6a00] rounded-full pointer-events-none animate-in zoom-in duration-200" />
+                    <span className="absolute w-2.5 h-2.5 bg-[#ff4f00] rounded-full pointer-events-none animate-in zoom-in duration-200" />
                   )}
                 </div>
-                
-                <span className="text-2xl lg:text-3xl filter drop-shadow-sm transition-transform duration-300 group-hover:scale-110">{opt.icon}</span>
+
+                <span className={`text-2xl lg:text-3xl filter drop-shadow-sm transition-transform duration-200 ${!disabled && 'group-hover:scale-105'}`}>{opt.icon}</span>
                 <div className="flex-1">
-                  <p className={`text-base font-bold transition-colors ${checked ? 'text-[#ff6a00]' : 'text-gray-900'}`}>{opt.label}</p>
-                  <p className="text-xs text-gray-500 mt-1 font-medium">{opt.desc}</p>
+                  <p className={`text-base font-extrabold transition-colors ${checked ? 'text-[#ff4f00]' : 'text-gray-900'}`}>{opt.label}</p>
+                  <p className="text-xs text-gray-500 mt-1 font-semibold">
+                    {disabled ? (
+                      <span className="text-red-500">COD is not available for orders over 50,000,000 ₫</span>
+                    ) : (
+                      opt.desc
+                    )}
+                  </p>
                 </div>
-                
+
                 {checked && (
-                  <div className="w-8 h-8 rounded-full bg-[#ff6a00]/10 flex items-center justify-center flex-shrink-0 animate-in fade-in duration-300">
-                    <svg className="w-4 h-4 text-[#ff6a00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 rounded-xl bg-[#ff4f00]/10 flex items-center justify-center flex-shrink-0 animate-in fade-in duration-200">
+                    <svg className="w-4 h-4 text-[#ff4f00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>

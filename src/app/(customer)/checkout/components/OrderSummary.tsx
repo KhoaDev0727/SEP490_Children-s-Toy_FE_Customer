@@ -31,10 +31,12 @@ export default function OrderSummary({
   formData,
   externalAddresses,
   externalLoading,
+  onTotalChange,
 }: {
   formData: CheckoutFormData;
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
+  onTotalChange?: (total: number) => void;
 }) {
   const [orderVoucherCode, setOrderVoucherCode] = useState("");
   const [shippingVoucherCode, setShippingVoucherCode] = useState("");
@@ -111,6 +113,10 @@ export default function OrderSummary({
     () => voucherList.some((v) => !v.minOrderAmount || subtotal >= v.minOrderAmount),
     [voucherList, subtotal],
   );
+
+  useEffect(() => {
+    onTotalChange?.(total);
+  }, [total, onTotalChange]);
 
   const activeAddress = useMemo(() => {
     // Ưu tiên địa chỉ người dùng đang chọn trong form
@@ -575,39 +581,36 @@ export default function OrderSummary({
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-5 md:p-6 lg:p-7 sticky top-24 overflow-hidden">
-      {/* Decorative top blur */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ff6a00]/10 rounded-full blur-3xl pointer-events-none" />
-
-      <h2 className="text-xl font-extrabold text-gray-900 tracking-tight pb-4 border-b border-gray-100/80 mb-5 relative">
+    <div className="bg-white rounded-xl border border-gray-200/80 p-5 md:p-6 sticky top-24 overflow-hidden shadow-sm">
+      <h2 className="text-xl font-extrabold text-gray-900 tracking-tight pb-4 border-b border-gray-100 mb-5 relative">
         Order Summary
       </h2>
 
       {/* Product list — chỉ hiển thị sản phẩm đang checkout */}
       <div className="space-y-2 mb-6 max-h-[42vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {checkoutLines.length === 0 && (
-          <p className="text-sm text-gray-400 font-medium italic text-center py-4">No items selected for checkout.</p>
+          <p className="text-sm text-gray-400 font-semibold italic text-center py-4">No items selected for checkout.</p>
         )}
         {items.filter((i) => i.isSelected).map((item) => (
-          <div key={item.cartItemId} className="group flex gap-3.5 items-center p-3 rounded-2xl hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100/80">
+          <div key={item.cartItemId} className="group flex gap-3.5 items-center p-3 rounded-xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100">
             <div className="relative flex-shrink-0">
               <Image
                 src={item.mainImageUrl ?? FALLBACK_IMAGE}
                 alt={item.productName}
                 width={68}
                 height={68}
-                className="w-[68px] h-[68px] object-cover rounded-xl border border-gray-200/60 shadow-sm transition-transform duration-300 group-hover:scale-105 bg-white"
+                className="w-[68px] h-[68px] object-cover rounded-lg border border-gray-200/60 shadow-sm transition-transform duration-200 group-hover:scale-102 bg-white"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-gray-800 leading-snug line-clamp-2 mb-2 group-hover:text-[#ff6a00] transition-colors">
+              <p className="text-[13px] font-bold text-gray-850 leading-snug line-clamp-2 mb-2 group-hover:text-[#ff4f00] transition-colors">
                 {item.productName}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2 py-0.5 rounded-md border border-gray-200/50">
-                  SL: {item.quantity}
+                <span className="text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-md">
+                  QTY: {item.quantity}
                 </span>
-                <span className="text-sm font-black text-[#ff6a00]">
+                <span className="text-sm font-black text-[#ff4f00]">
                   {fmt(item.lineTotal)}
                 </span>
               </div>
@@ -621,28 +624,32 @@ export default function OrderSummary({
         <button
           type="button"
           onClick={() => setIsVoucherModalOpen(true)}
-          className="w-full flex items-center justify-between p-3.5 bg-orange-50 border border-orange-100 rounded-xl hover:bg-orange-100 transition-colors group"
+          className="w-full flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 hover:border-[#ff4f00] rounded-xl transition-all duration-300 relative group overflow-hidden"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-[#ff6a00] text-[20px]">confirmation_number</span>
+          {/* Perforated side cuts */}
+          <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-r border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
+          <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-l border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
+          
+          <div className="flex items-center gap-3.5 pl-2">
+            <div className="w-8 h-8 rounded-xl bg-[#ff4f00] flex items-center justify-center text-white shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[18px] font-bold">confirmation_number</span>
             </div>
             <div className="text-left">
-              <p className="text-sm font-extrabold text-gray-900">Platform Vouchers</p>
-              <p className="text-xs text-gray-500 font-medium">
-                {(appliedOrderVoucherCode || appliedShippingVoucherCode)
-                  ? "Vouchers applied"
-                  : "Select or enter vouchers"}
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 leading-none mb-1">Store Offers</p>
+              <p className="text-sm font-extrabold text-gray-900 leading-tight">Platform Vouchers</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {(appliedOrderVoucherCode || appliedShippingVoucherCode) && (
-              <span className="text-[11px] font-bold text-[#ff6a00] bg-orange-100/80 px-2 py-0.5 rounded-md border border-[#ff6a00]/20">
+          <div className="flex items-center gap-2 pr-2">
+            {(appliedOrderVoucherCode || appliedShippingVoucherCode) ? (
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#ff4f00] bg-[#ff4f00]/10 px-2.5 py-1 rounded-md border border-[#ff4f00]/10">
                 Applied
               </span>
+            ) : (
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 group-hover:text-[#ff4f00] transition-colors">
+                Select Code
+              </span>
             )}
-            <span className="material-symbols-outlined text-gray-400 group-hover:text-gray-600 transition-colors text-xl">
+            <span className="material-symbols-outlined text-gray-400 group-hover:text-[#ff4f00] group-hover:translate-x-0.5 transition-all text-lg font-bold">
               chevron_right
             </span>
           </div>
@@ -650,29 +657,29 @@ export default function OrderSummary({
 
         {/* Selected Vouchers Display */}
         {appliedOrderVoucherCode && (
-          <div className="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
-            <span className="material-symbols-outlined text-emerald-500 text-[18px]">check_circle</span>
-            <span className="text-xs font-bold text-emerald-700 flex-1 truncate">Order: {appliedOrderVoucherCode}</span>
-            <span className="text-xs font-bold text-emerald-700">-{fmt(orderDiscount)}</span>
-            <button onClick={() => clearVoucher("ORDER_TOTAL")} className="ml-2 text-gray-400 hover:text-red-500">
-              <span className="material-symbols-outlined text-[18px]">close</span>
+          <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <span className="material-symbols-outlined text-[#ff4f00] text-[18px] font-bold">check_circle</span>
+            <span className="text-xs font-bold text-gray-800 flex-1 truncate">Order: {appliedOrderVoucherCode}</span>
+            <span className="text-xs font-black text-[#ff4f00]">-{fmt(orderDiscount)}</span>
+            <button onClick={() => clearVoucher("ORDER_TOTAL")} className="ml-2 text-gray-400 hover:text-[#ff4f00]">
+              <span className="material-symbols-outlined text-[18px] font-bold">close</span>
             </button>
           </div>
         )}
         {appliedShippingVoucherCode && (
-          <div className="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
-            <span className="material-symbols-outlined text-emerald-500 text-[18px]">local_shipping</span>
-            <span className="text-xs font-bold text-emerald-700 flex-1 truncate">Shipping: {appliedShippingVoucherCode}</span>
-            <span className="text-xs font-bold text-emerald-700">-{fmt(shippingDiscount)}</span>
-            <button onClick={() => clearVoucher("SHIPPING_FEE")} className="ml-2 text-gray-400 hover:text-red-500">
-              <span className="material-symbols-outlined text-[18px]">close</span>
+          <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <span className="material-symbols-outlined text-[#ff4f00] text-[18px] font-bold">local_shipping</span>
+            <span className="text-xs font-bold text-gray-800 flex-1 truncate">Shipping: {appliedShippingVoucherCode}</span>
+            <span className="text-xs font-black text-[#ff4f00]">-{fmt(shippingDiscount)}</span>
+            <button onClick={() => clearVoucher("SHIPPING_FEE")} className="ml-2 text-gray-400 hover:text-[#ff4f00]">
+              <span className="material-symbols-outlined text-[18px] font-bold">close</span>
             </button>
           </div>
         )}
       </div>
 
       {/* Price breakdown */}
-      <div className="space-y-3 border-t border-gray-100/80 pt-5 mb-5 text-sm">
+      <div className="space-y-3 border-t border-gray-100 pt-5 mb-5 text-sm">
         <Row label="Subtotal" value={fmt(subtotal)} />
         <Row
           label={isPreviewLoading ? "Est. Shipping Fee (calculating...)" : "Est. Shipping Fee"}
@@ -683,30 +690,30 @@ export default function OrderSummary({
                 ? "Loading..."
                 : "Select address"
           }
-          valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-medium" : "text-gray-900 font-bold"}
+          valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-bold" : "text-gray-900 font-black"}
         />
         {(orderDiscount > 0 || shippingDiscount > 0) ? (
           <>
             {orderDiscount > 0 && (
-              <Row label="Order Discount" value={`-${fmt(orderDiscount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+              <Row label="Order Discount" value={`-${fmt(orderDiscount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
             )}
             {shippingDiscount > 0 && (
-              <Row label="Shipping Discount" value={`-${fmt(shippingDiscount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+              <Row label="Shipping Discount" value={`-${fmt(shippingDiscount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
             )}
           </>
         ) : discount > 0 ? (
-          <Row label="Voucher Discount" value={`-${fmt(discount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+          <Row label="Voucher Discount" value={`-${fmt(discount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
         ) : null}
       </div>
 
       {/* Total */}
       <div className="flex items-end justify-between border-t border-gray-200 pt-5 mb-8 relative">
-        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total</span>
+        <span className="text-xs font-black text-gray-500 uppercase tracking-wider mb-1">Total</span>
         <div className="text-right">
-          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff6a00] to-[#ff4500] tracking-tight">
+          <span className="text-3xl font-black text-[#ff4f00] tracking-tight">
             {fmt(total)}
           </span>
-          <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-widest">(VAT included)</p>
+          <p className="text-[9px] text-gray-400 font-black mt-1 uppercase tracking-widest">(VAT included)</p>
         </div>
       </div>
 
@@ -714,14 +721,11 @@ export default function OrderSummary({
       <button
         onClick={handleOrder}
         disabled={isOrdering || isAddressLoading || items.length === 0 || checkoutLines.length === 0 || (preview?.itemErrors?.length ?? 0) > 0}
-        className="group relative overflow-hidden w-full bg-gradient-to-r from-[#ff6a00] to-[#ff4500] hover:from-[#ff7a1a] hover:to-[#ff551a] disabled:from-gray-400 disabled:to-gray-500 text-white font-extrabold text-base py-4.5 rounded-2xl shadow-[0_8px_24px_-6px_rgba(255,106,0,0.5)] hover:shadow-[0_12px_32px_-6px_rgba(255,106,0,0.6)] disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+        className="group relative overflow-hidden w-full bg-[#ff4f00] hover:bg-[#ff5f1a] disabled:bg-gray-300 text-white font-black text-sm uppercase tracking-wider py-4 rounded-xl shadow-sm hover:shadow active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
       >
-        {/* Shine effect */}
-        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-
         {isOrdering ? (
           <>
-            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -729,8 +733,8 @@ export default function OrderSummary({
           </>
         ) : (
           <>
-            <span className="text-lg">Place Order Now</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span>Place Order Now</span>
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </>
@@ -738,14 +742,14 @@ export default function OrderSummary({
       </button>
 
       {(preview?.itemErrors?.length ?? 0) > 0 && (
-        <p className="text-xs text-center text-red-600 font-semibold mt-3">
+        <p className="text-xs text-center text-red-600 font-bold mt-3">
           Please check your items — some products are unavailable.
         </p>
       )}
 
-      <p className="text-[11px] text-center text-gray-400 mt-4 font-medium">
+      <p className="text-[11px] text-center text-gray-400 mt-4 font-semibold">
         By placing an order, you agree to{" "}
-        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Terms of Service</a> of Toy Store.
+        <a href="#" className="text-[#ff4f00] hover:underline font-black">Terms of Service</a> of Toy Store.
       </p>
 
       {isVoucherModalOpen && (
@@ -788,16 +792,78 @@ export default function OrderSummary({
 function Row({
   label,
   value,
-  valueClass = "text-gray-900 font-bold",
+  valueClass = "text-[#201515] font-black",
 }: {
   label: string;
   value: string;
   valueClass?: string;
 }) {
   return (
-    <div className="flex justify-between items-center text-gray-500">
-      <span className="font-medium">{label}</span>
+    <div className="flex justify-between items-center text-[#605d52] font-semibold text-xs">
+      <span>{label}</span>
       <span className={valueClass}>{value}</span>
+    </div>
+  );
+}
+
+function CouponInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  onApply,
+  onClear,
+  applied,
+  appliedLabel,
+  disabled,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  onApply: () => void;
+  onClear: () => void;
+  applied: boolean;
+  appliedLabel: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1.5">{label}</p>
+      {applied ? (
+        <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-green-200">
+          <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-xs font-bold text-green-700">{appliedLabel}</span>
+          <button
+            type="button"
+            onClick={onClear}
+            className="ml-auto text-xs font-black text-green-700 hover:text-green-800"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            className="flex-1 text-sm rounded-xl border border-gray-200 bg-white focus:border-[#ff4f00] focus:ring-2 focus:ring-[#ff4f00]/10 px-3 py-2.5 outline-none transition-all font-semibold placeholder:text-gray-400 disabled:opacity-60 disabled:cursor-not-allowed text-gray-900"
+          />
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={disabled}
+            className="px-4 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl transition-colors whitespace-nowrap uppercase tracking-wider"
+          >
+            Apply
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -905,109 +971,57 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative group flex flex-row h-[116px] w-full transition-all z-0 hover:z-30 filter ${!eligible
-          ? "opacity-60 grayscale cursor-not-allowed border-gray-100"
-          : isSelected
-            ? "hover:-translate-y-1 hover:z-30 cursor-pointer drop-shadow-[0_4px_12px_rgba(249,115,22,0.15)]"
-            : "hover:-translate-y-1 hover:z-30 cursor-pointer drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:drop-shadow-[0_8px_20px_rgba(249,115,22,0.1)]"
+        className={`relative flex flex-row min-h-[110px] h-auto bg-white rounded-xl border transition-all ${!eligible ? "opacity-60 grayscale cursor-not-allowed border-gray-150" :
+          isSelected ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer" : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm"
           }`}
       >
-        {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
-        <div
-          className="relative w-[116px] shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden rounded-l-md"
-          style={{
-            maskImage:
-              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
-            WebkitMaskImage:
-              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
-            maskSize: "100% 12px",
-            WebkitMaskSize: "100% 12px",
-            maskRepeat: "repeat-y",
-            WebkitMaskRepeat: "repeat-y",
-          }}
-        >
-          {voucher.imageUrl ? (
-            <Image
-              src={voucher.imageUrl}
-              alt={voucher.voucherName}
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          ) : (
-            <div className={`w-full h-full ${voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"} flex flex-col items-center justify-center text-white px-2`}>
-              <span className="material-symbols-outlined text-4xl">
-                {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
-              </span>
-              <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-                {voucher.discountTarget === "ORDER_TOTAL" ? "Discount" : "Shipping"}
-              </span>
+        {remainingUsage !== null && (
+          <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
+            <div className="bg-white text-[#ff4f00] text-[10px] px-2 rounded-l-full border border-[#ff4f00]/30 shadow-sm whitespace-nowrap font-black">
+              x{remainingUsage}
             </div>
-          )}
+            <div className="w-1 h-1 bg-[#ff4f00] [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
+          </div>
+        )}
+        {/* Left Ribbon / Perforated Stub */}
+        <div className={`w-28 flex flex-col items-center justify-center border-r border-dashed border-gray-200 shrink-0 relative overflow-hidden rounded-l-xl ${isSelected ? "bg-[#ff4f00]/5 text-[#ff4f00]" : "bg-gray-50 text-gray-800"
+          }`}>
+          <span className="material-symbols-outlined text-2xl mb-1">
+            {voucher.discountTarget === "ORDER_TOTAL" ? "sell" : "local_shipping"}
+          </span>
+          <span className="text-[9px] font-black tracking-wider uppercase">
+            {voucher.discountTarget === "ORDER_TOTAL" ? "Discount" : "Shipping"}
+          </span>
+          <div className="absolute -right-1.5 top-0 w-3 h-3 bg-white rounded-full border border-gray-200"></div>
+          <div className="absolute -right-1.5 bottom-0 w-3 h-3 bg-white rounded-full border border-gray-200"></div>
         </div>
 
         {/* Right Content */}
-        <div
-          className={`grow bg-white p-3 flex flex-row relative min-w-0 border rounded-r-md transition-all ${isSelected
-            ? "border-[#ff6a00] ring-1 ring-[#ff6a00]"
-            : "border-slate-200"
-            }`}
-        >
-          {/* Info Column */}
-          <div className="grow flex flex-col justify-between min-w-0 pr-2">
-            <div>
-              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                <span className="text-[9px] font-black bg-orange-50 text-[#ff6a00] px-1.5 py-0.5 rounded border border-orange-100 uppercase tracking-wider shrink-0">
-                  {voucher.voucherCode}
-                </span>
-              </div>
-              <h3
-                className="text-slate-900 text-sm font-bold leading-tight line-clamp-2"
-                title={voucher.voucherName}
-              >
-                {voucher.voucherName}
-              </h3>
-              <p className="text-xs text-slate-500 mt-1 truncate">
-                Min. spend: {voucher.minOrderAmount ? formatCurrency(voucher.minOrderAmount) : "0 ₫"}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <span
-                className="material-symbols-outlined text-slate-400"
-                style={{
-                  fontSize: "20px",
-                  fontVariationSettings: '"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 20',
-                }}
-              >
-                schedule
-              </span>
-              <p className={`text-xs ${smartParseDate(voucher.startDate).getTime() > now ? "text-red-500 font-bold" : "text-slate-500"}`}>
-                {smartParseDate(voucher.startDate).getTime() > now
-                  ? `Starts: ${formatDate(voucher.startDate)}`
-                  : `HSD: ${formatDate(voucher.endDate)}`}
-              </p>
-            </div>
+        <div className="flex-1 p-3 flex flex-col justify-center min-w-0 pr-12">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="text-[9px] font-black bg-[#ff4f00]/10 text-[#ff4f00] px-1.5 py-0.5 rounded border border-[#ff4f00]/15 uppercase tracking-wider shrink-0">
+              {voucher.voucherCode}
+            </span>
           </div>
+          <p className="text-xs font-black text-gray-900 line-clamp-2 leading-snug" title={voucher.voucherName}>
+            {voucher.voucherName}
+          </p>
+          <p className="text-[11px] font-bold text-gray-600 mt-1">
+            Min. spend: {voucher.minOrderAmount ? formatCurrency(voucher.minOrderAmount) : "0 ₫"}
+          </p>
+          <p className={`text-[10px] mt-1 flex items-center gap-1 ${new Date(voucher.startDate).getTime() > Date.now() ? "text-red-500 font-bold" : "text-gray-400"}`}>
+            <span className="material-symbols-outlined text-[12px] font-bold">schedule</span>
+            {new Date(voucher.startDate).getTime() > Date.now()
+              ? `Starts: ${formatDate(voucher.startDate)}`
+              : `Exp: ${formatDate(voucher.endDate)}`}
+          </p>
+        </div>
 
-          {/* Max Usage Ribbon - Shopee Style at Top Right */}
-          {remainingUsage !== null && (
-            <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
-              <div className="bg-red-50 text-red-600 text-[11px] px-3 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
-                x{remainingUsage}
-              </div>
-              <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
-            </div>
-          )}
-
-
-
-          {/* Action Column - Radio selector */}
-          <div className="flex flex-col items-center justify-center w-10 shrink-0 pl-2 border-l border-slate-100">
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-[#ff6a00] bg-[#ff6a00]" : "border-gray-300"
-              }`}>
-              {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-            </div>
+        {/* Radio selector inside card */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-[#ff4f00] bg-[#ff4f00]" : "border-gray-300"
+            }`}>
+            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
           </div>
         </div>
       </div>
@@ -1017,36 +1031,33 @@ function UnifiedVoucherModal({
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-950/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
 
       {/* Card */}
-      <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]">
+      <div className="relative w-full max-w-lg rounded-xl bg-white border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="bg-slate-800 px-6 py-5 text-white border-b border-slate-800">
+        <div className="bg-gray-900 px-6 py-5 text-white border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-[#ff6a00] text-[22px] font-semibold">
+              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">
                   confirmation_number
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-extrabold leading-tight tracking-wide">Platform Vouchers</h3>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                <h3 className="text-base font-black leading-tight tracking-tight uppercase">Platform Vouchers</h3>
+                <p className="text-xs text-gray-400 font-semibold mt-0.5">
                   Select up to 1 voucher per category
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+            <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors">
+              <span className="material-symbols-outlined text-white text-[18px] font-bold">close</span>
             </button>
           </div>
         </div>
 
-        {/* Voucher Code Input - Fixed at Top */}
+        {/* Voucher Code Input */}
         <div className="px-6 py-4 bg-white border-b border-gray-100 flex flex-col gap-2">
           <div className="flex gap-3">
             <input
@@ -1060,31 +1071,31 @@ function UnifiedVoucherModal({
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleApplyTypedCode();
               }}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-[#ff6a00] focus:ring-1 focus:ring-[#ff6a00] uppercase transition-all"
+              className="flex-1 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-semibold placeholder:text-gray-400 focus:outline-none focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] uppercase text-gray-900"
             />
             <button
               type="button"
               onClick={handleApplyTypedCode}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow transition-colors shrink-0"
+              className="px-5 py-2.5 bg-gray-900 hover:bg-gray-855 text-white rounded-xl text-xs font-black shadow transition-colors shrink-0 uppercase tracking-wider"
             >
               Apply
             </button>
           </div>
           {inputError && (
-            <div className="flex items-center gap-1.5 text-red-500 pl-1 text-[11.5px] font-bold animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-center gap-1.5 text-red-500 pl-1 text-[11.5px] font-bold animate-in fade-in duration-200">
               <span className="material-symbols-outlined text-[15px]">error</span>
               {inputError}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-5 overflow-y-auto grow bg-gray-50/50 space-y-6">
-          {loading && <p className="text-sm text-center text-gray-400 py-10 font-medium">Loading vouchers...</p>}
-          {error && <p className="text-sm text-center text-red-500 py-10 font-medium">{error}</p>}
+        <div className="px-6 py-5 overflow-y-auto grow bg-gray-50/80 space-y-6">
+          {loading && <p className="text-sm text-center text-gray-400 py-10 font-semibold animate-pulse">Loading vouchers...</p>}
+          {error && <p className="text-sm text-center text-red-500 py-10 font-semibold">{error}</p>}
           {!loading && !error && vouchers.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center opacity-60">
               <span className="material-symbols-outlined text-4xl mb-3 text-gray-300">confirmation_number</span>
-              <p className="text-sm font-bold text-gray-400">No vouchers available</p>
+              <p className="text-sm font-black text-gray-400">No vouchers available</p>
             </div>
           )}
 
@@ -1093,8 +1104,8 @@ function UnifiedVoucherModal({
               {/* Group 1: Order Vouchers */}
               {orderVouchers.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
-                    <span className="material-symbols-outlined text-[16px] text-orange-500 font-bold">sell</span>
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
+                    <span className="material-symbols-outlined text-[15px] text-[#ff4f00] font-bold">sell</span>
                     Order Discount Vouchers ({orderVouchers.length})
                   </h4>
                   <div className="space-y-4">
@@ -1105,9 +1116,9 @@ function UnifiedVoucherModal({
 
               {/* Group 2: Shipping Vouchers */}
               {shippingVouchers.length > 0 && (
-                <div className={orderVouchers.length > 0 ? "pt-4 border-t border-slate-200/50" : ""}>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
-                    <span className="material-symbols-outlined text-[16px] text-emerald-500 font-bold">local_shipping</span>
+                <div className={orderVouchers.length > 0 ? "pt-4 border-t border-gray-200/60" : ""}>
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
+                    <span className="material-symbols-outlined text-[15px] text-[#ff4f00] font-bold">local_shipping</span>
                     Free Shipping Vouchers ({shippingVouchers.length})
                   </h4>
                   <div className="space-y-4">
@@ -1122,7 +1133,7 @@ function UnifiedVoucherModal({
         <div className="p-4 border-t border-gray-100 bg-white">
           <button
             onClick={() => onApply(selectedOrderCode, selectedShippingCode)}
-            className="w-full bg-gradient-to-r from-[#ff6a00] to-[#ff4500] text-white py-3.5 rounded-xl font-extrabold text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all active:translate-y-0"
+            className="w-full bg-[#ff4f00] hover:bg-[#ff5f1a] text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm transition-all"
           >
             Confirm Selection
           </button>

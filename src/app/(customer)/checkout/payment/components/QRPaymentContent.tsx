@@ -8,6 +8,7 @@ import PaymentPanel from "@/app/(customer)/checkout/payment/components/PaymentPa
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
 
 const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank";
 const ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
@@ -20,6 +21,7 @@ interface QRPaymentContentProps {
 export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const router = useRouter();
   const { refreshCart } = useCart();
+  const { connection } = useNotificationRealtime();
 
   // Payment info — fetched securely from API
   const [orderCode, setOrderCode] = useState("");
@@ -37,6 +39,51 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const redirectedRef = useRef(false);
   const fetchStartedRef = useRef<number | null>(null);
+
+  // ── SignalR: lắng nghe ReceiveNotification từ hub ─────────────────────────
+  // Khi backend xác nhận thanh toán thành công (PaymentSuccess event),
+  // nó push notification qua hub với actionTarget = /profile/orders/{orderId}.
+  // Ta bắt sự kiện này để redirect ngay, không cần chờ polling 4s.
+  useEffect(() => {
+    if (!connection || !orderId) return;
+
+    const handler = (n: {
+      notificationType?: string;
+      actionTarget?: string;
+      title?: string;
+      message?: string;
+    }) => {
+      if (redirectedRef.current) return;
+      // Chỉ xử lý notification liên quan đến order hiện tại
+      const isThisOrder = n.actionTarget?.includes(`/orders/${orderId}`);
+      const isPaymentSuccess =
+        n.notificationType === "Order" &&
+        isThisOrder &&
+        (n.title?.toLowerCase().includes("paid") ||
+          n.title?.toLowerCase().includes("payment") ||
+          n.message?.toLowerCase().includes("paid") ||
+          n.message?.toLowerCase().includes("successful") ||
+          n.message?.toLowerCase().includes("thành công"));
+
+      if (!isPaymentSuccess) return;
+
+      redirectedRef.current = true;
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      void refreshCart().catch(() => { });
+      const resolvedOrderCode = orderCode || "";
+      router.replace(
+        `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
+      );
+    };
+
+    connection.on("ReceiveNotification", handler);
+    return () => {
+      connection.off("ReceiveNotification", handler);
+    };
+  }, [connection, orderId, orderCode, refreshCart, router]);
 
   // Fetch sensitive payment info from API on mount
   useEffect(() => {

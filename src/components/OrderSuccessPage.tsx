@@ -27,7 +27,7 @@ function CheckIcon() {
         cx="40"
         cy="40"
         r="36"
-        stroke="#ff6a00"
+        stroke="#ff4f00"
         strokeWidth="3"
         strokeDasharray="226"
         strokeDashoffset="226"
@@ -36,7 +36,7 @@ function CheckIcon() {
       />
       <polyline
         points="22,40 34,52 58,28"
-        stroke="#ff6a00"
+        stroke="#ff4f00"
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -49,54 +49,7 @@ function CheckIcon() {
   );
 }
 
-// ─── Progress Steps ────────────────────────────────────────────────────────────
-const STEPS = [
-  { label: "Placed", icon: "receipt_long" },
-  { label: "Processing", icon: "inventory_2" },
-  { label: "Delivering", icon: "local_shipping" },
-  { label: "Completed", icon: "check_circle" },
-];
-
-function ProgressBar({ active }: { active: number }) {
-  return (
-    <div className="flex items-center justify-between w-full max-w-md mx-auto mb-10">
-      {STEPS.map((step, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center relative">
-          {i < STEPS.length - 1 && (
-            <div className="absolute top-5 left-1/2 w-full h-0.5 bg-[#e2bfb0]/40 z-0">
-              <div
-                className="h-full bg-[#ff6a00] transition-all duration-700"
-                style={{ width: i < active ? "100%" : "0%" }}
-              />
-            </div>
-          )}
-          <div
-            className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center
-              border-2 transition-all duration-500
-              ${i < active
-                ? "bg-[#ff6a00] border-[#ff6a00] text-white"
-                : i === active
-                  ? "bg-white border-[#ff6a00] text-[#ff6a00] shadow-md shadow-[#ff6a00]/20 scale-110"
-                  : "bg-white border-[#e2bfb0] text-[#e2bfb0]"
-              }`}
-          >
-            {i < active ? (
-              <span className="material-symbols-outlined text-[20px] font-bold">check</span>
-            ) : (
-              <span className="material-symbols-outlined text-[20px]">{step.icon}</span>
-            )}
-          </div>
-          <span
-            className={`mt-2 text-[11px] font-bold tracking-wide text-center leading-tight
-              ${i <= active ? "text-[#ff6a00]" : "text-[#5a4136]/50"}`}
-          >
-            {step.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+// ─── Fallback image ────────────────────────────────────────────────────────────
 
 const FALLBACK_IMAGE = "https://placehold.co/64x64/png?text=Toy";
 
@@ -236,13 +189,13 @@ function OrderSuccessContent() {
         }
       `}</style>
 
-      <main className="flex-1 bg-white flex items-center justify-center px-4 py-12 md:py-20">
+      <main className="flex-1 bg-[#fafafa] flex items-center justify-center px-4 py-12 md:py-20">
         <div
           className={`w-full max-w-2xl transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
             }`}
         >
-          <div className="bg-white rounded-2xl shadow-xl shadow-[#ff6a00]/10 border border-[#e2bfb0]/30 overflow-hidden">
-            <div className="h-1.5 w-full bg-gradient-to-r from-[#ff8c33] via-[#ff6a00] to-[#ffb880]" />
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
+            <div className="h-1.5 w-full bg-[#ff4f00]" />
 
             <div className="px-6 md:px-12 py-10 text-center">
               <div
@@ -267,86 +220,83 @@ function OrderSuccessContent() {
               </div>
 
               <h1
-                className="slide-up text-3xl md:text-4xl font-extrabold tracking-tight text-[#261812] mb-2"
+                className="slide-up text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 mb-2"
                 style={{ animationDelay: "0.12s" }}
               >
                 Order placed successfully!
               </h1>
 
               <p
-                className="slide-up text-[#5a4136] text-sm md:text-base mb-1 leading-relaxed"
+                className="slide-up text-gray-600 text-sm md:text-base mb-1 leading-relaxed"
                 style={{ animationDelay: "0.18s" }}
               >
                 Thank you for shopping at{" "}
-                <span className="font-bold text-[#ff6a00]">Toy Store</span>. Order{" "}
-                <span className="font-bold text-[#261812]">#{orderCode}</span> has been received
+                <span className="font-bold text-[#ff4f00]">Toy Store</span>. Order{" "}
+                <span className="font-bold text-gray-900">#{orderCode}</span> has been received
                 and is being processed.
               </p>
 
               <div
                 className="slide-up inline-flex items-center gap-1.5 mt-3 mb-8 px-4 py-2 rounded-full
-                  bg-[#fff1eb] border border-[#ffdbcc] text-sm text-[#ff6a00] font-medium"
+                  bg-orange-50 border border-orange-100 text-sm text-[#ff4f00] font-medium"
                 style={{ animationDelay: "0.24s" }}
               >
                 <span className="material-symbols-outlined text-[18px]">local_shipping</span>
                 <span>
-                  Estimated delivery: <strong className="text-[#e65f00]">3-5 business days</strong>
+                  Estimated delivery: <strong className="text-[#ff4f00]">3-5 business days</strong>
                 </span>
               </div>
 
-              <div className="slide-up" style={{ animationDelay: "0.3s" }}>
-                <ProgressBar active={1} />
-              </div>
 
               <div
-                className="slide-up bg-[#fff1eb]/60 border border-[#e2bfb0]/30 rounded-xl p-5 mb-8 text-left"
+                className="slide-up bg-gray-50 border border-gray-150 rounded-xl p-5 mb-8 text-left"
                 style={{ animationDelay: "0.36s" }}
               >
-                <h2 className="font-bold text-[#261812] text-sm uppercase tracking-widest mb-4 pb-2 border-b border-[#e2bfb0]/30">
+                <h2 className="font-bold text-gray-900 text-sm uppercase tracking-widest mb-4 pb-2 border-b border-gray-250/60">
                   Order summary
                 </h2>
 
                 {!order ? (
-                  <p className="text-sm text-[#5a4136]/70 text-center py-3">Loading order details...</p>
+                  <p className="text-sm text-gray-500 text-center py-3">Loading order details...</p>
                 ) : (
                   <>
-                    <ul className="divide-y divide-[#e2bfb0]/30">
+                    <ul className="divide-y divide-gray-150">
                       {order.items.map((item) => (
                         <li key={item.orderDetailId} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                           <img
                             src={item.productImage ?? FALLBACK_IMAGE}
                             alt={item.productName}
-                            className="w-16 h-16 object-cover rounded-lg border border-[#e2bfb0]/30 shadow-sm flex-shrink-0"
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#261812] text-sm line-clamp-2">{item.productName}</p>
+                            <p className="font-semibold text-gray-900 text-sm line-clamp-2">{item.productName}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="font-bold text-[#ff6a00] text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
-                            <p className="text-xs text-[#5a4136]/70 mt-0.5">×{item.quantity}</p>
+                            <p className="font-bold text-gray-900 text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">×{item.quantity}</p>
                           </div>
                         </li>
                       ))}
                     </ul>
 
-                    <div className="mt-4 pt-3 border-t border-[#e2bfb0]/40 space-y-2">
-                      <div className="flex justify-between items-center text-sm text-[#5a4136]">
+                    <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                      <div className="flex justify-between items-center text-sm text-gray-600">
                         <span>Subtotal</span>
                         <span className="font-semibold">{fmt(order.subTotal)}</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm text-[#5a4136]">
+                      <div className="flex justify-between items-center text-sm text-gray-600">
                         <span>Shipping Fee</span>
                         <span className="font-semibold">{fmt(order.estimatedShippingFee)}</span>
                       </div>
                       {order.voucherDiscountAmount > 0 && (
-                        <div className="flex justify-between items-center text-sm text-[#5a4136]">
+                        <div className="flex justify-between items-center text-sm text-gray-600">
                           <span>Voucher Discount</span>
                           <span className="text-emerald-600 font-semibold">-{fmt(order.voucherDiscountAmount)}</span>
                         </div>
                       )}
-                      <div className="pt-2 mt-2 border-t border-[#e2bfb0]/20 flex justify-between items-center">
-                        <span className="text-sm font-semibold text-[#5a4136]">Total</span>
-                        <span className="text-lg font-extrabold text-[#ff6a00]">{fmt(order.totalAmount)}</span>
+                      <div className="pt-2 mt-2 border-t border-gray-100 flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-600">Total</span>
+                        <span className="text-lg font-extrabold text-[#ff4f00]">{fmt(order.totalAmount)}</span>
                       </div>
                     </div>
                   </>
@@ -359,32 +309,23 @@ function OrderSuccessContent() {
               >
                 <Link
                   href="/"
-                  className="w-full sm:w-auto px-7 py-3 rounded-xl border-2 border-[#ff6a00]
-                    text-[#ff6a00] font-bold text-sm hover:bg-[#fff1eb]
-                    transition-colors duration-200 text-center"
+                  className="w-full sm:w-auto px-7 py-3 rounded-xl border border-gray-300
+                    text-gray-700 font-black text-xs uppercase tracking-wider hover:bg-gray-50 hover:border-gray-400
+                    transition-all duration-200 text-center"
                 >
                   Continue shopping
                 </Link>
                 <Link
                   href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
-                  className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#ff6a00] text-white
-                    font-bold text-sm shadow-md shadow-[#ff6a00]/20
-                    hover:bg-[#e65f00] active:scale-95 transition-all duration-200 text-center"
+                  className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#ff4f00] hover:bg-[#ff5f1a] text-white
+                    font-black text-xs uppercase tracking-wider shadow-sm
+                    active:scale-95 transition-all duration-200 text-center"
                 >
                   View orders →
                 </Link>
               </div>
             </div>
           </div>
-          <p
-            className="slide-up text-center text-xs text-zinc-400 mt-5"
-            style={{ animationDelay: "0.5s" }}
-          >
-            Need help?{" "}
-            <a href="/contact" className="text-orange-500 hover:underline font-medium">
-              Contact us
-            </a>
-          </p>
 
           {order && order.items.length > 0 && (
             <div className="mt-12 slide-up" style={{ animationDelay: "0.55s" }}>

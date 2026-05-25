@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OrderTabs from "./OrderTabs";
 import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
@@ -19,14 +19,39 @@ const ORDERS_PER_PAGE = 3;
 
 export default function OrderHistoryView() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+  
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasWallet, setHasWallet] = useState(false);
+
+  // Sync state to URL silently so that "Back" button restores it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+
+    if (activeTab !== "all") { params.set("tab", activeTab); changed = true; }
+    else if (params.has("tab")) { params.delete("tab"); changed = true; }
+
+    if (searchQuery) { params.set("q", searchQuery); changed = true; }
+    else if (params.has("q")) { params.delete("q"); changed = true; }
+
+    if (currentPage > 1) { params.set("page", currentPage.toString()); changed = true; }
+    else if (params.has("page")) { params.delete("page"); changed = true; }
+
+    if (changed) {
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
+    } else if (!activeTab && !searchQuery && currentPage === 1 && window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [activeTab, searchQuery, currentPage]);
 
   // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -206,11 +231,11 @@ export default function OrderHistoryView() {
   }, [isCompletingId, loadOrders]);
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200/80 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">Order history</h1>
-        <p className="mt-1 text-sm text-[#5a4136]">
+      <div className="px-6 py-4 border-b border-gray-200/60 bg-white">
+        <h1 className="text-2xl font-bold text-gray-900">Order history</h1>
+        <p className="mt-1 text-sm text-gray-500">
           View and track your order history.
         </p>
       </div>
@@ -224,15 +249,15 @@ export default function OrderHistoryView() {
       {/* Order List */}
       <div className="p-6 bg-white">
         {errorMessage ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-slate-50/30 rounded-xl border border-dashed border-gray-200/80">
             <span className="material-symbols-outlined text-6xl opacity-40">
               error
             </span>
-            <p className="text-base font-bold">{errorMessage}</p>
+            <p className="text-base font-bold text-red-600">{errorMessage}</p>
           </div>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
-            <span className="material-symbols-outlined text-6xl opacity-40">
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-slate-50/30 rounded-xl border border-dashed border-gray-200/80">
+            <span className="material-symbols-outlined text-6xl opacity-40 animate-pulse">
               hourglass_top
             </span>
             <p className="text-base font-bold">Loading orders...</p>

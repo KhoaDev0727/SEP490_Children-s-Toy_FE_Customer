@@ -57,14 +57,14 @@ export default function CancelOrderModal({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop with elegant blur */}
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/60 transition-opacity duration-300"
+        className="absolute inset-0 bg-slate-900/50 transition-opacity duration-300"
         onClick={isSubmitting ? undefined : onCancel}
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 sm:p-8 text-left align-middle shadow-2xl transition-all animate-in fade-in zoom-in duration-200 border border-[#e2bfb0]/30">
+      <div className="relative w-full max-w-lg transform overflow-hidden rounded-xl bg-white p-6 sm:p-8 text-left align-middle shadow-2xl transition-all animate-in fade-in zoom-in duration-200 border border-gray-200/80">
 
         {/* Close Button */}
         <button
@@ -84,7 +84,7 @@ export default function CancelOrderModal({
             </span>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-[#261812]">
+            <h3 className="text-xl font-bold text-gray-900">
               Cancel Order #{orderCode}
             </h3>
             <p className="text-sm text-slate-500 mt-1 leading-relaxed">
@@ -114,7 +114,7 @@ export default function CancelOrderModal({
               disabled={isSubmitting}
               placeholder="Please enter a specific reason why you want to cancel this order..."
               maxLength={200}
-              className={`w-full px-4 py-3 rounded-xl border bg-slate-50/50 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff6a00] focus:border-[#ff6a00] transition-all resize-none ${error
+              className={`w-full px-4 py-3 rounded-xl border bg-slate-50/50 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff4f00] focus:border-[#ff4f00] transition-all resize-none ${error
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50/10"
                 : "border-slate-200"
                 }`}
@@ -139,14 +139,14 @@ export default function CancelOrderModal({
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="w-full sm:w-auto inline-flex justify-center items-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50"
+              className="w-full sm:w-auto inline-flex justify-center items-center rounded-xl border border-gray-300 bg-white px-6 py-3 text-xs font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
             >
               Close
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-red-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed hover:scale-[1.02]"
+              className="w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-red-600 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-sm hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed hover:scale-[1.02]"
             >
               {isSubmitting ? (
                 <>
