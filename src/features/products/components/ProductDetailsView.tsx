@@ -305,6 +305,10 @@ export default function ProductDetailsView({
       { label: "Age range", value: product.ageRange ?? "Updating" },
       { label: "Gender", value: product.sexName ?? "Updating" },
       { label: "Origin", value: product.originName ?? "Updating" },
+      { label: "Weight", value: product.weightGram ? `${product.weightGram} g` : "Updating" },
+      { label: "Length", value: product.lengthCm ? `${product.lengthCm} cm` : "Updating" },
+      { label: "Width", value: product.widthCm ? `${product.widthCm} cm` : "Updating" },
+      { label: "Height", value: product.heightCm ? `${product.heightCm} cm` : "Updating" },
       { label: "Remaining stock", value: product.productStatus === "ComingSoon" ? "Updating" : product.quantity.toString() },
     ];
   }, [product]);
