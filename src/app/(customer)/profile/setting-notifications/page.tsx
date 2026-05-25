@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AxiosError } from "axios";
+import toast from "react-hot-toast";
 import { notificationPreferencesApi } from "@/features/profile/services/notification-preferences-api";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import ChannelSettings from "./_components/ChannelSettings";
@@ -139,10 +140,11 @@ export default function NotificationSettingsPage() {
       setChannels(mapped.channels);
       setContent(mapped.content);
       setSaved(true);
+      toast.success("Notification settings saved successfully");
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       if (handleAuthError(err)) return;
-      setSaveError("Could not save settings. Please try again.");
+      toast.error("Could not save settings. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -154,12 +156,12 @@ export default function NotificationSettingsPage() {
       <ProfileSidebar />
 
       {/* Main panel */}
-      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-          <h1 className="text-2xl font-bold text-[#261812]">
+      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200/80 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             Notification Settings
           </h1>
-          <p className="mt-1 text-sm text-[#5a4136]">
+          <p className="mt-1 text-sm text-gray-500">
             Customize how you want to receive notifications from Toy Store
           </p>
         </div>
@@ -167,7 +169,7 @@ export default function NotificationSettingsPage() {
         {/* Settings List */}
         <div className="px-6 py-8 flex flex-col gap-8">
           {isLoading ? (
-            <p className="text-[14px] text-[#5a4136]">
+            <p className="text-[14px] text-gray-500">
               Loading your preferences…
             </p>
           ) : loadError ? (
@@ -181,18 +183,12 @@ export default function NotificationSettingsPage() {
                 onChange={handleChannelChange}
               />
 
-              <div className="border-t border-[#e2bfb0]/40" />
+              <div className="border-t border-gray-100" />
 
               <ContentSettings
                 values={content}
                 onChange={handleContentChange}
               />
-
-              {saveError ? (
-                <p className="text-[14px] text-red-700" role="alert">
-                  {saveError}
-                </p>
-              ) : null}
 
               <SaveButton
                 onSave={handleSave}

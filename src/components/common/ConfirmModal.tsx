@@ -56,9 +56,9 @@ export default function ConfirmModal({
       default:
         return {
           icon: "warning",
-          iconBg: "bg-orange-100",
-          iconColor: "text-orange-600",
-          btnColor: "bg-[#a14000] hover:bg-[#8e3900] focus:ring-[#a14000]",
+          iconBg: "bg-orange-50",
+          iconColor: "text-[#ff4f00]",
+          btnColor: "bg-[#ff4f00] hover:bg-[#ff5f1a] focus:ring-[#ff4f00]",
         };
     }
   };
@@ -69,12 +69,12 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/60 transition-opacity"
+        className="absolute inset-0 bg-slate-900/50 transition-opacity"
         onClick={onCancel}
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-2xl transition-all animate-in fade-in zoom-in duration-200">
+      <div className="relative w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-2xl transition-all animate-in fade-in zoom-in duration-200 border border-gray-200/80">
         <div className="flex items-start gap-4">
           <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${styles.iconBg}`}>
             <span className={`material-symbols-outlined ${styles.iconColor}`}>
@@ -97,14 +97,14 @@ export default function ConfirmModal({
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             type="button"
-            className="inline-flex justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 transition-all"
+            className="inline-flex justify-center rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-xs font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
             onClick={onCancel}
           >
             {cancelText}
           </button>
           <button
             type="button"
-            className={`inline-flex justify-center rounded-xl border border-transparent px-5 py-2.5 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${styles.btnColor}`}
+            className={`inline-flex justify-center rounded-xl border border-transparent px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm focus:outline-none transition-all ${styles.btnColor}`}
             onClick={onConfirm}
           >
             {confirmText}

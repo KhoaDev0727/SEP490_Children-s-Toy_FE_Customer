@@ -115,23 +115,23 @@ export default function WalletPinModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/60"
+        className="absolute inset-0 bg-slate-900/50"
         onClick={isVerifying ? undefined : onCancel}
       />
 
       {/* Card */}
-      <div className="relative w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        {/* Header gradient */}
-        <div className="bg-gradient-to-br from-[#ff6a00] to-[#ff4500] px-6 py-5 text-white">
+      <div className="relative w-full max-w-sm rounded-xl bg-white border border-gray-200/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        {/* Header */}
+        <div className="bg-gray-900 px-6 py-5 text-white border-b border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-white text-[22px]">
                 account_balance_wallet
               </span>
             </div>
             <div>
               <h3 className="text-lg font-extrabold leading-tight">Wallet Payment</h3>
-              <p className="text-xs text-white/75 font-medium mt-0.5">
+              <p className="text-xs text-gray-400 font-medium mt-0.5">
                 Enter your 6-digit wallet PIN to confirm
               </p>
             </div>
@@ -156,13 +156,13 @@ export default function WalletPinModal({
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onFocus={(e) => e.target.select()}
                 className={[
-                  "w-11 h-13 text-center text-xl font-black rounded-2xl border-2 outline-none transition-all duration-200",
+                  "w-11 h-13 text-center text-xl font-black rounded-xl border-2 outline-none transition-all duration-200",
                   "disabled:cursor-not-allowed disabled:opacity-60",
                   digits[i]
-                    ? "border-[#ff6a00] bg-[#ff6a00]/5 text-[#ff6a00] shadow-sm shadow-[#ff6a00]/20"
-                    : "border-gray-200 bg-gray-50 text-gray-900",
+                    ? "border-[#ff4f00] bg-[#ff4f00]/5 text-[#ff4f00] shadow-sm shadow-[#ff4f00]/20"
+                    : "border-gray-200 bg-white text-gray-900",
                   isLocked ? "border-red-200 bg-red-50" : "",
-                  "focus:border-[#ff6a00] focus:bg-white focus:ring-4 focus:ring-[#ff6a00]/10",
+                  "focus:border-[#ff4f00] focus:bg-white focus:ring-4 focus:ring-[#ff4f00]/10",
                 ].join(" ")}
               />
             ))}
@@ -170,7 +170,7 @@ export default function WalletPinModal({
 
           {/* Status messages */}
           {isLocked && lockedUntil && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 rounded-2xl border border-red-200 mb-4">
+            <div className="flex items-start gap-2 p-3 bg-red-50 rounded-xl border border-red-200 mb-4">
               <span className="material-symbols-outlined text-red-500 text-[18px] flex-shrink-0 mt-0.5">lock</span>
               <div>
                 <p className="text-xs font-bold text-red-700">Wallet temporarily locked</p>
@@ -182,7 +182,7 @@ export default function WalletPinModal({
           )}
 
           {errorMessage && !isLocked && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-2xl border border-red-200 mb-4">
+            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-200 mb-4">
               <span className="material-symbols-outlined text-red-500 text-[18px] flex-shrink-0">error</span>
               <div className="flex-1">
                 <p className="text-xs font-semibold text-red-700">{errorMessage}</p>
@@ -195,11 +195,7 @@ export default function WalletPinModal({
             </div>
           )}
 
-          {!errorMessage && !isLocked && (
-            <p className="text-center text-[11px] text-gray-400 font-medium mb-4">
-              🔒 Your PIN is encrypted and never stored in plain text.
-            </p>
-          )}
+          {!errorMessage && !isLocked}
 
           {/* Actions */}
           <div className="flex gap-3">
@@ -207,7 +203,7 @@ export default function WalletPinModal({
               type="button"
               onClick={onCancel}
               disabled={isVerifying}
-              className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-60"
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-xs font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
             >
               Cancel
             </button>
@@ -215,11 +211,11 @@ export default function WalletPinModal({
               type="button"
               onClick={() => onConfirm(digits.join(""))}
               disabled={isVerifying || isLocked || digits.join("").length < PIN_LENGTH}
-              className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#ff6a00] to-[#ff4500] text-sm font-extrabold text-white shadow-lg shadow-[#ff6a00]/30 hover:-translate-y-0.5 hover:shadow-[#ff6a00]/40 active:translate-y-0 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-[#ff4f00] hover:bg-[#ff5f1a] text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
             >
               {isVerifying ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>

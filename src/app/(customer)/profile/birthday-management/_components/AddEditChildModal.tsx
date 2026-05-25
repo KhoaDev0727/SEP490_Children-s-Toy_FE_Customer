@@ -72,14 +72,14 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       aria-modal="true"
     >
       <div
-        className="absolute inset-0 bg-slate-950/60"
+        className="absolute inset-0 bg-slate-900/50"
         onClick={onClose}
       />
 
       {/* Modal Card */}
-      <div className="relative bg-white w-full max-w-md rounded-[2rem] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-white/60 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white w-full max-w-md rounded-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-200/80 overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Subtle decorative gradient background */}
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#ff6a00]/5 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#ff4f00]/5 to-transparent pointer-events-none" />
 
         {/* Header */}
         <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between relative bg-white/80 backdrop-blur-xl">
@@ -90,7 +90,7 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 bg-gray-50/50 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 bg-gray-50/50 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
@@ -110,7 +110,7 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. John Doe"
               disabled={isSubmitting}
-              className="w-full rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff6a00] focus:ring-4 focus:ring-[#ff6a00]/10 text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-gray-100/50"
+              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
             />
           </div>
 
@@ -125,7 +125,7 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
               onChange={(e) => setNickName(e.target.value)}
               placeholder="e.g. Junior, Sunny..."
               disabled={isSubmitting}
-              className="w-full rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff6a00] focus:ring-4 focus:ring-[#ff6a00]/10 text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-gray-100/50"
+              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
             />
           </div>
 
@@ -142,7 +142,7 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
               disabled={isSubmitting}
               min={minDob}
               max={maxDob}
-              className="w-full rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff6a00] focus:ring-4 focus:ring-[#ff6a00]/10 text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-gray-100/50"
+              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
             />
           </div>
 
@@ -160,9 +160,9 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
                   type="button"
                   onClick={() => setSexId(g.id)}
                   disabled={isSubmitting}
-                  className={`flex-1 py-4 rounded-2xl text-sm font-semibold border-2 transition-all duration-300 ${sexId === g.id
-                    ? "border-[#ff6a00] bg-gradient-to-r from-[#ff6a00]/5 to-transparent text-[#ff6a00] shadow-md shadow-[#ff6a00]/10"
-                    : "bg-white text-gray-900 border-gray-100 hover:border-gray-300 hover:shadow-lg hover:-translate-y-0.5"
+                  className={`flex-1 py-4 rounded-xl text-sm font-semibold border-2 transition-all duration-300 ${sexId === g.id
+                    ? "border-[#ff4f00] bg-[#ff4f00]/5 text-[#ff4f00] shadow-sm"
+                    : "bg-white text-gray-900 border-gray-200 hover:border-gray-400 hover:shadow-sm"
                     } disabled:opacity-50`}
                 >
                   <span className="mr-2 text-xl">{g.icon}</span>
@@ -174,12 +174,12 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-5 bg-white border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl">
+        <div className="px-6 py-5 bg-white border-t border-gray-100 flex justify-end gap-3 rounded-b-xl">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -187,10 +187,10 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
             type="submit"
             form="child-form"
             disabled={isSubmitting}
-            className="px-8 py-3 bg-[#ff6a00] text-white rounded-2xl text-sm font-bold shadow-[0_4px_14px_0_rgba(255,106,0,0.39)] hover:shadow-[0_6px_20px_rgba(255,106,0,0.23)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 min-w-[140px] disabled:opacity-50 disabled:hover:translate-y-0"
+            className="px-8 py-3 bg-[#ff4f00] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#ff5f1a] transition-all flex items-center justify-center gap-2 min-w-[140px] disabled:opacity-50 shadow-sm"
           >
             {isSubmitting && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-            {editTarget ? "Save Changes" : "Add Child"}
+            {editTarget ? "Save" : "Add Child"}
           </button>
         </div>
       </div>

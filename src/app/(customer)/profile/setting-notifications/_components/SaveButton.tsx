@@ -18,8 +18,8 @@ export default function SaveButton({ onSave, isSaving, saved }: SaveButtonProps)
             saved
               ? "bg-green-600 text-white cursor-default"
               : isSaving
-              ? "bg-[#a14000]/70 text-white cursor-wait"
-              : "bg-[#a14000] hover:bg-[#8a3600] text-white shadow-md hover:shadow-lg active:scale-95"
+              ? "bg-[#ff4f00]/70 text-white cursor-wait"
+              : "bg-[#ff4f00] hover:bg-[#ff5f1a] text-white shadow-sm active:scale-95"
           }
         `}
       >
