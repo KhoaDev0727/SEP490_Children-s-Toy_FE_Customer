@@ -91,18 +91,6 @@ export default function ProfileSidebar() {
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">{name}</p>
-          <Link
-            href="/profile/edit"
-            className="text-xs text-slate-500 flex items-center gap-1 hover:text-[#ff6a00] transition-colors"
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 13 }}
-            >
-              edit
-            </span>
-            Edit Profile
-          </Link>
         </div>
       </div>
 
