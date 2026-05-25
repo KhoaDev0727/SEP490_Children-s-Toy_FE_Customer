@@ -195,11 +195,7 @@ export default function WalletPinModal({
             </div>
           )}
 
-          {!errorMessage && !isLocked && (
-            <p className="text-center text-[11px] text-gray-400 font-medium mb-4">
-              🔒 Your PIN is encrypted and never stored in plain text.
-            </p>
-          )}
+          {!errorMessage && !isLocked}
 
           {/* Actions */}
           <div className="flex gap-3">
