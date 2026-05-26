@@ -106,8 +106,11 @@ export default function AddressList() {
 
   return (
     <>
-      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">My Addresses</h1>
+      <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0f172a]">My Addresses</h1>
+          <p className="mt-1 text-sm text-[#475569]">Manage your delivery addresses for fast checkout.</p>
+        </div>
         <button
           onClick={() => {
             if (isMaxAddresses) return;
@@ -118,8 +121,8 @@ export default function AddressList() {
           }}
           disabled={isMaxAddresses}
           title={isMaxAddresses ? "Maximum 5 addresses reached" : "Add new address"}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${
-            isMaxAddresses ? "bg-[#ff6a00]/50 cursor-not-allowed" : "bg-[#ff6a00]"
+          className={`px-4 py-2 rounded-xl text-sm font-semibold text-white transition hover:-translate-y-0.5 active:translate-y-0 ${
+            isMaxAddresses ? "bg-[#ff4f00]/50 cursor-not-allowed" : "bg-[#ff4f00]"
           }`}
         >
           Add new address
@@ -128,12 +131,12 @@ export default function AddressList() {
 
       <div className="flex flex-col p-6 gap-4">
         {addresses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-white rounded-xl border border-dashed border-[#e2bfb0]">
-            <div className="w-16 h-16 bg-[#e2bfb0]/20 rounded-full flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-[#a14000] text-3xl">location_off</span>
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-white rounded-xl border border-dashed border-slate-200">
+            <div className="w-16 h-16 bg-[#ff4f00]/5 rounded-full flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-[#ff4f00] text-3xl">location_off</span>
             </div>
-            <h3 className="text-lg font-semibold text-[#261812] mb-1">No addresses found</h3>
-            <p className="text-sm text-[#5a4136] max-w-[250px]">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">No addresses found</h3>
+            <p className="text-sm text-slate-500 max-w-[250px]">
               You haven't added any shipping addresses yet. Add one to make checkout faster!
             </p>
           </div>
@@ -164,17 +167,17 @@ export default function AddressList() {
 
       {deleteConfirmId && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteConfirmId(null)} />
-          <div className="relative bg-white w-full max-w-sm mx-4 rounded-xl p-6">
+          <div className="absolute inset-0 bg-[#0f172a]/50" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative z-10 bg-white w-full max-w-sm mx-4 rounded-xl p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
             <div className="mb-4">
-              <h3 className="font-semibold text-slate-900">Delete address</h3>
-              <p className="text-sm text-slate-500">Are you sure you want to delete this address?</p>
+              <h3 className="font-bold text-[#0f172a] text-lg">Delete address</h3>
+              <p className="text-sm text-[#475569] mt-1">Are you sure you want to delete this address?</p>
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm">
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
                 Cancel
               </button>
-              <button onClick={confirmDelete} className="px-4 py-2 rounded-lg bg-[#ba1a1a] text-white text-sm">
+              <button onClick={confirmDelete} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold shadow-md shadow-red-600/10 hover:-translate-y-0.5 transition-all">
                 Delete
               </button>
             </div>

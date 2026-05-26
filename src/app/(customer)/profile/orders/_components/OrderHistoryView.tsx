@@ -1,75 +1,121 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OrderTabs from "./OrderTabs";
 import OrderSearch from "./OrderSearch";
 import OrderList from "./OrderList";
 import OrderPagination from "./OrderPagination";
+import CancelOrderModal from "@/components/common/CancelOrderModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import CreateRefundModal from "@/app/(customer)/profile/refunds/_components/CreateRefundModal";
 import { Order, OrderStatus } from "./OrderCard";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import axiosClient from "@/configs/axios-client";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
 
 const ORDERS_PER_PAGE = 3;
 
 export default function OrderHistoryView() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+  
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasWallet, setHasWallet] = useState(false);
 
-  // Modal state
+  // Sync state to URL silently so that "Back" button restores it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+
+    if (activeTab !== "all") { params.set("tab", activeTab); changed = true; }
+    else if (params.has("tab")) { params.delete("tab"); changed = true; }
+
+    if (searchQuery) { params.set("q", searchQuery); changed = true; }
+    else if (params.has("q")) { params.delete("q"); changed = true; }
+
+    if (currentPage > 1) { params.set("page", currentPage.toString()); changed = true; }
+    else if (params.has("page")) { params.delete("page"); changed = true; }
+
+    if (changed) {
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
+    } else if (!activeTab && !searchQuery && currentPage === 1 && window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [activeTab, searchQuery, currentPage]);
+
+  // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  const mapStatusNameToUi = useCallback((statusName?: string | null): OrderStatus => {
-    if (!statusName) return "pending";
+  // Refund modal state
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [orderToRefund, setOrderToRefund] = useState<Order | null>(null);
 
-    switch (statusName.toLowerCase()) {
-      case "pending":
-        return "pending";
-      case "confirmed":
-      case "processing":
-      case "shipped":
-        return "shipping";
-      case "delivering":
-        return "delivering";
-      case "delivered":
-      case "completed":
-        return "completed";
-      case "cancelled":
-        return "cancelled";
-      default:
-        return "pending";
-    }
-  }, []);
+  // Complete order state
+  const [isCompletingId, setIsCompletingId] = useState<number | null>(null);
 
-  const mapOrderItem = useCallback((item: CustomerOrderListItem): Order => {
-    const fallbackImage = "/assets/images/tinitoy.png";
+  const mapStatusNameToUi = useCallback(
+    (statusName?: string | null): OrderStatus => {
+      if (!statusName) return "pending";
 
-    return {
-      orderId: item.orderId,
-      orderCode: item.orderCode,
-      status: mapStatusNameToUi(item.statusName),
-      items: (item.items || []).map((p) => ({
-        name: p.productName,
-        variant: p.variant ?? "",
-        categoryName: p.categoryName ?? "",
-        quantity: p.quantity,
-        price: p.unitPrice,
-        image: p.productImage || fallbackImage,
-      })),
-      total: item.totalAmount,
-      paymentMethod: item.paymentMethod,
-      rawStatusName: item.statusName,
-    };
-  }, [mapStatusNameToUi]);
+      switch (statusName.toLowerCase()) {
+        case "pending":
+          return "pending";
+        case "confirmed":
+        case "processing":
+        case "shipped":
+          return "shipping";
+        case "delivering":
+          return "delivering";
+        case "delivered":
+        case "completed":
+          return "completed";
+        case "cancelled":
+          return "cancelled";
+        case "refunded":
+          return "refunded";
+        default:
+          return "pending";
+      }
+    },
+    [],
+  );
+
+  const mapOrderItem = useCallback(
+    (item: CustomerOrderListItem): Order => {
+      const fallbackImage = "/assets/images/tinitoy.png";
+
+      return {
+        orderId: item.orderId,
+        orderCode: item.orderCode,
+        status: mapStatusNameToUi(item.statusName),
+        items: (item.items || []).map((p) => ({
+          name: p.productName,
+          variant: p.variant ?? "",
+          categoryName: p.categoryName ?? "",
+          quantity: p.quantity,
+          price: p.unitPrice,
+          image: p.productImage || fallbackImage,
+        })),
+        total: item.totalAmount,
+        paymentMethod: item.paymentMethod,
+        rawStatusName: item.statusName,
+        hasActiveRefund: item.hasActiveRefund,
+      };
+    },
+    [mapStatusNameToUi],
+  );
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -86,7 +132,9 @@ export default function OrderHistoryView() {
       setOrders(response.items.map(mapOrderItem));
       setTotalPages(Math.max(1, response.totalPages));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not load orders.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not load orders.",
+      );
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -98,6 +146,20 @@ export default function OrderHistoryView() {
     void loadOrders();
   }, [loadOrders]);
 
+  // Check wallet status once on mount
+  useEffect(() => {
+    axiosClient
+      .get<{ success?: boolean; data?: { status?: string } | null } | null>("/wallets/me")
+      .then((res) => {
+        const anyRes = res as { success?: boolean; data?: { status?: string } | null } | null;
+        const walletStatus = anyRes?.data?.status;
+        setHasWallet(
+          typeof walletStatus === "string" && walletStatus.toLowerCase() === "active",
+        );
+      })
+      .catch(() => setHasWallet(false));
+  }, []);
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -108,44 +170,72 @@ export default function OrderHistoryView() {
     setCurrentPage(1);
   };
 
-  const handlePrimaryAction = useCallback((order: Order) => {
-    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
-      router.push(`/checkout/payment?orderId=${order.orderId}`);
-    } else {
-      router.push(`/profile/orders/${order.orderId}`);
-    }
-  }, [router]);
+  const handlePrimaryAction = useCallback(
+    (order: Order) => {
+      if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
+        router.push(`/checkout/payment?orderId=${order.orderId}`);
+      } else {
+        router.push(`/profile/orders/${order.orderId}`);
+      }
+    },
+    [router],
+  );
 
-  const handleSecondaryAction = useCallback((order: Order) => {
-    if (order.status === "pending") {
-      setOrderToCancel(order);
-      setIsCancelModalOpen(true);
-    } else {
-      router.push(`/profile/orders/${order.orderId}`);
-    }
-  }, [router]);
+  const handleSecondaryAction = useCallback(
+    (order: Order) => {
+      if (order.status === "pending") {
+        setOrderToCancel(order);
+        setIsCancelModalOpen(true);
+      } else {
+        router.push(`/profile/orders/${order.orderId}`);
+      }
+    },
+    [router],
+  );
 
-  const confirmCancel = async () => {
+  const handleRequestRefund = useCallback((order: Order) => {
+    setOrderToRefund(order);
+    setIsRefundModalOpen(true);
+  }, []);
+
+  const confirmCancel = async (reason: string) => {
     if (!orderToCancel) return;
+    setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(orderToCancel.orderId);
+      await checkoutApi.cancelOrder(orderToCancel.orderId, reason);
       await loadOrders();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to cancel order.",
+      );
     } finally {
+      setIsCancelling(false);
       setIsCancelModalOpen(false);
       setOrderToCancel(null);
     }
   };
 
+  const handleCompleteOrder = useCallback(async (order: Order) => {
+    if (isCompletingId) return;
+    setIsCompletingId(order.orderId);
+    try {
+      await ordersApi.completeOrder(order.orderId);
+      await loadOrders();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to complete order.",
+      );
+    } finally {
+      setIsCompletingId(null);
+    }
+  }, [isCompletingId, loadOrders]);
+
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200/80 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">
-          Order Management
-        </h1>
-        <p className="mt-1 text-sm text-[#5a4136]">
+      <div className="px-6 py-4 border-b border-gray-200/60 bg-white">
+        <h1 className="text-2xl font-bold text-gray-900">Order history</h1>
+        <p className="mt-1 text-sm text-gray-500">
           View and track your order history.
         </p>
       </div>
@@ -159,41 +249,55 @@ export default function OrderHistoryView() {
       {/* Order List */}
       <div className="p-6 bg-white">
         {errorMessage ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-slate-50/30 rounded-xl border border-dashed border-gray-200/80">
             <span className="material-symbols-outlined text-6xl opacity-40">
               error
             </span>
-            <p className="text-base font-bold">{errorMessage}</p>
+            <p className="text-base font-bold text-red-600">{errorMessage}</p>
           </div>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
-            <span className="material-symbols-outlined text-6xl opacity-40">
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-slate-50/30 rounded-xl border border-dashed border-gray-200/80">
+            <span className="material-symbols-outlined text-6xl opacity-40 animate-pulse">
               hourglass_top
             </span>
             <p className="text-base font-bold">Loading orders...</p>
           </div>
         ) : (
-          <OrderList 
-            orders={orders} 
+          <OrderList
+            orders={orders}
             onPrimaryAction={handlePrimaryAction}
             onSecondaryAction={handleSecondaryAction}
+            onRequestRefund={handleRequestRefund}
+            onCompleteAction={handleCompleteOrder}
           />
         )}
       </div>
 
-      <ConfirmModal
+      <CancelOrderModal
         isOpen={isCancelModalOpen}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel order #${orderToCancel?.orderCode}? This action cannot be undone.`}
+        orderCode={orderToCancel?.orderCode ?? ""}
         onConfirm={confirmCancel}
         onCancel={() => {
           setIsCancelModalOpen(false);
           setOrderToCancel(null);
         }}
-        confirmText="Confirm Cancel"
-        cancelText="Close"
-        type="danger"
+        isSubmitting={isCancelling}
       />
+
+      {orderToRefund && (
+        <CreateRefundModal
+          isOpen={isRefundModalOpen}
+          orderId={orderToRefund.orderId}
+          orderCode={orderToRefund.orderCode}
+          orderTotal={orderToRefund.total}
+          hasWallet={hasWallet}
+          onClose={() => {
+            setIsRefundModalOpen(false);
+            setOrderToRefund(null);
+          }}
+          onSuccess={() => void loadOrders()}
+        />
+      )}
 
       {/* Pagination */}
       <OrderPagination

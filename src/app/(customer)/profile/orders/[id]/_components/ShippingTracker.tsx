@@ -9,6 +9,7 @@ export interface ShippingEvent {
 interface ShippingTrackerProps {
   currentStatus?: string | null;
   events?: ShippingEvent[];
+  hasActiveRefund?: boolean;
 }
 
 const STEPS = [
@@ -39,6 +40,20 @@ const getActiveStep = (status?: string | null): number => {
       return 0;
     default:
       return 0;
+  }
+};
+
+/** Returns the status label shown in the badge — matches OrderCard labels in the order list. */
+const getStatusBadgeLabel = (status?: string | null, activeStep?: number): string => {
+  switch (status?.toLowerCase()) {
+    case "pending":    return "Pending";
+    case "confirmed":  return "Confirmed";
+    case "processing": return "Processing";
+    case "shipped":    return "Shipped";
+    case "delivering": return "Delivering";
+    case "delivered":  return "Delivered";
+    case "completed":  return "Completed";
+    default: return STEPS[activeStep ?? 0]?.label ?? "Pending";
   }
 };
 
@@ -81,11 +96,11 @@ const formatEventTime = (value: string): string => {
   }).replace(",", " -") + " (GMT+7)";
 };
 
-export default function ShippingTracker({ currentStatus, events = [] }: ShippingTrackerProps) {
+export default function ShippingTracker({ currentStatus, events = [], hasActiveRefund = false }: ShippingTrackerProps) {
   const activeStep = getActiveStep(currentStatus);
   const statusLower = currentStatus?.toLowerCase() || "";
   const isCancelled = statusLower === "cancelled";
-  const isRefunded = statusLower === "refunded";
+  const isRefunded = statusLower === "refunded" || hasActiveRefund;
   const isFinalStatus = isCancelled || isRefunded;
   const [showAll, setShowAll] = useState(false);
 
@@ -136,7 +151,7 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${isCancelled ? "bg-red-50 border-red-100" : isRefunded ? "bg-blue-50 border-blue-100" : "bg-emerald-50 border-emerald-100"}`}>
           <div className={`w-2 h-2 rounded-full ${isCancelled ? "bg-red-500" : isRefunded ? "bg-blue-500" : "bg-emerald-500"}`} />
           <span className={`text-xs font-bold uppercase tracking-wider ${isCancelled ? "text-red-600" : isRefunded ? "text-blue-600" : "text-emerald-600"}`}>
-            {isCancelled ? "Cancelled" : isRefunded ? "Refunded" : STEPS[activeStep].label}
+            {isCancelled ? "Cancelled" : isRefunded ? (hasActiveRefund ? "Refund Requested" : "Refunded") : getStatusBadgeLabel(currentStatus, activeStep)}
           </span>
         </div>
       </div>
@@ -201,10 +216,10 @@ export default function ShippingTracker({ currentStatus, events = [] }: Shipping
             {isCancelled ? "cancel" : "currency_exchange"}
           </span>
           <p className="text-sm font-bold text-slate-600">
-            {isCancelled ? "This order has been cancelled" : "Order has been refunded"}
+            {isCancelled ? "This order has been cancelled" : hasActiveRefund ? "Refund has been requested" : "Order has been refunded"}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            {isCancelled ? "If you have questions, please contact support" : "Refund has been returned to your wallet"}
+            {isCancelled ? "If you have questions, please contact support" : hasActiveRefund ? "Our staff is reviewing your refund request" : "Refund has been returned to your wallet"}
           </p>
         </div>
       )}

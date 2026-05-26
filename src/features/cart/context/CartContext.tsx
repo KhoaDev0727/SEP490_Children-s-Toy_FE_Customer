@@ -1,10 +1,16 @@
 "use client";
 
+
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { cartApi } from "@/features/cart/services/cart-api";
-import type { CartData, CartRealtimeEnvelope } from "@/features/cart/types/cart";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
+import type { CartData, CartItem, CartRealtimeEnvelope } from "@/features/cart/types/cart";
+
 
 interface CartContextValue {
   cart: CartData | null;
@@ -17,18 +23,23 @@ interface CartContextValue {
   clearCart: () => Promise<void>;
 }
 
+
 const CartContext = createContext<CartContextValue | null>(null);
+
 
 const normalizeHubBaseUrl = (url?: string): string => {
   const fallback = "http://localhost:5216";
   if (!url || !url.trim()) return fallback;
 
+
   const trimmed = url.trim().replace(/\/+$/, "");
   return trimmed.endsWith("/api") ? trimmed.slice(0, -4) : trimmed;
 };
 
+
 const HUB_BASE_URL = normalizeHubBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 const HUB_URL = `${HUB_BASE_URL}/hubs/cart`;
+
 
 const CART_EVENTS = [
   "CartUpdated",
@@ -40,10 +51,12 @@ const CART_EVENTS = [
   "CartOutOfStock",
 ] as const;
 
+
 const extractEnvelope = (payload: unknown): { cart: CartData | null; message?: string } => {
   if (!payload || typeof payload !== "object") {
     return { cart: null };
   }
+
 
   const record = payload as Record<string, unknown>;
   const message = typeof record.message === "string"
@@ -52,9 +65,43 @@ const extractEnvelope = (payload: unknown): { cart: CartData | null; message?: s
       ? record.Message
       : undefined;
 
+
   const data = (record.data ?? record.Data) as CartData | null | undefined;
   return { cart: data ?? null, message };
 };
+
+const normalizeCart = (value: CartData): CartData => {
+  const items = [...value.items].sort((a, b) => {
+    const aTime = Date.parse(a.addedAt);
+    const bTime = Date.parse(b.addedAt);
+
+    if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    return b.cartItemId - a.cartItemId;
+  });
+
+  return {
+    ...value,
+    items,
+  };
+};
+
+const resolveUnitPrice = (item: CartItem): number => {
+  if (typeof item.currentPrice === "number" && Number.isFinite(item.currentPrice) && item.currentPrice > 0) {
+    return item.currentPrice;
+  }
+
+  return item.priceAtThatTime;
+};
+
+const assertCartSubtotalWithinLimit = (projectedSubTotal: number): void => {
+  if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+    throw new Error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
+  }
+};
+
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuthContext();
@@ -64,23 +111,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const realtimeRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRealtimeRefreshingRef = useRef(false);
 
+
   const refreshCartSnapshot = useCallback(async () => {
     if (!isAuthenticated) return;
 
+
     try {
       const response = await cartApi.getMyCart();
-      setCart(response);
+      setCart(normalizeCart(response));
     } catch {
       // Ignore realtime refresh errors, normal API flows will still work.
     }
   }, [isAuthenticated]);
 
+
   const queueRealtimeRefresh = useCallback(() => {
     if (realtimeRefreshTimerRef.current) return;
+
 
     realtimeRefreshTimerRef.current = setTimeout(async () => {
       realtimeRefreshTimerRef.current = null;
       if (isRealtimeRefreshingRef.current) return;
+
 
       isRealtimeRefreshingRef.current = true;
       try {
@@ -91,6 +143,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }, 120);
   }, [refreshCartSnapshot]);
 
+
   const refreshCart = useCallback(async () => {
     if (!isAuthenticated) {
       setCart(null);
@@ -98,10 +151,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+
     setIsLoading(true);
     try {
       const response = await cartApi.getMyCart();
-      setCart(response);
+      setCart(normalizeCart(response));
     } catch {
       setCart(null);
     } finally {
@@ -109,10 +163,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated]);
 
+
   useEffect(() => {
     if (!isHydrated) return;
     void refreshCart();
   }, [isHydrated, refreshCart]);
+
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) {
@@ -120,9 +176,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+
     let mounted = true;
     let hubConnection: import("@microsoft/signalr").HubConnection | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
 
     const handleEvent = (eventName: string) => (payload: CartRealtimeEnvelope | unknown) => {
       if (!mounted) return;
@@ -130,17 +188,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         console.info("[CartSignalR] event received", eventName, payload);
       }
 
+
       const { cart: nextCart, message } = extractEnvelope(payload);
       if (nextCart) {
-        setCart(nextCart);
+        setCart(normalizeCart(nextCart));
+      } else {
+        queueRealtimeRefresh();
       }
 
-      queueRealtimeRefresh();
 
       if (eventName === "CartOutOfStock") {
         toast.error(message || "Some items are out of stock.");
       }
     };
+
 
     const scheduleRetry = () => {
       if (!mounted || retryTimer) return;
@@ -150,6 +211,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }, 2000);
     };
 
+
     const connect = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
@@ -158,12 +220,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+
       const signalr = await import("@microsoft/signalr");
       if (!mounted) return;
       const candidateUrls = new Set<string>([HUB_URL]);
       if (typeof window !== "undefined" && window.location.protocol === "https:" && HUB_URL.startsWith("http://")) {
         candidateUrls.add(HUB_URL.replace("http://", "https://").replace(":5216", ":7083"));
       }
+
 
       let lastError: unknown = null;
       for (const url of candidateUrls) {
@@ -175,9 +239,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           .withAutomaticReconnect()
           .build();
 
+
         CART_EVENTS.forEach((eventName) => {
           connection.on(eventName, handleEvent(eventName));
         });
+
 
         connection.onreconnected(async () => {
           if (!mounted) return;
@@ -185,11 +251,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           await refreshCart();
         });
 
+
         connection.onclose(() => {
           if (!mounted) return;
           setIsConnected(false);
           scheduleRetry();
         });
+
 
         try {
           await connection.start();
@@ -198,24 +266,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
+
           hubConnection = connection;
           setIsConnected(true);
           if (process.env.NODE_ENV === "development") {
             console.info("[CartSignalR] connected", url);
           }
           return;
-        } catch (error: any) {
+        } catch (error: unknown) {
           lastError = error;
           if (process.env.NODE_ENV === "development") {
+            const errorDetails = error as {
+              message?: string;
+              statusCode?: number;
+              stack?: string;
+            };
             console.error(`[CartSignalR] Connection failed to ${url}:`, {
-              message: error.message,
-              statusCode: error.statusCode,
-              stack: error.stack
+              message: errorDetails.message,
+              statusCode: errorDetails.statusCode,
+              stack: errorDetails.stack
             });
           }
           await connection.stop();
         }
       }
+
 
       setIsConnected(false);
       if (lastError) {
@@ -224,11 +299,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       scheduleRetry();
     };
 
+
     void connect().catch((error) => {
       setIsConnected(false);
       console.warn("[CartSignalR] init failed", error);
       scheduleRetry();
     });
+
 
     return () => {
       mounted = false;
@@ -247,25 +324,44 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAuthenticated, isHydrated, queueRealtimeRefresh, refreshCart]);
 
+
   const addItem = useCallback(async (productId: number, quantity = 1) => {
-    const response = await cartApi.addItem({ productId, quantity });
-    setCart(response);
-  }, []);
+    const normalizedQuantity = Math.max(1, Math.floor(quantity));
+    const existingItem = cart?.items.find((item) => item.productId === productId);
+    if (existingItem) {
+      const projectedSubTotal = (cart?.subTotal ?? 0) + resolveUnitPrice(existingItem) * normalizedQuantity;
+      assertCartSubtotalWithinLimit(projectedSubTotal);
+    }
+
+    const response = await cartApi.addItem({ productId, quantity: normalizedQuantity });
+    setCart(normalizeCart(response));
+  }, [cart]);
+
 
   const updateQuantity = useCallback(async (cartItemId: number, quantity: number) => {
+    const targetItem = cart?.items.find((item) => item.cartItemId === cartItemId);
+    if (targetItem) {
+      const projectedSubTotal =
+        (cart?.subTotal ?? 0) - targetItem.lineTotal + resolveUnitPrice(targetItem) * quantity;
+      assertCartSubtotalWithinLimit(projectedSubTotal);
+    }
+
     const response = await cartApi.updateQuantity(cartItemId, { quantity });
-    setCart(response);
-  }, []);
+    setCart(normalizeCart(response));
+  }, [cart]);
+
 
   const removeItem = useCallback(async (cartItemId: number) => {
     const response = await cartApi.removeItem(cartItemId);
-    setCart(response);
+    setCart(normalizeCart(response));
   }, []);
+
 
   const clearCart = useCallback(async () => {
     const response = await cartApi.clearCart();
-    setCart(response);
+    setCart(normalizeCart(response));
   }, []);
+
 
   const value = useMemo<CartContextValue>(
     () => ({
@@ -281,8 +377,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [cart, isLoading, isConnected, refreshCart, addItem, updateQuantity, removeItem, clearCart],
   );
 
+
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
+
 
 export function useCart() {
   const context = useContext(CartContext);
@@ -290,5 +388,9 @@ export function useCart() {
     throw new Error("useCart must be used within CartProvider");
   }
 
+
   return context;
 }
+
+
+

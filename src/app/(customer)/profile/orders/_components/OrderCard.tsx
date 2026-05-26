@@ -9,7 +9,8 @@ export type OrderStatus =
   | "completed"
   | "pending"
   | "shipping"
-  | "cancelled";
+  | "cancelled"
+  | "refunded";
 
 export interface OrderItem {
   name: string;
@@ -28,6 +29,7 @@ export interface Order {
   total: number;
   paymentMethod?: string;
   rawStatusName?: string;
+  hasActiveRefund?: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -36,35 +38,40 @@ const STATUS_CONFIG: Record<
 > = {
   delivering: {
     label: "DELIVERING",
-    className: "text-primary-container",
+    className: "text-orange-600",
   },
   completed: {
     label: "COMPLETED",
-    className: "text-secondary",
+    className: "text-emerald-600",
   },
   pending: {
     label: "PENDING",
-    className: "text-yellow-600",
+    className: "text-amber-600",
   },
   shipping: {
     label: "SHIPPING",
-    className: "text-blue-600",
+    className: "text-indigo-600",
   },
   cancelled: {
     label: "CANCELLED",
-    className: "text-error",
+    className: "text-red-600",
+  },
+  refunded: {
+    label: "REFUNDED",
+    className: "text-sky-600",
   },
 };
 
 const ACTION_BUTTONS: Record<
   OrderStatus,
-  { secondary: string; primary: string }
+  { secondary?: string; primary: string }
 > = {
-  delivering: { secondary: "Contact Seller", primary: "Track Order" },
-  completed: { secondary: "Review", primary: "Reorder" },
-  pending: { secondary: "Cancel Order", primary: "Pay Now" },
-  shipping: { secondary: "Contact Seller", primary: "Track Order" },
-  cancelled: { secondary: "View Details", primary: "Reorder" },
+  delivering: { primary: "View Details" },
+  completed: { secondary: "Review", primary: "View Details" },
+  pending: { secondary: "Cancel Order", primary: "View Details" },
+  shipping: { primary: "View Details" },
+  cancelled: { primary: "View Details" },
+  refunded: { primary: "View Details" },
 };
 
 function formatPrice(price: number): string {
@@ -76,13 +83,16 @@ interface OrderCardProps {
   onPrimaryAction?: (order: Order) => void;
   onSecondaryAction?: (order: Order) => void;
   onViewDetails?: (order: Order) => void;
+  onRequestRefund?: (order: Order) => void;
+  onCompleteAction?: (order: Order) => void;
 }
 
-export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }: OrderCardProps) {
+export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund, onCompleteAction }: OrderCardProps) {
   const { label, className, primaryLabel } = useMemo(() => {
     const config = STATUS_CONFIG[order.status];
     const actions = ACTION_BUTTONS[order.status];
     let finalLabel = config.label;
+    let finalClassName = config.className;
     let finalPrimaryLabel = actions.primary;
 
     if (order.status === "pending") {
@@ -92,11 +102,28 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
       } else {
         finalLabel = "PENDING PAYMENT";
       }
-    } else if (order.status === "shipping" && order.rawStatusName?.toLowerCase() === "confirmed") {
-      finalLabel = "CONFIRMED";
+    } else if (order.status === "shipping") {
+      const raw = order.rawStatusName?.toLowerCase();
+      if (raw === "confirmed") {
+        finalLabel = "CONFIRMED";
+      } else if (raw === "processing") {
+        finalLabel = "PROCESSING";
+      } else if (raw === "shipped") {
+        finalLabel = "SHIPPED";
+      }
+    } else if (order.status === "completed") {
+      if (order.rawStatusName?.toLowerCase() === "delivered") {
+        finalLabel = "DELIVERED";
+        finalClassName = "text-emerald-600";
+      }
     }
 
-    return { label: finalLabel, className: config.className, primaryLabel: finalPrimaryLabel };
+    if (order.hasActiveRefund) {
+      finalLabel = "REFUND REQUESTED";
+      finalClassName = "text-sky-600";
+    }
+
+    return { label: finalLabel, className: finalClassName, primaryLabel: finalPrimaryLabel };
   }, [order]);
 
   const actions = ACTION_BUTTONS[order.status];
@@ -106,20 +133,20 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
     !(order.paymentMethod === "SHIP_COD" && order.rawStatusName?.toLowerCase() === "confirmed");
 
   return (
-    <div className="border border-[#e2bfb0]/30 rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="border border-gray-200/80 rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <Link href={`/profile/orders/${order.orderId}`} className="block group">
         {/* Card Header */}
-        <div className="px-6 py-3 border-b border-[#e2bfb0]/20 flex justify-between items-center bg-slate-50/50 group-hover:bg-[#ff6a00]/5 transition-colors">
+        <div className="px-6 py-3 border-b border-gray-100 flex justify-between items-center bg-slate-50/50 group-hover:bg-gray-50/30 transition-colors">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#ff6a00] text-[20px]">
+            <span className="material-symbols-outlined text-[#ff4f00] text-[20px]">
               receipt_long
             </span>
-            <span className="text-sm font-bold text-[#261812]">
+            <span className="text-sm font-bold text-gray-900">
               Order
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-[#5a4136]">
+            <span className="text-xs text-gray-500">
               Order ID: #{order.orderCode}
             </span>
             <span className={`text-xs font-bold uppercase ${className}`}>
@@ -134,8 +161,8 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
           return (
             <div
               key={idx}
-              className={`p-6 flex flex-col md:flex-row gap-6 ${idx < order.items.length - 1 ? "border-b border-[#e2bfb0]/10" : ""
-                } group-hover:bg-[#ff6a00]/5 transition-colors`}
+              className={`p-6 flex flex-col md:flex-row gap-6 ${idx < order.items.length - 1 ? "border-b border-gray-100" : ""
+                } group-hover:bg-gray-50/30 transition-colors`}
             >
               <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
                 <Image
@@ -147,19 +174,19 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
               </div>
               <div className="flex-grow flex flex-col justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-[#261812] mb-1 line-clamp-1 group-hover:text-[#ff6a00] transition-colors">
+                  <h3 className="text-base font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-[#ff4f00] transition-colors">
                     {item.name}
                   </h3>
-                  <p className="text-xs text-[#5a4136] mb-2">
+                  <p className="text-xs text-gray-500 mb-2">
                     Variant: {classification}
                   </p>
-                  <p className="text-xs font-semibold text-[#5a4136]">
+                  <p className="text-xs font-semibold text-gray-500">
                     Quantity: x{item.quantity}
                   </p>
                 </div>
               </div>
               <div className="flex items-end justify-end flex-shrink-0">
-                <span className="text-lg font-bold text-[#ff6a00]">
+                <span className="text-lg font-bold text-gray-900">
                   {formatPrice(item.price)}
                 </span>
               </div>
@@ -171,43 +198,68 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction }:
       {/* Footer */}
       <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#5a4136]">
+          <span className="text-sm text-gray-500">
             Total:
           </span>
-          <span className="text-xl text-[#ff6a00] font-black">
+          <span className="text-xl text-[#ff4f00] font-black">
             {formatPrice(order.total)}
           </span>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
-          {order.status === "cancelled" ? (
-            <Link
-              href={`/profile/orders/${order.orderId}`}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
-            >
-              {actions.secondary}
-            </Link>
-          ) : (order.status === "pending" && !canCancel) ? (
-            <Link
-              href={`/profile/orders/${order.orderId}`}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors text-center"
-            >
-              View Details
-            </Link>
-          ) : (
-            <button
-              onClick={() => onSecondaryAction?.(order)}
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-200 text-[#261812] text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors"
-            >
-              {actions.secondary}
-            </button>
+          {actions.secondary && (
+            order.status === "cancelled" ? (
+              <Link
+                href={`/profile/orders/${order.orderId}`}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
+              >
+                {actions.secondary}
+              </Link>
+            ) : (order.status === "pending" && !canCancel) ? (
+              <Link
+                href={`/profile/orders/${order.orderId}`}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
+              >
+                View Details
+              </Link>
+            ) : (
+              <button
+                onClick={() => onSecondaryAction?.(order)}
+                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all"
+              >
+                {actions.secondary}
+              </button>
+            )
           )}
           <button
             onClick={() => onPrimaryAction?.(order)}
-            className="flex-1 sm:flex-none px-6 py-2.5 text-white text-sm font-bold rounded-xl shadow-[0_8px_20px_rgba(249,115,22,0.25)] transition hover:-translate-y-0.5 active:translate-y-0"
-            style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+            className="flex-1 sm:flex-none px-6 py-2.5 bg-[#ff4f00] hover:bg-[#ff5f1a] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all"
           >
             {primaryLabel}
           </button>
+          {order.rawStatusName?.toLowerCase() === "delivered" && onCompleteAction && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onCompleteAction(order);
+              }}
+              className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all"
+            >
+              Order Received
+            </button>
+          )}
+          {order.rawStatusName?.toLowerCase() === "completed" && onRequestRefund && (
+            <button
+              onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
+              disabled={order.hasActiveRefund}
+              className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                order.hasActiveRefund
+                  ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {order.hasActiveRefund ? "Refund Requested" : "Request Refund"}
+            </button>
+          )}
         </div>
       </div>
     </div>

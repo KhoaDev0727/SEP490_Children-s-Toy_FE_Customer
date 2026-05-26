@@ -31,7 +31,7 @@ export default function NotificationToggle({
       <div
         className="
           w-11 h-6
-          bg-[#e2bfb0]
+          bg-gray-200
           peer-focus:outline-none
           rounded-full
           peer
@@ -49,7 +49,7 @@ export default function NotificationToggle({
           after:h-5
           after:w-5
           after:transition-all
-          peer-checked:bg-[#a14000]
+          peer-checked:bg-[#ff4f00]
           transition-colors
           duration-200
         "

@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { AccountInfo } from "@/features/auth/types/auth";
 
 interface AuthContextValue {
@@ -31,11 +31,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   });
-  const isHydrated = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!account) {
@@ -56,6 +56,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("account_info");
     setAccount(null);
   }, []);
+
+  useEffect(() => {
+    const handleLogout = () => {
+      clearAuth();
+    };
+    window.addEventListener("auth:logout", handleLogout);
+    return () => {
+      window.removeEventListener("auth:logout", handleLogout);
+    };
+  }, [clearAuth]);
 
   const updateAccount = useCallback((partial: Partial<AccountInfo>) => {
     setAccount((current) => {

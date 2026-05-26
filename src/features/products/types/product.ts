@@ -59,6 +59,10 @@ export interface ProductDetail {
   sexName?: string | null;
   originId?: number | null;
   originName?: string | null;
+  weightGram?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
   mainImageUrl?: string | null;
   additionalImageUrls: string[];
   averageRating?: number | null;
@@ -96,6 +100,8 @@ export interface ProductFilters {
   categoryIds?: number[];
   brandIds?: number[];
   priceRangeIds?: number[];
+  minPrice?: number;
+  maxPrice?: number;
   materialIds?: number[];
   ageIds?: number[];
   sexIds?: number[];

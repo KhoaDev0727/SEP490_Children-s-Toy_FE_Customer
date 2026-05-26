@@ -9,7 +9,7 @@ interface NotificationListProps {
   activeTab: NotificationCategory;
   onMarkAllRead: () => void;
   onMarkRead: (id: string) => void;
-  onDelete: (id: string, type: string) => void;
+  onDelete: (notification: Notification) => void;
 }
 
 const PAGE_SIZE = 4;
@@ -45,7 +45,7 @@ export default function NotificationList({
               key={notif.id}
               notification={notif}
               onRead={() => onMarkRead(notif.id)}
-              onDelete={() => onDelete(notif.id, notif.category.toUpperCase())}
+              onDelete={() => onDelete(notif)}
             />
           ))}
         </ul>

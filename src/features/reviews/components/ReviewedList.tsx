@@ -15,7 +15,7 @@ export default function ReviewedList() {
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   const [selectedReview, setSelectedReview] = useState<MyReviewDto | null>(
-    null
+    null,
   );
 
   const fetchReviews = async (currentPage: number, status: string) => {
@@ -59,9 +59,11 @@ export default function ReviewedList() {
           <span
             key={star}
             className={`material-symbols-outlined text-[20px] ${
-              star <= rating ? "text-orange-400 fill-1" : "text-slate-200"
+              star <= rating ? "text-[#ff4f00] fill-1" : "text-slate-200"
             }`}
-            style={{ fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0" }}
+            style={{
+              fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0",
+            }}
           >
             star
           </span>
@@ -74,7 +76,7 @@ export default function ReviewedList() {
     switch (status) {
       case "Approved":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Approved
           </span>
@@ -82,21 +84,21 @@ export default function ReviewedList() {
       case "Pending":
       case "ManualReview":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-100">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-100">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
             Pending
           </span>
         );
       case "Rejected":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
             Rejected
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-50 text-slate-500 border border-slate-100">
+          <span className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-slate-50 text-slate-500 border border-slate-100">
             {status}
           </span>
         );
@@ -112,7 +114,7 @@ export default function ReviewedList() {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - modDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays <= 3;
   };
 
@@ -120,17 +122,18 @@ export default function ReviewedList() {
     return (
       <div className="flex flex-col justify-center items-center py-20 space-y-4">
         <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-4 border-orange-100"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-[#ff4f00] border-t-transparent animate-spin"></div>
         </div>
-        <p className="text-sm text-slate-500 animate-pulse font-medium">Loading history...</p>
+        <p className="text-sm text-slate-500 animate-pulse font-medium">
+          Loading history...
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
         {[
           { label: "All", value: "" },
@@ -143,8 +146,8 @@ export default function ReviewedList() {
             onClick={() => handleFilterChange(tab.value)}
             className={`px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 border ${
               statusFilter === tab.value
-                ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20"
-                : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-600"
+                ? "bg-[#ff4f00] border-[#ff4f00] text-white shadow-md shadow-[#ff4f00]/10"
+                : "bg-white border-slate-200 text-slate-600 hover:border-[#ff4f00]/30 hover:text-[#ff4f00]"
             }`}
           >
             {tab.label}
@@ -171,10 +174,13 @@ export default function ReviewedList() {
           {reviews.map((review) => (
             <div
               key={review.reviewId}
-              className="bg-white border border-slate-200/80 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
+              className="bg-white border border-slate-200/80 rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
             >
-              <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center border-b border-slate-100 pb-5 mb-5">
-                <Link href={`/products/${review.productId}`} className="shrink-0">
+              <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center border-b border-slate-100 pb-4 mb-4">
+                <Link
+                  href={`/products/${review.productId}`}
+                  className="shrink-0"
+                >
                   <div className="relative w-16 h-16 bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
                     {review.productImage ? (
                       <Image
@@ -185,7 +191,9 @@ export default function ReviewedList() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-                        <span className="material-symbols-outlined text-3xl">image</span>
+                        <span className="material-symbols-outlined text-3xl">
+                          image
+                        </span>
                       </div>
                     )}
                   </div>
@@ -197,7 +205,7 @@ export default function ReviewedList() {
                     </span>
                   </div>
                   <Link href={`/products/${review.productId}`}>
-                    <h4 className="text-base font-bold text-slate-900 hover:text-orange-600 truncate transition-colors">
+                    <h4 className="text-base font-bold text-slate-900 hover:text-[#ff4f00] truncate transition-colors">
                       {review.productName}
                     </h4>
                   </Link>
@@ -211,22 +219,23 @@ export default function ReviewedList() {
                 <div className="space-y-1.5">
                   {renderStars(review.rating)}
                   <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
-                    <span className="material-symbols-outlined text-[14px]">calendar_today</span>
                     {new Date(review.createdAt).toLocaleDateString("vi-VN")}
                     {review.isEdited && (
-                      <span className="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded italic">
+                      <span className="text-[#ff4f00] bg-[#ff4f00]/5 px-1.5 py-0.5 rounded italic">
                         Edited
                       </span>
                     )}
                   </div>
                 </div>
-                
+
                 {isEditable(review) && (
                   <button
                     onClick={() => setSelectedReview(review)}
-                    className="flex items-center gap-1 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all active:scale-95"
+                    className="flex items-center gap-1 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      edit
+                    </span>
                     Edit review
                   </button>
                 )}
@@ -244,7 +253,10 @@ export default function ReviewedList() {
               {review.images && review.images.length > 0 && (
                 <div className="flex flex-wrap gap-2.5 mb-4">
                   {review.images.map((img) => (
-                    <div key={img.reviewProductImageId} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 hover:border-orange-300 transition-colors cursor-pointer group/img">
+                    <div
+                      key={img.reviewProductImageId}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 hover:border-[#ff4f00]/30 transition-colors cursor-pointer group/img"
+                    >
                       <Image
                         src={img.imageUrl}
                         alt="Review Image"
@@ -257,15 +269,19 @@ export default function ReviewedList() {
               )}
 
               {review.replies && review.replies.length > 0 && (
-                <div className="mt-2 bg-slate-50 p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-orange-400"></div>
-                  {review.replies.map(reply => (
+                <div className="mt-2 bg-slate-50 p-5 rounded-xl border border-slate-100 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-[#ff4f00]"></div>
+                  {review.replies.map((reply) => (
                     <div key={reply.replyProductId} className="text-sm">
                       <div className="flex items-center gap-2 font-bold text-slate-800 mb-2">
-                        <span className="material-symbols-outlined text-[18px] text-orange-500">support_agent</span>
+                        <span className="material-symbols-outlined text-[18px] text-[#ff4f00]">
+                          support_agent
+                        </span>
                         Reply from {reply.staffName}
                       </div>
-                      <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{reply.content}</p>
+                      <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
+                        {reply.content}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -281,21 +297,23 @@ export default function ReviewedList() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-orange-300 transition-all text-slate-600 disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-[#ff4f00]/30 transition-all text-slate-600 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
-          
+
           <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-sm font-bold text-orange-600">{page}</span>
+            <span className="text-sm font-bold text-[#ff4f00]">{page}</span>
             <span className="text-xs text-slate-400 font-medium">/</span>
-            <span className="text-sm font-bold text-slate-600">{totalPages}</span>
+            <span className="text-sm font-bold text-slate-600">
+              {totalPages}
+            </span>
           </div>
 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-orange-300 transition-all text-slate-600 disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-[#ff4f00]/30 transition-all text-slate-600 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">chevron_right</span>
           </button>

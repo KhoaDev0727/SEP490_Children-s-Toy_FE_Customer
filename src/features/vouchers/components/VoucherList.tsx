@@ -27,7 +27,9 @@ export default function VoucherList() {
           const now = new Date().getTime();
           const activeVouchers = res.items.filter((v) => {
             const endDate = new Date(v.endDate).getTime();
-            return endDate > now;
+            if (endDate <= now) return false;
+            if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
+            return true;
           });
           setVouchers(activeVouchers);
         }
@@ -55,8 +57,10 @@ export default function VoucherList() {
   const counts = useMemo(() => {
     return {
       ALL: vouchers.length,
-      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL").length,
-      SHIPPING_FEE: vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE").length,
+      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL")
+        .length,
+      SHIPPING_FEE: vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE")
+        .length,
     };
   }, [vouchers]);
 
@@ -67,12 +71,10 @@ export default function VoucherList() {
   ];
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-3xl shadow-[0_14px_40px_rgba(15,23,42,0.08)] border border-slate-200/80 flex flex-col min-h-[500px]">
-      <div className="px-6 md:px-8 py-6 border-b border-slate-200/70 bg-linear-to-r from-orange-50/80 via-white to-amber-50/70">
-        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-slate-900">
-          Kho Voucher
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden flex flex-col min-h-[500px]">
+      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
+        <h1 className="text-2xl font-bold text-[#261812]">My Vouchers</h1>
+        <p className="mt-1 text-sm text-[#5a4136]">
           Manage and use your discount vouchers.
         </p>
       </div>
@@ -87,7 +89,7 @@ export default function VoucherList() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value as TabValue)}
-                className={`relative py-4 text-sm font-medium transition-all ${
+                className={`relative py-4 text-sm font-medium transition-all hover:cursor-pointer ${
                   isActive
                     ? "text-orange-500 font-semibold"
                     : "text-slate-600 hover:text-orange-500"

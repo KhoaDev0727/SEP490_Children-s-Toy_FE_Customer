@@ -1,133 +1,119 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import QRCodeCard from "@/app/(customer)/checkout/payment/components/QRCodeCard";
 import PaymentPanel from "@/app/(customer)/checkout/payment/components/PaymentPanel";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
 
 const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank";
-const BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
 const ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
 const ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
-const QR_TEMPLATE = process.env.NEXT_PUBLIC_SEPAY_QR_TEMPLATE ?? "";
-
-const sepayStorageKey = (orderId: number) => `sepay_checkout_${orderId}`;
-
-const buildSepayQrUrl = (params: {
-  accountNumber: string;
-  bankCode: string;
-  amount?: number | null;
-  content?: string | null;
-  template?: string | null;
-}) => {
-  if (!params.accountNumber || !params.bankCode) return "";
-
-  const query = new URLSearchParams({
-    acc: params.accountNumber,
-    bank: params.bankCode,
-  });
-
-  if (params.amount && params.amount > 0) query.set("amount", String(params.amount));
-  if (params.content) query.set("des", params.content);
-  if (params.template) query.set("template", params.template);
-
-  return `https://qr.sepay.vn/img?${query.toString()}`;
-};
 
 interface QRPaymentContentProps {
   orderId?: number;
-  orderCode?: string;
-  amount?: number;
-  /** Attempt code từ backend (SPX_{orderCode}_{uid8}) */
-  initialAttemptCode?: string;
-  /** QR image URL từ backend */
-  initialQrUrl?: string;
 }
 
-export default function QRPaymentContent({
-  orderId,
-  orderCode,
-  amount,
-  initialAttemptCode,
-  initialQrUrl,
-}: QRPaymentContentProps) {
+export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const router = useRouter();
   const { refreshCart } = useCart();
-  const [attemptCode, setAttemptCode] = useState(initialAttemptCode ?? "");
-  const [qrUrl, setQrUrl] = useState(initialQrUrl ?? "");
-  const [amountValue, setAmountValue] = useState<number | null>(
-    Number.isFinite(amount) ? Math.round(amount as number) : null,
-  );
+  const { connection } = useNotificationRealtime();
+
+  // Payment info — fetched securely from API
+  const [orderCode, setOrderCode] = useState("");
+  const [attemptCode, setAttemptCode] = useState("");
+  const [qrUrl, setQrUrl] = useState("");
+  const [amountValue, setAmountValue] = useState<number | null>(null);
+  const [isFetchingInfo, setIsFetchingInfo] = useState(true);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [expiredByServer, setExpiredByServer] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const redirectedRef = useRef(false);
+  const fetchStartedRef = useRef<number | null>(null);
 
-  /** Tránh gọi retryPayment 2 lần (React Strict Mode / deps) cho cùng một orderId khi thiếu QR. */
-  const hydrateStartedForOrderRef = useRef<number | null>(null);
-
+  // ── SignalR: lắng nghe ReceiveNotification từ hub ─────────────────────────
+  // Khi backend xác nhận thanh toán thành công (PaymentSuccess event),
+  // nó push notification qua hub với actionTarget = /profile/orders/{orderId}.
+  // Ta bắt sự kiện này để redirect ngay, không cần chờ polling 4s.
   useEffect(() => {
-    startTransition(() => {
-      if (initialAttemptCode) setAttemptCode(initialAttemptCode);
-      if (initialQrUrl) setQrUrl(initialQrUrl);
-      if (Number.isFinite(amount)) setAmountValue(Math.round(amount as number));
-    });
-  }, [amount, initialAttemptCode, initialQrUrl]);
+    if (!connection || !orderId) return;
 
-  // Bổ sung từ sessionStorage (OrderSummary lưu sau confirm — tránh URL quá dài)
-  useLayoutEffect(() => {
-    if (typeof window === "undefined" || !orderId) return;
-    try {
-      const raw = window.sessionStorage.getItem(sepayStorageKey(orderId));
-      if (!raw) return;
-      const p = JSON.parse(raw) as { attemptCode?: string; qrUrl?: string };
-      startTransition(() => {
-        setAttemptCode((prev) => prev || p.attemptCode || "");
-        setQrUrl((prev) => prev || p.qrUrl || "");
-      });
-    } catch {
-      /* ignore */
-    }
-  }, [orderId]);
+    const handler = (n: {
+      notificationType?: string;
+      actionTarget?: string;
+      title?: string;
+      message?: string;
+    }) => {
+      if (redirectedRef.current) return;
+      // Chỉ xử lý notification liên quan đến order hiện tại
+      const isThisOrder = n.actionTarget?.includes(`/orders/${orderId}`);
+      const isPaymentSuccess =
+        n.notificationType === "Order" &&
+        isThisOrder &&
+        (n.title?.toLowerCase().includes("paid") ||
+          n.title?.toLowerCase().includes("payment") ||
+          n.message?.toLowerCase().includes("paid") ||
+          n.message?.toLowerCase().includes("successful") ||
+          n.message?.toLowerCase().includes("thành công"));
 
-  const normalizedAmount = amountValue && amountValue > 0 ? amountValue : null;
+      if (!isPaymentSuccess) return;
 
+      redirectedRef.current = true;
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      void refreshCart().catch(() => { });
+      const resolvedOrderCode = orderCode || "";
+      router.replace(
+        `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
+      );
+    };
+
+    connection.on("ReceiveNotification", handler);
+    return () => {
+      connection.off("ReceiveNotification", handler);
+    };
+  }, [connection, orderId, orderCode, refreshCart, router]);
+
+  // Fetch sensitive payment info from API on mount
   useEffect(() => {
-    if (!orderId) return;
-    // Nếu đã có attemptCode và amount thì có thể tự build QR, không cần gọi server tạo thêm record mới
-    if (attemptCode && normalizedAmount) return;
-    if (qrUrl && normalizedAmount) return;
-    if (hydrateStartedForOrderRef.current === orderId) return;
-    hydrateStartedForOrderRef.current = orderId;
+    if (!orderId || fetchStartedRef.current === orderId) return;
+    fetchStartedRef.current = orderId;
 
-    let cancelled = false;
-    const hydrateFromServer = async () => {
-      setIsRefreshing(true);
+    // Clean up sensitive params from URL immediately
+    window.history.replaceState(null, "", `/checkout/payment?orderId=${orderId}`);
+
+    const fetchInfo = async () => {
+      setIsFetchingInfo(true);
       try {
-        const res = await checkoutApi.retryPayment(orderId);
-        if (cancelled) return;
-        setAttemptCode(res.paymentAttemptCode);
-        setQrUrl(res.qrImageUrl);
-        setAmountValue(Math.round(res.totalAmount));
+        const info = await checkoutApi.getPaymentInfo(orderId);
+        setOrderCode(info.orderCode);
+        setAttemptCode(info.paymentAttemptCode);
+        setQrUrl(info.qrImageUrl);
+        setAmountValue(Math.round(info.amount));
+        if (info.expiresAt) setExpiresAt(info.expiresAt);
       } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : "Unable to retrieve payment information.";
+        const msg = err instanceof Error ? err.message : "Unable to load payment information.";
         toast.error(msg);
       } finally {
-        if (!cancelled) setIsRefreshing(false);
+        setIsFetchingInfo(false);
       }
     };
 
-    void hydrateFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [attemptCode, orderId, normalizedAmount, qrUrl]);
+    void fetchInfo();
+  }, [orderId]);
+
+
 
   useEffect(() => {
     if (!orderId || redirectedRef.current) return;
@@ -142,6 +128,9 @@ export default function QRPaymentContent({
             clearInterval(pollingRef.current);
             pollingRef.current = null;
           }
+          await refreshCart().catch(() => {
+            // Ignore cart refresh errors while redirecting to success page.
+          });
           const resolvedOrderCode = orderCode || res.orderCode || "";
           router.replace(
             `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
@@ -170,29 +159,37 @@ export default function QRPaymentContent({
         pollingRef.current = null;
       }
     };
-  }, [orderCode, orderId, router]);
+  }, [orderCode, orderId, refreshCart, router]);
 
-  const qrImageUrl = useMemo(() => {
-    if (qrUrl) return qrUrl;
-    return buildSepayQrUrl({
-      accountNumber: ACCOUNT_NUMBER,
-      bankCode: BANK_CODE,
-      amount: normalizedAmount,
-      content: attemptCode || orderCode || "",
-      template: QR_TEMPLATE || null,
-    });
-  }, [attemptCode, normalizedAmount, orderCode, qrUrl]);
+  const normalizedAmount = amountValue && amountValue > 0 ? amountValue : null;
+  const qrImageUrl = qrUrl;
+
+  if (isFetchingInfo) {
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
+          <span className="material-symbols-outlined text-4xl text-orange-400 animate-spin">refresh</span>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Loading QR</p>
+          <p className="text-sm text-slate-500">Fetching payment information...</p>
+        </div>
+        <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Payment information</p>
+          <p className="text-sm text-slate-500">Please wait a moment...</p>
+        </div>
+      </>
+    );
+  }
 
   if (!qrImageUrl) {
     return (
       <>
         <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Loading QR</p>
-          <p className="text-sm text-slate-500">Please wait a moment...</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-red-400">Unable to load</p>
+          <p className="text-sm text-slate-500">Could not retrieve QR code. Please refresh the page.</p>
         </div>
         <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg p-8 gap-3 w-full min-h-[420px]">
           <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Payment information</p>
-          <p className="text-sm text-slate-500">Fetching payment information...</p>
+          <p className="text-sm text-slate-500">Please try refreshing this page.</p>
         </div>
       </>
     );
@@ -229,6 +226,14 @@ export default function QRPaymentContent({
     try {
       const res = await checkoutApi.getPaymentStatus(orderId);
       if (res.paymentStatus === "PAID") {
+        redirectedRef.current = true;
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        await refreshCart().catch(() => {
+          // Ignore cart refresh errors while redirecting to success page.
+        });
         toast.success("Payment successful!");
         const resolvedOrderCode = orderCode || res.orderCode || "";
         router.replace(
@@ -245,15 +250,19 @@ export default function QRPaymentContent({
 
   const handleCancelOrder = async () => {
     if (!orderId) return;
-    if (!window.confirm("Are you sure you want to cancel this transaction and return to cart?")) return;
+    setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(orderId, "Customer cancelled on QR page");
+      // restoreCart=true: QR payment cancel should restore items back to the cart
+      await checkoutApi.cancelOrder(orderId, "Customer cancelled on QR page", true);
       toast.success("Transaction cancelled. Products restored to cart.");
       await refreshCart();
       router.push("/cart");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unable to cancel order.";
       toast.error(msg);
+    } finally {
+      setIsCancelling(false);
+      setIsCancelModalOpen(false);
     }
   };
 
@@ -273,7 +282,19 @@ export default function QRPaymentContent({
         amount={normalizedAmount ?? 0}
         content={attemptCode || orderCode || ""}
         onConfirm={handleConfirmPayment}
-        onCancel={handleCancelOrder}
+        onCancel={async () => {
+          setIsCancelModalOpen(true);
+        }}
+      />
+      <ConfirmModal
+        isOpen={isCancelModalOpen}
+        title="Cancel Transaction"
+        message="Are you sure you want to cancel this transaction? Your items will be restored to your cart."
+        onConfirm={handleCancelOrder}
+        onCancel={() => setIsCancelModalOpen(false)}
+        confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel"}
+        cancelText="Keep Paying"
+        type="danger"
       />
     </>
   );

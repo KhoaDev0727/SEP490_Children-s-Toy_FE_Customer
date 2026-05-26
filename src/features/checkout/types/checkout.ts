@@ -31,6 +31,7 @@ export interface CheckoutConfirmResponse {
 
 export interface CheckoutPreviewRequest {
   addressId: number;
+  paymentMethod?: string;
   orderVoucherCode?: string;
   shippingVoucherCode?: string;
   voucherCode?: string;
@@ -92,4 +93,14 @@ export interface ApiResponse<T> {
   message: string;
   data: T | null;
   errors?: string[] | null;
+}
+
+/** Thông tin thanh toán nhạy cảm — fetch từ API thay vì lấy từ URL */
+export interface OrderPaymentInfo {
+  orderId: number;
+  orderCode: string;
+  amount: number;
+  paymentAttemptCode: string;
+  qrImageUrl: string;
+  expiresAt?: string | null;
 }

@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Breadcrumbs from "@/components/common/Breadcrumbs";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import NotificationTabs from "./_components/NotificationTabs";
 import NotificationList from "./_components/NotificationList";
@@ -29,6 +28,16 @@ const getIconMeta = (type: string) => {
   }
 };
 
+const isBlogRelatedNotification = (notification: Notification) => {
+  const actionTarget = notification.actionTarget ?? "";
+  const text = `${notification.title} ${notification.description}`.toLowerCase();
+
+  return notification.notificationType === "BLOG"
+    || notification.actionType === "BLOG"
+    || actionTarget.startsWith("/blog")
+    || text.includes("blog comment");
+};
+
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<NotificationCategory>("all");
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -49,6 +58,7 @@ export default function NotificationsPage() {
         return {
           id: n.deliveryId.toString(),
           category: mapCategory(n.notificationType),
+          notificationType: n.notificationType,
           read: n.status !== "Unread",
           title: n.title,
           description: n.message,
@@ -93,11 +103,11 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleDelete = (id: string, type: string) => {
+  const handleDelete = (notification: Notification) => {
     const doDelete = async () => {
       try {
-        await notificationApi.deleteNotification(Number(id));
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        await notificationApi.deleteNotification(Number(notification.id));
+        setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
         void refreshUnread();
       } catch (e) {
         console.error(e);
@@ -105,7 +115,7 @@ export default function NotificationsPage() {
       setConfirmModal((prev) => ({ ...prev, show: false }));
     };
 
-    if (type === "SYSTEM") {
+    if (notification.notificationType === "SYSTEM" && !isBlogRelatedNotification(notification)) {
       setConfirmModal({
         show: true,
         title: "Confirm deletion",
@@ -163,13 +173,16 @@ export default function NotificationsPage() {
       } else if (target.startsWith("/")) {
         router.push(target);
       } else {
+        const actionType = notif.actionType?.toUpperCase();
         // If it's just an ID
-        if (notif.actionType === "PRODUCT") {
+        if (actionType === "PRODUCT") {
           router.push(`/products/${target}`);
-        } else if (notif.actionType === "BLOG") {
+        } else if (actionType === "BLOG") {
           router.push(`/blog/${target}`);
-        } else if (notif.actionType === "VOUCHER") {
-          router.push(`/profile/wallet`);
+        } else if (actionType === "VOUCHER") {
+          router.push(`/profile/vouchers`);
+        } else if (actionType === "SALE") {
+          router.push(`/`); // Flash sales are on the home page
         } else {
           router.push(target);
         }
@@ -179,16 +192,6 @@ export default function NotificationsPage() {
 
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-      {/* Breadcrumb (full width) */}
-      <div className="col-span-full mb-2">
-        <Breadcrumbs
-          items={[
-            { label: "Account", href: "/profile" },
-            { label: "Notifications" }
-          ]}
-        />
-      </div>
-
       {/* Sidebar */}
       <ProfileSidebar />
 
@@ -196,7 +199,10 @@ export default function NotificationsPage() {
       <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-          <h1 className="text-xl font-bold text-[#261812]">My Notifications</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-[#261812]">My Notifications</h1>
+            <p className="mt-1 text-sm text-[#5a4136]">View and manage your account and promotional notifications.</p>
+          </div>
           <div className="flex items-center gap-4">
             <button
               onClick={handleMarkAllRead}

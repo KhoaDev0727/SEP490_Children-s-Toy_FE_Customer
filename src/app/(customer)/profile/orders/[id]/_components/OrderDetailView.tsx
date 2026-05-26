@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ShippingTracker, { type ShippingEvent } from "./ShippingTracker";
 import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
-import ConfirmModal from "@/components/common/ConfirmModal";
+import CancelOrderModal from "@/components/common/CancelOrderModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
@@ -52,6 +52,7 @@ const formatDate = (value?: string | null): string => {
 };
 
 export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
+  const router = useRouter();
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
   const [trackingEvents, setTrackingEvents] = useState<ShippingEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +60,14 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleBack = () => {
+    if (window.history.length > 2) {
+      router.back();
+    } else {
+      router.push("/profile/orders");
+    }
+  };
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -90,7 +99,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       if (detail.statusHistory?.length) {
         detail.statusHistory.forEach((h) => {
           let note = h.note || h.statusName;
-          
+
           // Simple inline translation for legacy Vietnamese notes
           const n = note.toLowerCase();
           if (n.includes("chờ lấy hàng")) note = "Ready to pick";
@@ -100,6 +109,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           else if (n.includes("giao hàng thành công")) note = "Delivered successfully";
           else if (n.includes("đã hủy")) note = "Cancelled";
           else if (n.includes("order completed")) note = "Order completed";
+
+          // Filter out internal noisy webhook messages
+          if (n.includes("webhook")) return;
+          if (n.includes("marked as delivered")) return;
 
           allEvents.push({
             time: h.createdAt,
@@ -113,7 +126,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       const uniqueEvents = allEvents
         .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
         .filter((ev, idx, self) =>
-          idx === self.findIndex((t) => t.description === ev.description && t.time === ev.time)
+          idx === self.findIndex((t) => t.description === ev.description)
         );
 
       setTrackingEvents(uniqueEvents);
@@ -187,12 +200,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     return status === "delivered";
   }, [order]);
 
-  const handleCancel = useCallback(async () => {
+  const handleCancel = useCallback(async (reason: string) => {
     if (!order) return;
 
     setIsCancelling(true);
     try {
-      await checkoutApi.cancelOrder(order.orderId);
+      await checkoutApi.cancelOrder(order.orderId, reason);
       await loadOrder();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
@@ -242,12 +255,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30">
         <div className="flex items-center gap-4">
-          <Link
-            href="/profile/orders"
+          <button
+            onClick={handleBack}
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all hover:scale-105"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </button>
           <div>
             <h1 className="text-xl font-bold text-[#261812]">
               Order Details <span className="text-[#ff6a00]">#{order.orderCode}</span>
@@ -279,22 +292,23 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         ) : null}
       </div>
 
-      <ConfirmModal
+      <CancelOrderModal
         isOpen={isCancelModalOpen}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel order #${order.orderCode}? This action cannot be undone.`}
+        orderCode={order.orderCode}
         onConfirm={handleCancel}
         onCancel={() => setIsCancelModalOpen(false)}
-        confirmText={isCancelling ? "Processing..." : "Confirm Cancel"}
-        cancelText="Close"
-        type="danger"
+        isSubmitting={isCancelling}
       />
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: tracker + products */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <ShippingTracker currentStatus={order.statusName} events={trackingEvents} />
+          <ShippingTracker
+            currentStatus={order.statusName}
+            events={trackingEvents}
+            hasActiveRefund={order.hasActiveRefund}
+          />
           <OrderProductList products={products} />
         </div>
 
@@ -309,7 +323,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           />
           <PaymentSummary
             subtotal={order.subTotal}
-            shippingFee={order.actualShippingFee ?? order.estimatedShippingFee}
+            shippingFee={order.estimatedShippingFee}
             discount={order.voucherDiscountAmount}
             paymentMethod={order.paymentMethod}
           />

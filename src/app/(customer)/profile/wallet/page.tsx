@@ -12,9 +12,11 @@ import {
   verifyForgotWalletPinOtpSchema,
   verifyWalletPinSchema,
 } from "@/features/wallet/types/wallet.schema";
-import type { ApiErrorResponse, WalletDto } from "@/features/wallet/types/wallet";
+import type {
+  ApiErrorResponse,
+  WalletDto,
+} from "@/features/wallet/types/wallet";
 import WalletActivationState from "./_components/WalletActivationState";
-import WalletBreadcrumb from "./_components/WalletBreadcrumb";
 import WalletOverview from "./_components/WalletOverview";
 import WalletPinModal from "./_components/WalletPinModal";
 import WalletTopUpSePayPanel from "./_components/WalletTopUpSePayPanel";
@@ -27,15 +29,20 @@ import {
   type UiTransaction,
 } from "./_components/wallet-shared";
 
-const TOP_UP_QUICK_AMOUNTS = [2000, 20000, 50000, 100000, 200000, 500000] as const;
+const TOP_UP_QUICK_AMOUNTS = [
+  2000, 20000, 50000, 100000, 200000, 500000,
+] as const;
 const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
+const TRANSACTION_HISTORY_PAGE_SIZE = 10;
 const SEP_BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "SePay";
 const SEP_BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
 const SEP_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
 const SEP_ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
 
 function getApiError(error: unknown) {
-  const err = error as { response?: { status?: number; data?: ApiErrorResponse } };
+  const err = error as {
+    response?: { status?: number; data?: ApiErrorResponse };
+  };
   return {
     status: err?.response?.status,
     code: err?.response?.data?.code ?? err?.response?.data?.Code,
@@ -48,6 +55,12 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<UiTransaction[]>([]);
   const [isWalletLoading, setIsWalletLoading] = useState(true);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
+  const [transactionPageNumber, setTransactionPageNumber] = useState(1);
+  const [transactionTotalPages, setTransactionTotalPages] = useState(1);
+  const [transactionTotalCount, setTransactionTotalCount] = useState(0);
+  const [hasPreviousTransactionPage, setHasPreviousTransactionPage] =
+    useState(false);
+  const [hasNextTransactionPage, setHasNextTransactionPage] = useState(false);
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<PinModalMode>("activate");
@@ -64,9 +77,9 @@ export default function WalletPage() {
   const [confirmNewPin, setConfirmNewPin] = useState("");
   const [isResettingPin, setIsResettingPin] = useState(false);
   const [isBalanceVisible, setIsBalanceVisible] = useState(false);
-  const [pinVisibility, setPinVisibility] = useState<Record<PinVisibilityField, boolean>>(
-    () => ({ ...DEFAULT_PIN_VISIBILITY }),
-  );
+  const [pinVisibility, setPinVisibility] = useState<
+    Record<PinVisibilityField, boolean>
+  >(() => ({ ...DEFAULT_PIN_VISIBILITY }));
   const [isTopUpPanelOpen, setIsTopUpPanelOpen] = useState(false);
   const [topUpToken, setTopUpToken] = useState<string | null>(null);
   const [topUpAmount, setTopUpAmount] = useState<number>(DEFAULT_TOP_UP_AMOUNT);
@@ -87,36 +100,54 @@ export default function WalletPage() {
     [transactions],
   );
 
+  const loadTransactionPage = useCallback(async (pageNumber: number) => {
+    setIsTransactionsLoading(true);
+    try {
+      const transactionResponse = await walletApi.getTransactions(
+        pageNumber,
+        TRANSACTION_HISTORY_PAGE_SIZE,
+      );
+      setTransactions(transactionResponse.items.map(mapWalletTransactionToUi));
+      setTransactionPageNumber(transactionResponse.pageNumber);
+      setTransactionTotalPages(transactionResponse.totalPages || 1);
+      setTransactionTotalCount(transactionResponse.totalCount);
+      setHasPreviousTransactionPage(transactionResponse.hasPreviousPage);
+      setHasNextTransactionPage(transactionResponse.hasNextPage);
+    } catch (transactionError) {
+      const transactionApiError = getApiError(transactionError);
+      setTransactions([]);
+      toast.error(
+        transactionApiError.message ?? "Unable to load transaction history.",
+      );
+    } finally {
+      setIsTransactionsLoading(false);
+    }
+  }, []);
+
   const loadWalletData = useCallback(async () => {
     setIsWalletLoading(true);
 
     try {
       const walletResponse = await walletApi.getMyWallet();
       setWallet(walletResponse);
-
-      setIsTransactionsLoading(true);
-      try {
-        const transactionResponse = await walletApi.getTransactions(1, 10);
-        setTransactions(transactionResponse.items.map(mapWalletTransactionToUi));
-      } catch (transactionError) {
-        const transactionApiError = getApiError(transactionError);
-        setTransactions([]);
-        toast.error(transactionApiError.message ?? "Unable to load transaction history.");
-      } finally {
-        setIsTransactionsLoading(false);
-      }
+      await loadTransactionPage(1);
     } catch (error) {
       const apiError = getApiError(error);
       if (apiError.status === 404 || apiError.code === "NOT_FOUND") {
         setWallet(null);
         setTransactions([]);
+        setTransactionPageNumber(1);
+        setTransactionTotalPages(1);
+        setTransactionTotalCount(0);
+        setHasPreviousTransactionPage(false);
+        setHasNextTransactionPage(false);
       } else {
         toast.error(apiError.message ?? "Unable to load wallet information.");
       }
     } finally {
       setIsWalletLoading(false);
     }
-  }, []);
+  }, [loadTransactionPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -124,6 +155,12 @@ export default function WalletPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadWalletData]);
+
+  const handleTransactionPageChange = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > transactionTotalPages) return;
+    if (nextPage === transactionPageNumber) return;
+    void loadTransactionPage(nextPage);
+  };
 
   const resetPinModalFields = () => {
     setPin("");
@@ -145,7 +182,8 @@ export default function WalletPage() {
   };
 
   const closePinModal = (force = false) => {
-    if (!force && (isSubmittingPin || isSendingForgotOtp || isResettingPin)) return;
+    if (!force && (isSubmittingPin || isSendingForgotOtp || isResettingPin))
+      return;
     setIsPinModalOpen(false);
     resetPinModalFields();
   };
@@ -174,7 +212,10 @@ export default function WalletPage() {
         return;
       }
 
-      const validation = createSePayTopUpQrSchema.safeParse({ amount, topUpToken: activeTopUpToken });
+      const validation = createSePayTopUpQrSchema.safeParse({
+        amount,
+        topUpToken: activeTopUpToken,
+      });
       if (!validation.success) {
         toast.error(getValidationErrorMessage(validation.error));
         return;
@@ -202,8 +243,11 @@ export default function WalletPage() {
 
     setIsCheckingTopUpStatus(true);
     try {
-      const statusResponse = await walletApi.getSePayTopUpStatus(topUpAttemptCode);
-      const normalizedStatus = (statusResponse.status || "PENDING").toUpperCase();
+      const statusResponse =
+        await walletApi.getSePayTopUpStatus(topUpAttemptCode);
+      const normalizedStatus = (
+        statusResponse.status || "PENDING"
+      ).toUpperCase();
       setTopUpStatus(normalizedStatus);
 
       if (normalizedStatus === "PAID") {
@@ -214,7 +258,9 @@ export default function WalletPage() {
       }
 
       if (normalizedStatus === "FAILED") {
-        toast.error("Top-up payment failed. Please generate a new QR and try again.");
+        toast.error(
+          "Top-up payment failed. Please generate a new QR and try again.",
+        );
       }
     } catch (error: unknown) {
       const apiError = getApiError(error);
@@ -245,7 +291,9 @@ export default function WalletPage() {
         closePinModal();
       } catch (error: unknown) {
         const apiError = getApiError(error);
-        toast.error(apiError.message ?? "Unable to change PIN. Please try again.");
+        toast.error(
+          apiError.message ?? "Unable to change PIN. Please try again.",
+        );
       } finally {
         setIsSubmittingPin(false);
       }
@@ -253,7 +301,9 @@ export default function WalletPage() {
     }
 
     const activationValidation =
-      pinModalMode === "activate" ? createWalletSchema.safeParse({ pin, confirmPin }) : null;
+      pinModalMode === "activate"
+        ? createWalletSchema.safeParse({ pin, confirmPin })
+        : null;
     const topUpValidation =
       pinModalMode === "topup"
         ? verifyWalletPinSchema.safeParse({ pin, actionType: "TOP_UP" })
@@ -281,7 +331,9 @@ export default function WalletPage() {
     setIsSubmittingPin(true);
     try {
       if (pinModalMode === "activate") {
-        const createdWallet = await walletApi.createWallet(activationValidation!.data);
+        const createdWallet = await walletApi.createWallet(
+          activationValidation!.data,
+        );
         setWallet(createdWallet);
         setTransactions([]);
         toast.success("Wallet activated successfully.");
@@ -312,7 +364,9 @@ export default function WalletPage() {
       const apiError = getApiError(error);
       if (pinModalMode === "activate" && apiError.code === "CONFLICT") {
         await loadWalletData();
-        toast.success("You already have a wallet. Switched to wallet management mode.");
+        toast.success(
+          "You already have a wallet. Switched to wallet management mode.",
+        );
         closePinModal();
         return;
       }
@@ -348,7 +402,10 @@ export default function WalletPage() {
       return;
     }
 
-    const resetValidation = resetForgotWalletPinSchema.safeParse({ newPin, confirmNewPin });
+    const resetValidation = resetForgotWalletPinSchema.safeParse({
+      newPin,
+      confirmNewPin,
+    });
     if (!resetValidation.success) {
       toast.error(getValidationErrorMessage(resetValidation.error));
       return;
@@ -381,17 +438,20 @@ export default function WalletPage() {
 
   return (
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-      <WalletBreadcrumb />
-
       <ProfileSidebar />
 
-      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#e2bfb0]/30 flex justify-between items-center bg-white">
-          <h1 className="text-2xl font-bold text-[#261812]">Wallet Management</h1>
+      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 bg-white">
+          <h1 className="text-2xl font-bold text-[#0f172a]">My Wallet</h1>
+          <p className="mt-1 text-sm text-[#475569]">
+            Manage your wallet balance, PIN code, and transaction history.
+          </p>
         </div>
 
         {isWalletLoading ? (
-          <div className="px-6 py-20 text-center text-[#5a4136] text-sm">Loading wallet information...</div>
+          <div className="px-6 py-20 text-center text-slate-500 text-sm">
+            Loading wallet information...
+          </div>
         ) : !isWalletActivated ? (
           <WalletActivationState onActivate={() => openPinModal("activate")} />
         ) : isTopUpPanelOpen ? (
@@ -427,6 +487,11 @@ export default function WalletPage() {
             totalCredit={totalCredit}
             transactions={transactions}
             isTransactionsLoading={isTransactionsLoading}
+            transactionPageNumber={transactionPageNumber}
+            transactionTotalPages={transactionTotalPages}
+            transactionTotalCount={transactionTotalCount}
+            hasPreviousTransactionPage={hasPreviousTransactionPage}
+            hasNextTransactionPage={hasNextTransactionPage}
             onTopUp={() => openPinModal("topup")}
             onToggleBalanceVisibility={() => {
               if (isBalanceVisible) {
@@ -436,6 +501,7 @@ export default function WalletPage() {
               openPinModal("viewBalance");
             }}
             onChangePin={() => openPinModal("changePin")}
+            onTransactionPageChange={handleTransactionPageChange}
           />
         )}
       </section>

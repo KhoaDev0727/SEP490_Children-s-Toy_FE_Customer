@@ -2,9 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -20,11 +25,12 @@ const isReadOnlyItemStatus = (status: string): boolean => {
 };
 
 export default function CartPage() {
+  const router = useRouter();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
 
-  const items = cart?.items ?? [];
+  const items = useMemo(() => cart?.items ?? [], [cart]);
 
   const canCheckout = useMemo(() => {
     if (!cart || items.length === 0) return false;
@@ -46,7 +52,13 @@ export default function CartPage() {
     }
   };
 
-  const handleUpdateQuantity = async (cartItemId: number, nextQuantity: number, stock: number) => {
+  const handleUpdateQuantity = async (
+    cartItemId: number,
+    nextQuantity: number,
+    stock: number,
+    unitPrice: number,
+    currentLineTotal: number,
+  ) => {
     if (nextQuantity <= 0) {
       await handleRemoveItem(cartItemId);
       return;
@@ -60,6 +72,12 @@ export default function CartPage() {
       return;
     }
 
+    const projectedSubTotal = (cart?.subTotal ?? 0) - currentLineTotal + unitPrice * nextQuantity;
+    if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+      toast.error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
+      return;
+    }
+
     try {
       setPendingItemId(cartItemId);
       await updateQuantity(cartItemId, nextQuantity);
@@ -69,6 +87,21 @@ export default function CartPage() {
     } finally {
       setPendingItemId(null);
     }
+  };
+
+  const handleProceedToCheckout = () => {
+    if (!canCheckout) {
+      toast.error("Please remove unavailable items before checkout.");
+      return;
+    }
+
+    const cartTotal = cart?.subTotal ?? 0;
+    if (cartTotal >= CART_MAX_SUBTOTAL) {
+      toast.error("Cart total must be below 100,000,000 VND to proceed to checkout.");
+      return;
+    }
+
+    router.push("/checkout");
   };
 
   if (!isHydrated || isLoading) {
@@ -177,7 +210,15 @@ export default function CartPage() {
                           <div className="flex h-10 w-32 items-center rounded-xl border border-slate-300 bg-white">
                             <button
                               type="button"
-                              onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity - 1, item.stockQuantity)}
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.cartItemId,
+                                  item.quantity - 1,
+                                  item.stockQuantity,
+                                  item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
+                                  item.lineTotal,
+                                )
+                              }
                               disabled={busy || isReadOnlyItem || item.quantity <= 0}
                               className="flex h-full w-10 items-center justify-center rounded-l-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                             >
@@ -190,7 +231,15 @@ export default function CartPage() {
                             />
                             <button
                               type="button"
-                              onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity + 1, item.stockQuantity)}
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.cartItemId,
+                                  item.quantity + 1,
+                                  item.stockQuantity,
+                                  item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
+                                  item.lineTotal,
+                                )
+                              }
                               disabled={busy || isReadOnlyItem || item.quantity >= item.stockQuantity}
                               className="flex h-full w-10 items-center justify-center rounded-r-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                             >
@@ -235,12 +284,14 @@ export default function CartPage() {
               </div>
             </div>
 
-            <Link
-              href="/checkout"
-              className={`mt-6 block w-full text-center rounded-xl bg-[#ff6a00] py-3 text-sm font-bold text-white hover:bg-[#e05e00] ${!canCheckout ? "pointer-events-none opacity-60" : ""}`}
+            <button
+              type="button"
+              onClick={handleProceedToCheckout}
+              disabled={!canCheckout}
+              className="mt-6 block w-full rounded-xl bg-[#ff6a00] py-3 text-center text-sm font-bold text-white hover:bg-[#e05e00] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Proceed to Checkout
-            </Link>
+            </button>
           </div>
         </div>
       )}

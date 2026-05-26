@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Header from "@/layout/header/Header";
 import Footer from "@/layout/Footer";
-import ChatWidget from "@/layout/ChatWidget";
+import PageTransition from "@/components/shared/PageTransition";
 
 export default function CustomerLayout({
   children,
@@ -14,10 +14,9 @@ export default function CustomerLayout({
         <Header />
       </Suspense>
       <main className="flex-grow">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
       <Footer />
-      <ChatWidget />
     </div>
   );
 }

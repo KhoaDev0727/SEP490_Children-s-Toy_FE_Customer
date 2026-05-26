@@ -13,6 +13,7 @@ const DEFAULT_FORM: CheckoutFormData = {
   phone: "",
   address: "",
   provinceId: 0,
+
   districtId: 0,
   wardCode: "",
   payment: "cod",
@@ -24,6 +25,7 @@ export default function CheckoutClient() {
   const [formData, setFormData] = useState<CheckoutFormData>(DEFAULT_FORM);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [orderTotal, setOrderTotal] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
@@ -49,6 +51,7 @@ export default function CheckoutClient() {
           onFormChange={setFormData} 
           externalAddresses={addresses}
           externalLoading={isLoadingAddresses}
+          orderTotal={orderTotal}
         />
       </div>
 
@@ -57,6 +60,7 @@ export default function CheckoutClient() {
           formData={formData} 
           externalAddresses={addresses}
           externalLoading={isLoadingAddresses}
+          onTotalChange={setOrderTotal}
         />
       </aside>
     </>

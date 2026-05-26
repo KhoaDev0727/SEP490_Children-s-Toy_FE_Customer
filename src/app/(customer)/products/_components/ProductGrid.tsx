@@ -447,13 +447,17 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import {
+  CART_MAX_SUBTOTAL,
+  CART_MAX_SUBTOTAL_ERROR_MESSAGE,
+} from "@/features/cart/types/cart";
 import { productApi } from "@/features/products/services/product-api";
 import {
   PaginatedResponse,
   ProductFilters,
   ProductList,
 } from "@/features/products/types/product";
-import { formatCurrency } from "@/features/products/utils/format";
+import { formatCurrency, formatMysteryPrice } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import { followApi } from "@/features/products/services/follow-api";
 
@@ -520,7 +524,7 @@ function ProductCard({
   const inStock = product.quantity > 0 && product.productStatus === "Active";
   const remainingStock = inStock ? Math.max(product.quantity - quantityInCart, 0) : 0;
   const canAddToCart = inStock && remainingStock > 0;
-  
+
   // Determine the display label
   let statusLabel = "";
   if (isComingSoon) {
@@ -583,7 +587,18 @@ function ProductCard({
           {product.productName}
         </Link>
         <div className="mt-auto pt-3">
-          {product.discountedPrice != null ? (
+          {product.productStatus === "ComingSoon" ? (
+            <div className="flex items-baseline justify-between mb-4">
+              <span className="text-lg font-bold text-[#ff6a00]">
+                {formatMysteryPrice(product.price)}
+              </span>
+              {product.brandName && (
+                <span className="text-xs text-slate-400">
+                  {product.brandName}
+                </span>
+              )}
+            </div>
+          ) : product.discountedPrice != null ? (
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg font-bold text-[#ff6a00]">
@@ -619,14 +634,13 @@ function ProductCard({
               )}
             </div>
           )}
-          
+
           {isComingSoon || !inStock ? (
             <button
-              className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
-                isFollowed 
-                  ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200" 
+              className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${isFollowed
+                  ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
                   : "bg-white text-[#ff6a00] border border-[#ff6a00] hover:bg-[#ff6a00] hover:text-white"
-              }`}
+                }`}
               type="button"
               onClick={() => onToggleFollow(product.productId)}
               disabled={isFollowUpdating}
@@ -692,11 +706,10 @@ function Pagination({
           )}
           <button
             onClick={() => onChange(p)}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors border ${
-              current === p
+            className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors border ${current === p
                 ? "bg-[#ff6a00] text-white border-[#ff6a00]"
                 : "border-slate-200 text-slate-700 hover:border-[#ff6a00] hover:text-[#ff6a00]"
-            }`}
+              }`}
           >
             {p}
           </button>
@@ -750,7 +763,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           pageSize: PAGE_SIZE,
           ...getSortConfig(sort),
           ...filters,
-          status: "Active",
+          status: "Active,ComingSoon",
         });
         if (!active) return;
         setData(result);
@@ -847,6 +860,16 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     const remainingStock = Math.max(product.quantity - quantityInCart, 0);
     if (remainingStock <= 0) {
       toast.error("Cart quantity has reached the maximum available stock.");
+      return;
+    }
+
+    const currentCartItem = cart?.items.find((item) => item.productId === product.productId);
+    const unitPrice = currentCartItem
+      ? (currentCartItem.currentPrice > 0 ? currentCartItem.currentPrice : currentCartItem.priceAtThatTime)
+      : (product.discountedPrice ?? product.price);
+    const projectedSubTotal = (cart?.subTotal ?? 0) + unitPrice;
+    if (projectedSubTotal > CART_MAX_SUBTOTAL) {
+      toast.error(CART_MAX_SUBTOTAL_ERROR_MESSAGE);
       return;
     }
 

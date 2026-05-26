@@ -74,10 +74,15 @@ export default function RegisterForm() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsRegistering(true);
     try {
-      await authApi.register(data);
+      const payload: RegisterFormValues = {
+        ...data,
+        password: data.password.trim(),
+        confirmPassword: data.confirmPassword.trim(),
+      };
+      await authApi.register(payload);
       const loginResponse = await authApi.login({
         email: data.email,
-        password: data.password,
+        password: data.password.trim(),
       });
       if (loginResponse.account.roleId === CUSTOMER_ROLE_ID) {
         setAuth(loginResponse.account, loginResponse.accessToken);

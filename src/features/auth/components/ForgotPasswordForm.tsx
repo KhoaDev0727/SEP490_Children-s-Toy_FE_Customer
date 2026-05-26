@@ -77,7 +77,12 @@ export default function ForgotPasswordForm() {
   const onResetPassword = async (data: ResetFormValues) => {
     setIsResetting(true);
     try {
-      await authApi.resetPassword({ email, ...data });
+      await authApi.resetPassword({
+        email,
+        ...data,
+        newPassword: data.newPassword.trim(),
+        confirmPassword: data.confirmPassword.trim(),
+      });
       toast.success("Password reset successful! Please sign in.");
       router.push("/login");
     } catch (error: unknown) {

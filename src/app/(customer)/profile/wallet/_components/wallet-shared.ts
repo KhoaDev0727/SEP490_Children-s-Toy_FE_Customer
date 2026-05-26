@@ -25,7 +25,13 @@ export type UiTransaction = {
   icon: string;
   title: string;
   time: string;
+  completedTime: string | null;
+  createdAtTimestamp: number;
   amount: number;
+  method: string;
+  reason: string | null;
+  relatedOrderCode: string | null;
+  rawTxnType: string;
   statusLabel: string;
   statusClassName: string;
   kind: TransactionKind;
@@ -64,25 +70,46 @@ export function formatBalance(value: number) {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)} VND`;
 }
 
-function formatTransactionTime(isoDate: string) {
-  const date = new Date(isoDate);
+const VIETNAM_TIMEZONE = "Asia/Ho_Chi_Minh";
+
+function parseApiDateAsUtc(rawDate: string) {
+  const raw = rawDate.trim();
+  if (!raw) return null;
+
+  const hasTimezoneInfo = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw);
+  const normalized = hasTimezoneInfo ? raw : `${raw}Z`;
+  const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatTransactionTime(isoDate: string) {
+  const date = parseApiDateAsUtc(isoDate);
+  if (!date) {
     return "-";
   }
 
-  const timeText = new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  }).format(date);
-
-  const dateText = new Intl.DateTimeFormat("en-GB", {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: VIETNAM_TIMEZONE,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(date);
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
 
-  return `${timeText}, ${dateText}`;
+  const partMap = parts.reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== "literal") {
+      acc[part.type] = part.value;
+    }
+    return acc;
+  }, {});
+
+  return `${partMap.day ?? "--"}/${partMap.month ?? "--"}/${partMap.year ?? "----"} ${partMap.hour ?? "--"}:${partMap.minute ?? "--"}`;
 }
 
 export function getTransactionIconStyles(kind: TransactionKind) {
@@ -95,6 +122,7 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
   const normalizedType = txn.txnType.trim().toLowerCase();
   const normalizedDirection = txn.direction.trim().toUpperCase();
   const signedAmount = txn.signedAmount;
+  const createdAt = parseApiDateAsUtc(txn.createdAt);
 
   const kind: TransactionKind =
     normalizedType === "refund" ? "refund" : normalizedDirection === "DR" ? "debit" : "credit";
@@ -137,7 +165,13 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
     icon,
     title,
     time: formatTransactionTime(txn.createdAt),
+    completedTime: txn.completedAt ? formatTransactionTime(txn.completedAt) : null,
+    createdAtTimestamp: createdAt?.getTime() ?? 0,
     amount: signedAmount,
+    method: txn.method,
+    reason: txn.reason,
+    relatedOrderCode: txn.relatedOrderCode,
+    rawTxnType: txn.txnType,
     statusLabel,
     statusClassName,
     kind,

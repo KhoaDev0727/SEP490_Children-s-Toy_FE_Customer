@@ -5,6 +5,9 @@ export interface ApiResponse<T> {
   errors?: string[] | null;
 }
 
+export const CART_MAX_SUBTOTAL = 100_000_000;
+export const CART_MAX_SUBTOTAL_ERROR_MESSAGE = "Cart total cannot exceed 100,000,000 VND.";
+
 export interface CartItem {
   cartItemId: number;
   productId: number;

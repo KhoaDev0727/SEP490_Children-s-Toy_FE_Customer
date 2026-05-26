@@ -355,10 +355,10 @@ export default function ProfileForm() {
   };
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">My Profile</h1>
-        <p className="mt-1 text-sm text-[#5a4136]">Manage your personal information and avatar.</p>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-200 bg-white">
+        <h1 className="text-2xl font-bold text-[#0f172a]">My Profile</h1>
+        <p className="mt-1 text-sm text-[#475569]">Manage your personal information and avatar.</p>
       </div>
 
       <div className="p-6">
@@ -381,8 +381,8 @@ export default function ProfileForm() {
                   </div>
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-white text-2xl font-bold"
-                    style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
+                    className="w-full h-full flex items-center justify-center text-white text-2xl font-bold animate-fade-in"
+                    style={{ background: "#ff4f00" }}
                   >
                     {initials}
                   </div>
@@ -395,7 +395,7 @@ export default function ProfileForm() {
                     accept=".jpg,.jpeg,.png"
                     onChange={handleAvatarChange}
                     disabled={isUploading}
-                    className="block text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-2 file:font-semibold file:text-orange-600 hover:file:bg-orange-100"
+                    className="block text-sm text-slate-600 file:mr-3 file:rounded-xl file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-2 file:font-semibold file:text-[#ff4f00] hover:file:bg-slate-100"
                   />
                   <p className="text-xs text-slate-400">Max size 1MB, format JPG/PNG.</p>
                 </div>
@@ -410,8 +410,8 @@ export default function ProfileForm() {
                   value={accountName}
                   onChange={(event) => setAccountName(event.target.value)}
                   readOnly={!isEditing}
-                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
+                  style={{ "--tw-ring-color": "#ff4f00" } as React.CSSProperties}
                 />
               </label>
 
@@ -421,7 +421,7 @@ export default function ProfileForm() {
                   type="email"
                   value={email}
                   readOnly
-                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-md text-[15px] bg-slate-50/90 text-slate-700"
                 />
               </label>
 
@@ -436,8 +436,8 @@ export default function ProfileForm() {
                   }}
                   placeholder="Enter phone number"
                   readOnly={!isEditing}
-                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
-                  style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
+                  className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white read-only:bg-slate-50/90 read-only:text-slate-700"
+                  style={{ "--tw-ring-color": "#ff4f00" } as React.CSSProperties}
                 />
                 {phoneNumberError && isEditing ? (
                   <p className="mt-1.5 text-sm text-red-600">{phoneNumberError}</p>
@@ -447,7 +447,7 @@ export default function ProfileForm() {
               <div className="text-sm text-slate-700">
                 <span className="font-semibold tracking-[0.01em]">Sex</span>
                 {isEditing ? (
-                  <div className="mt-1.5 min-h-12 px-4 py-2 border border-slate-200 rounded-2xl bg-white flex items-center gap-5">
+                  <div className="mt-1.5 min-h-12 px-4 py-2 border border-slate-200 rounded-md bg-white flex items-center gap-5">
                     {SEX_OPTIONS.map((option) => (
                       <label key={option.id} className="inline-flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -456,7 +456,7 @@ export default function ProfileForm() {
                           value={String(option.id)}
                           checked={sexId === String(option.id)}
                           onChange={(event) => setSexId(event.target.value)}
-                          className="h-4 w-4 text-orange-500 border-slate-300 focus:ring-orange-500"
+                          className="h-4 w-4 text-[#ff4f00] border-slate-300 focus:ring-[#ff4f00]"
                         />
                         <span className="text-sm text-slate-700">{option.label}</span>
                       </label>
@@ -467,7 +467,7 @@ export default function ProfileForm() {
                     type="text"
                     readOnly
                     value={getSexLabelById(sexId ? Number(sexId) : null)}
-                    className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                    className="mt-1.5 w-full h-12 px-4 border border-slate-200 rounded-md text-[15px] bg-slate-50/90 text-slate-700"
                   />
                 )}
               </div>
@@ -487,15 +487,15 @@ export default function ProfileForm() {
                         setDobError(null);
                       }}
                       max={getTodayLocalDateInput()}
-                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white"
-                      style={{ "--tw-ring-color": "#ff6a00" } as React.CSSProperties}
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white"
+                      style={{ "--tw-ring-color": "#ff4f00" } as React.CSSProperties}
                     />
                   ) : (
                     <input
                       type="text"
                       readOnly
                       value={formatDob(parseDobDateInputToIso(dobInput))}
-                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl text-[15px] bg-slate-50/90 text-slate-700"
+                      className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-md text-[15px] bg-slate-50/90 text-slate-700"
                       placeholder="dd/MM/yyyy"
                     />
                   )}
@@ -511,8 +511,8 @@ export default function ProfileForm() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
-                  style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                  className="h-12 px-7 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(255,79,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,79,0,0.3)] transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                  style={{ background: "#ff4f00" }}
                 >
                   Edit Profile
                 </button>
@@ -522,15 +522,15 @@ export default function ProfileForm() {
                     type="button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
-                    style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                    className="h-12 px-7 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(255,79,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,79,0,0.3)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                    style={{ background: "#ff4f00" }}
                   >
                     {isSaving ? "Saving..." : "Save Changes"}
                   </button>
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="h-12 px-7 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition"
+                    className="h-12 px-7 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition"
                   >
                     Cancel
                   </button>

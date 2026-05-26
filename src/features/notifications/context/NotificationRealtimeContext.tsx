@@ -17,6 +17,29 @@ interface BellNotificationDto {
   unreadCount: number;
 }
 
+const isErrorNotification = (notification: BellNotificationDto) => {
+  const text = `${notification.title} ${notification.message}`.toLowerCase();
+  return text.includes("rejected") || text.includes("blocked") || text.includes("locked");
+};
+
+const shouldSuppressCurrentPageAiModerationToast = (notification: BellNotificationDto) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const title = notification.title.toLowerCase();
+  const isAiModerationReject =
+    title === "comment rejected by ai moderation" ||
+    title === "reply rejected by ai moderation";
+
+  if (!isAiModerationReject || !notification.actionTarget) {
+    return false;
+  }
+
+  const notificationPath = notification.actionTarget.split("#")[0];
+  return window.location.pathname === notificationPath;
+};
+
 interface NotificationRealtimeContextType {
   unreadCount: number;
   refreshUnread: () => Promise<void>;
@@ -85,7 +108,12 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
 
         newConnection.on("ReceiveNotification", (n: BellNotificationDto) => {
           setUnreadCount(n.unreadCount);
-          toast.success(
+          if (shouldSuppressCurrentPageAiModerationToast(n)) {
+            return;
+          }
+
+          const showToast = isErrorNotification(n) ? toast.error : toast.success;
+          showToast(
             <div>
               <p className="font-semibold">{n.title}</p>
               <p className="text-sm opacity-90">{n.message}</p>

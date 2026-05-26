@@ -51,6 +51,9 @@ export interface BlogReviewReply {
   replyToAccountName: string | null;
   comment: string;
   status: "Visible" | "Hidden";
+  moderationStatus: "Pending" | "Processing" | "Approved" | "Rejected" | "ManualReview" | "Failed";
+  banReasonId?: number | null;
+  banReasonContent?: string | null;
   likeCount: number;
   loveCount: number;
   hahaCount: number;
@@ -69,6 +72,9 @@ export interface BlogReview {
   accountImageUrl: string | null;
   comment: string;
   status: "Visible" | "Hidden";
+  moderationStatus: "Pending" | "Processing" | "Approved" | "Rejected" | "ManualReview" | "Failed";
+  banReasonId?: number | null;
+  banReasonContent?: string | null;
   likeCount: number;
   loveCount: number;
   hahaCount: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -12,6 +13,9 @@ import { useCart } from "@/features/cart/context/CartContext";
 import type { CheckoutFormData } from "@/app/(customer)/checkout/components/CheckoutForm";
 import { voucherApi } from "@/features/vouchers/services/voucher-api";
 import type { IVoucher } from "@/features/vouchers/types/voucher";
+import { walletApi } from "@/features/wallet/services/wallet-api";
+import WalletPinModal from "@/components/common/WalletPinModal";
+import { smartParseDate } from "@/utils/date-utils";
 
 const FALLBACK_IMAGE = "https://placehold.co/80x80/png?text=Toy";
 
@@ -27,10 +31,12 @@ export default function OrderSummary({
   formData,
   externalAddresses,
   externalLoading,
+  onTotalChange,
 }: {
   formData: CheckoutFormData;
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
+  onTotalChange?: (total: number) => void;
 }) {
   const [orderVoucherCode, setOrderVoucherCode] = useState("");
   const [shippingVoucherCode, setShippingVoucherCode] = useState("");
@@ -48,6 +54,13 @@ export default function OrderSummary({
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [hasLoadedVouchers, setHasLoadedVouchers] = useState(false);
   const [bestApplyingTarget, setBestApplyingTarget] = useState<"ORDER_TOTAL" | "SHIPPING_FEE" | null>(null);
+
+  // Wallet PIN modal state
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isPinVerifying, setIsPinVerifying] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinRemainingAttempts, setPinRemainingAttempts] = useState<number | null>(null);
+  const [pinLockedUntil, setPinLockedUntil] = useState<string | null>(null);
   const addresses = externalAddresses ?? [];
   const isAddressLoading = externalLoading ?? false;
   const [preview, setPreview] = useState<CheckoutPreviewResponse | null>(null);
@@ -70,6 +83,7 @@ export default function OrderSummary({
     () => items.filter((i) => i.isSelected).reduce((sum, i) => sum + i.lineTotal, 0),
     [items],
   );
+  const paymentMethod = PAYMENT_METHOD_MAP[formData.payment] ?? "SHIP_COD";
   const subtotal = preview?.subTotal ?? selectedSubtotal;
   const shipping = preview?.shippingFee ?? 0;
 
@@ -100,6 +114,10 @@ export default function OrderSummary({
     [voucherList, subtotal],
   );
 
+  useEffect(() => {
+    onTotalChange?.(total);
+  }, [total, onTotalChange]);
+
   const activeAddress = useMemo(() => {
     // Ưu tiên địa chỉ người dùng đang chọn trong form
     if (formData.addressId > 0) {
@@ -127,6 +145,7 @@ export default function OrderSummary({
       try {
         const data = await checkoutApi.previewCheckout({
           addressId,
+          paymentMethod,
           orderVoucherCode: orderCode,
           shippingVoucherCode: shippingCode,
           items: lines.length > 0 ? lines : undefined,
@@ -146,7 +165,7 @@ export default function OrderSummary({
         setIsPreviewLoading(false);
       }
     },
-    [],
+    [paymentMethod],
   );
 
   useEffect(() => {
@@ -175,30 +194,30 @@ export default function OrderSummary({
   // explicitCode: truyền thẳng code (dùng khi gọi từ modal, bỏ qua input state).
   const applyVoucher = useCallback(
     async (target: "ORDER_TOTAL" | "SHIPPING_FEE", explicitVoucher?: IVoucher | string) => {
-      const code = typeof explicitVoucher === "string" 
-        ? explicitVoucher 
-        : explicitVoucher?.voucherCode 
+      const code = typeof explicitVoucher === "string"
+        ? explicitVoucher
+        : explicitVoucher?.voucherCode
         ?? (target === "ORDER_TOTAL" ? orderVoucherCode : shippingVoucherCode).trim();
 
       if (!code) {
-        toast.error("Vui lòng nhập mã voucher.");
+        toast.error("Please enter a voucher code.");
         return;
       }
       // ... (giữ nguyên validation FE)
       if (target === "ORDER_TOTAL" && code === appliedShippingVoucherCode) {
-        setOrderVoucherError("Không thể áp dụng cùng một mã cho đơn hàng và vận chuyển.");
+        setOrderVoucherError("Cannot apply the same voucher code for both order and shipping.");
         return;
       }
       if (target === "SHIPPING_FEE" && code === appliedOrderVoucherCode) {
-        setShippingVoucherError("Không thể áp dụng cùng một mã cho đơn hàng và vận chuyển.");
+        setShippingVoucherError("Cannot apply the same voucher code for both order and shipping.");
         return;
       }
       if (target === "SHIPPING_FEE" && shipping <= 0) {
-        setShippingVoucherError("Chưa tính được phí vận chuyển. Vui lòng chọn địa chỉ hợp lệ.");
+        setShippingVoucherError("Shipping fee not calculated yet. Please select a valid address.");
         return;
       }
       if (formData.addressId <= 0 || checkoutLines.length === 0) {
-        toast.error("Vui lòng chọn địa chỉ giao hàng.");
+        toast.error("Please select a shipping address.");
         return;
       }
 
@@ -209,6 +228,7 @@ export default function OrderSummary({
       try {
         const data = await checkoutApi.previewCheckout({
           addressId: formData.addressId,
+          paymentMethod,
           orderVoucherCode: target === "ORDER_TOTAL" ? code : appliedOrderVoucherCode,
           shippingVoucherCode: target === "SHIPPING_FEE" ? code : appliedShippingVoucherCode,
           items: checkoutLines.length > 0 ? checkoutLines : undefined,
@@ -228,12 +248,12 @@ export default function OrderSummary({
           setAppliedShippingVoucher(vObj);
           setShippingVoucherError(null);
         }
-        
+
         if (data.itemErrors.length > 0) {
           data.itemErrors.forEach((e) => toast.error(e.error));
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Voucher không hợp lệ.";
+        const msg = err instanceof Error ? err.message : "Invalid voucher.";
         if (target === "ORDER_TOTAL") setOrderVoucherError(msg);
         else setShippingVoucherError(msg);
       } finally {
@@ -241,17 +261,70 @@ export default function OrderSummary({
       }
     },
     [
-      orderVoucherCode,
-      shippingVoucherCode,
       appliedOrderVoucherCode,
       appliedShippingVoucherCode,
       shipping,
       formData.addressId,
       checkoutLines,
       voucherList,
-      setAppliedOrderVoucher,
-      setAppliedShippingVoucher,
     ],
+  );
+
+  const applyMultipleVouchers = useCallback(
+    async (newOrderCode?: string, newShippingCode?: string) => {
+      if (formData.addressId <= 0 || checkoutLines.length === 0) {
+        toast.error("Please select a shipping address.");
+        return;
+      }
+
+      setIsPreviewLoading(true);
+      setOrderVoucherError(null);
+      setShippingVoucherError(null);
+
+      try {
+        const data = await checkoutApi.previewCheckout({
+          addressId: formData.addressId,
+          paymentMethod,
+          orderVoucherCode: newOrderCode,
+          shippingVoucherCode: newShippingCode,
+          items: checkoutLines.length > 0 ? checkoutLines : undefined,
+        });
+
+        setPreview(data);
+
+        if (newOrderCode) {
+          const vObj = voucherList.find((v) => v.voucherCode === newOrderCode) || null;
+          setOrderVoucherCode(newOrderCode);
+          setAppliedOrderVoucherCode(newOrderCode);
+          setAppliedOrderVoucher(vObj);
+        } else {
+          setOrderVoucherCode("");
+          setAppliedOrderVoucherCode(undefined);
+          setAppliedOrderVoucher(null);
+        }
+
+        if (newShippingCode) {
+          const vObj = voucherList.find((v) => v.voucherCode === newShippingCode) || null;
+          setShippingVoucherCode(newShippingCode);
+          setAppliedShippingVoucherCode(newShippingCode);
+          setAppliedShippingVoucher(vObj);
+        } else {
+          setShippingVoucherCode("");
+          setAppliedShippingVoucherCode(undefined);
+          setAppliedShippingVoucher(null);
+        }
+
+        if (data.itemErrors.length > 0) {
+          data.itemErrors.forEach((e) => toast.error(e.error));
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Invalid voucher.";
+        toast.error(msg);
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    },
+    [formData.addressId, checkoutLines, voucherList, paymentMethod],
   );
 
   const clearVoucher = useCallback(
@@ -277,11 +350,15 @@ export default function OrderSummary({
     try {
       const res = await voucherApi.getVouchers({ status: "Active", pageSize: 100 });
       const now = Date.now();
-      const activeVouchers = res.items.filter((v) => new Date(v.endDate).getTime() > now);
+      const activeVouchers = res.items.filter((v) => {
+        if (smartParseDate(v.endDate).getTime() <= now) return false;
+        if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
+        return true;
+      });
       setVoucherList(activeVouchers);
       setHasLoadedVouchers(true);
     } catch (err) {
-      setVoucherError("Không thể tải voucher. Vui lòng thử lại.");
+      setVoucherError("Unable to load vouchers. Please try again.");
     } finally {
       setVoucherLoading(false);
     }
@@ -338,6 +415,7 @@ export default function OrderSummary({
             try {
               const res = await checkoutApi.previewCheckout({
                 addressId: formData.addressId,
+                paymentMethod,
                 orderVoucherCode: target === "ORDER_TOTAL" ? voucher.voucherCode : undefined,
                 shippingVoucherCode: target === "SHIPPING_FEE" ? voucher.voucherCode : undefined,
                 items: checkoutLines.length > 0 ? checkoutLines : undefined,
@@ -373,9 +451,9 @@ export default function OrderSummary({
         } else {
           // No eligible voucher produced a non-zero discount — show brief info
           if (target === "ORDER_TOTAL") {
-            setOrderVoucherError("Không có voucher đơn hàng nào phù hợp với đơn hiện tại.");
+            setOrderVoucherError("No matching order vouchers for this order.");
           } else {
-            setShippingVoucherError("Không có voucher vận chuyển nào phù hợp với đơn hiện tại.");
+            setShippingVoucherError("No matching shipping vouchers for this order.");
           }
         }
       } finally {
@@ -388,6 +466,7 @@ export default function OrderSummary({
       voucherList,
       subtotal,
       shipping,
+      paymentMethod,
       appliedOrderVoucherCode,
       appliedShippingVoucherCode,
     ],
@@ -416,6 +495,50 @@ export default function OrderSummary({
 
     const paymentMethod = PAYMENT_METHOD_MAP[formData.payment] ?? "SHIP_COD";
 
+    // Wallet payment requires PIN verification first
+    if (paymentMethod === "WALLET") {
+      setPinError(null);
+      setPinRemainingAttempts(null);
+      setPinLockedUntil(null);
+      setIsPinModalOpen(true);
+      return;
+    }
+
+    await placeOrder(paymentMethod);
+  };
+
+  const handlePinConfirm = async (pin: string) => {
+    if (pin.length < 6) return;
+    setIsPinVerifying(true);
+    setPinError(null);
+    try {
+      const res = await walletApi.verifyPin({ pin, actionType: "PAYMENT" });
+
+      if (res.lockedUntil) {
+        setPinLockedUntil(res.lockedUntil);
+        setPinError(null);
+        return;
+      }
+
+      if (!res.isVerified) {
+        setPinRemainingAttempts(res.remainingAttempts);
+        setPinError("Incorrect PIN. Please try again.");
+        return;
+      }
+
+      // PIN correct — proceed to place order
+      setIsPinModalOpen(false);
+      await placeOrder("WALLET");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.response?.data?.Message ?? err?.message ?? "PIN verification failed. Please try again.";
+      setPinError(msg);
+    } finally {
+      setIsPinVerifying(false);
+    }
+  };
+
+  const placeOrder = async (paymentMethod: string) => {
+    if (!activeAddress) return;
     setIsOrdering(true);
     try {
       const response = await checkoutApi.confirmCheckout({
@@ -430,33 +553,15 @@ export default function OrderSummary({
       });
 
       if (paymentMethod === "SE_PAY") {
-        try {
-          if (typeof window !== "undefined") {
-            window.sessionStorage.setItem(
-              `sepay_checkout_${response.orderId}`,
-              JSON.stringify({
-                attemptCode: response.paymentAttemptCode ?? "",
-                qrUrl: response.qrImageUrl ?? "",
-              }),
-            );
-          }
-        } catch {
-          /* ignore quota */
-        }
-        const params = new URLSearchParams({
-          orderId: String(response.orderId),
-          orderCode: response.orderCode ?? "",
-          amount: String(Math.round(Number(response.totalAmount))),
-          ...(response.paymentAttemptCode ? { attemptCode: response.paymentAttemptCode } : {}),
-          ...(response.qrImageUrl ? { qrUrl: encodeURIComponent(response.qrImageUrl) } : {}),
-        });
-        router.push(`/checkout/payment?${params.toString()}`);
+        // Navigate with only orderId — sensitive data (QR URL, amount, attemptCode)
+        // is fetched client-side via GET /orders/:orderId/payment-info
+        router.push(`/checkout/payment?orderId=${response.orderId}`);
       } else {
         // COD / WALLET — trang thành công
         router.push(`/checkout/success?orderId=${response.orderId}&orderCode=${encodeURIComponent(response.orderCode ?? "")}`);
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to create the order.";
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? error?.response?.data?.Message ?? error?.message ?? "Unable to create the order.";
       toast.error(message);
     } finally {
       setIsOrdering(false);
@@ -476,39 +581,36 @@ export default function OrderSummary({
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-5 md:p-6 lg:p-7 sticky top-24 overflow-hidden">
-      {/* Decorative top blur */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ff6a00]/10 rounded-full blur-3xl pointer-events-none" />
-
-      <h2 className="text-xl font-extrabold text-gray-900 tracking-tight pb-4 border-b border-gray-100/80 mb-5 relative">
+    <div className="bg-white rounded-xl border border-gray-200/80 p-5 md:p-6 sticky top-24 overflow-hidden shadow-sm">
+      <h2 className="text-xl font-extrabold text-gray-900 tracking-tight pb-4 border-b border-gray-100 mb-5 relative">
         Order Summary
       </h2>
 
       {/* Product list — chỉ hiển thị sản phẩm đang checkout */}
       <div className="space-y-2 mb-6 max-h-[42vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {checkoutLines.length === 0 && (
-          <p className="text-sm text-gray-400 font-medium italic text-center py-4">No items selected for checkout.</p>
+          <p className="text-sm text-gray-400 font-semibold italic text-center py-4">No items selected for checkout.</p>
         )}
         {items.filter((i) => i.isSelected).map((item) => (
-          <div key={item.cartItemId} className="group flex gap-3.5 items-center p-3 rounded-2xl hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100/80">
+          <div key={item.cartItemId} className="group flex gap-3.5 items-center p-3 rounded-xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100">
             <div className="relative flex-shrink-0">
               <Image
                 src={item.mainImageUrl ?? FALLBACK_IMAGE}
                 alt={item.productName}
                 width={68}
                 height={68}
-                className="w-[68px] h-[68px] object-cover rounded-xl border border-gray-200/60 shadow-sm transition-transform duration-300 group-hover:scale-105 bg-white"
+                className="w-[68px] h-[68px] object-cover rounded-lg border border-gray-200/60 shadow-sm transition-transform duration-200 group-hover:scale-102 bg-white"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-gray-800 leading-snug line-clamp-2 mb-2 group-hover:text-[#ff6a00] transition-colors">
+              <p className="text-[13px] font-bold text-gray-850 leading-snug line-clamp-2 mb-2 group-hover:text-[#ff4f00] transition-colors">
                 {item.productName}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2 py-0.5 rounded-md border border-gray-200/50">
-                  SL: {item.quantity}
+                <span className="text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-md">
+                  QTY: {item.quantity}
                 </span>
-                <span className="text-sm font-black text-[#ff6a00]">
+                <span className="text-sm font-black text-[#ff4f00]">
                   {fmt(item.lineTotal)}
                 </span>
               </div>
@@ -517,98 +619,70 @@ export default function OrderSummary({
         ))}
       </div>
 
-      {/* Voucher input */}
+      {/* Unified Voucher Section */}
       <div className="space-y-3 mb-6">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-            Voucher đơn hàng
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              disabled={bestApplyingTarget === "ORDER_TOTAL" || !hasLoadedVouchers || isPreviewLoading}
-              onClick={() => void applyBestVoucherForTarget("ORDER_TOTAL")}
-              className="text-[11px] font-bold text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-60"
-            >
-              Tự chọn tốt nhất
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setVoucherModalTarget("ORDER_TOTAL");
-                setIsVoucherModalOpen(true);
-              }}
-              className="text-[11px] font-bold text-[#ff6a00] hover:text-[#ff4500] transition-colors"
-            >
-              Chọn voucher
-            </button>
+        <button
+          type="button"
+          onClick={() => setIsVoucherModalOpen(true)}
+          className="w-full flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 hover:border-[#ff4f00] rounded-xl transition-all duration-300 relative group overflow-hidden"
+        >
+          {/* Perforated side cuts */}
+          <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-r border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
+          <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-l border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
+          
+          <div className="flex items-center gap-3.5 pl-2">
+            <div className="w-8 h-8 rounded-xl bg-[#ff4f00] flex items-center justify-center text-white shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[18px] font-bold">confirmation_number</span>
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 leading-none mb-1">Store Offers</p>
+              <p className="text-sm font-extrabold text-gray-900 leading-tight">Platform Vouchers</p>
+            </div>
           </div>
-        </div>
-        <CouponInput
-          label="Order Voucher"
-          placeholder="Enter voucher code..."
-          value={orderVoucherCode}
-          onChange={setOrderVoucherCode}
-          onApply={() => void applyVoucher("ORDER_TOTAL")}
-          onClear={() => clearVoucher("ORDER_TOTAL")}
-          applied={!!appliedOrderVoucherCode}
-          appliedLabel={orderDiscount > 0 ? `-${fmt(orderDiscount)}` : isPreviewLoading ? "Calculating..." : "Applied"}
-          disabled={isPreviewLoading}
-        />
-        {orderVoucherError && (
-          <p className="text-xs text-red-600 font-semibold">
-            {orderVoucherError}
-          </p>
-        )}
+          <div className="flex items-center gap-2 pr-2">
+            {(appliedOrderVoucherCode || appliedShippingVoucherCode) ? (
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#ff4f00] bg-[#ff4f00]/10 px-2.5 py-1 rounded-md border border-[#ff4f00]/10">
+                Applied
+              </span>
+            ) : (
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 group-hover:text-[#ff4f00] transition-colors">
+                Select Code
+              </span>
+            )}
+            <span className="material-symbols-outlined text-gray-400 group-hover:text-[#ff4f00] group-hover:translate-x-0.5 transition-all text-lg font-bold">
+              chevron_right
+            </span>
+          </div>
+        </button>
 
-        <div className="flex items-center justify-between pt-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-            Voucher vận chuyển
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              disabled={bestApplyingTarget === "SHIPPING_FEE" || !hasLoadedVouchers || isPreviewLoading}
-              onClick={() => void applyBestVoucherForTarget("SHIPPING_FEE")}
-              className="text-[11px] font-bold text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-60"
-            >
-              Tự chọn tốt nhất
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setVoucherModalTarget("SHIPPING_FEE");
-                setIsVoucherModalOpen(true);
-              }}
-              className="text-[11px] font-bold text-[#ff6a00] hover:text-[#ff4500] transition-colors"
-            >
-              Chọn voucher
+        {/* Selected Vouchers Display */}
+        {appliedOrderVoucherCode && (
+          <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <span className="material-symbols-outlined text-[#ff4f00] text-[18px] font-bold">check_circle</span>
+            <span className="text-xs font-bold text-gray-800 flex-1 truncate">Order: {appliedOrderVoucherCode}</span>
+            <span className="text-xs font-black text-[#ff4f00]">-{fmt(orderDiscount)}</span>
+            <button onClick={() => clearVoucher("ORDER_TOTAL")} className="ml-2 text-gray-400 hover:text-[#ff4f00]">
+              <span className="material-symbols-outlined text-[18px] font-bold">close</span>
             </button>
           </div>
-        </div>
-        <CouponInput
-          label="Mã giảm phí vận chuyển"
-          placeholder="Nhập mã voucher..."
-          value={shippingVoucherCode}
-          onChange={setShippingVoucherCode}
-          onApply={() => void applyVoucher("SHIPPING_FEE")}
-          onClear={() => clearVoucher("SHIPPING_FEE")}
-          applied={!!appliedShippingVoucherCode}
-          appliedLabel={shippingDiscount > 0 ? `-${fmt(shippingDiscount)}` : isPreviewLoading ? "Đang tính..." : "Đã áp dụng"}
-          disabled={isPreviewLoading}
-        />
-        {shippingVoucherError && (
-          <p className="text-xs text-red-600 font-semibold">
-            {shippingVoucherError}
-          </p>
+        )}
+        {appliedShippingVoucherCode && (
+          <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <span className="material-symbols-outlined text-[#ff4f00] text-[18px] font-bold">local_shipping</span>
+            <span className="text-xs font-bold text-gray-800 flex-1 truncate">Shipping: {appliedShippingVoucherCode}</span>
+            <span className="text-xs font-black text-[#ff4f00]">-{fmt(shippingDiscount)}</span>
+            <button onClick={() => clearVoucher("SHIPPING_FEE")} className="ml-2 text-gray-400 hover:text-[#ff4f00]">
+              <span className="material-symbols-outlined text-[18px] font-bold">close</span>
+            </button>
+          </div>
         )}
       </div>
 
       {/* Price breakdown */}
-      <div className="space-y-3 border-t border-gray-100/80 pt-5 mb-5 text-sm">
+      <div className="space-y-3 border-t border-gray-100 pt-5 mb-5 text-sm">
         <Row label="Subtotal" value={fmt(subtotal)} />
         <Row
-          label={isPreviewLoading ? "Shipping fee (calculating...)" : "Shipping fee"}
+          label={isPreviewLoading ? "Est. Shipping Fee (calculating...)" : "Est. Shipping Fee"}
           value={
             shipping > 0
               ? fmt(shipping)
@@ -616,30 +690,30 @@ export default function OrderSummary({
                 ? "Loading..."
                 : "Select address"
           }
-          valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-medium" : "text-gray-900 font-bold"}
+          valueClass={(isPreviewLoading || isAddressLoading) ? "text-gray-400 animate-pulse font-bold" : "text-gray-900 font-black"}
         />
         {(orderDiscount > 0 || shippingDiscount > 0) ? (
           <>
             {orderDiscount > 0 && (
-              <Row label="Order Discount" value={`-${fmt(orderDiscount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+              <Row label="Order Discount" value={`-${fmt(orderDiscount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
             )}
             {shippingDiscount > 0 && (
-              <Row label="Shipping Discount" value={`-${fmt(shippingDiscount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+              <Row label="Shipping Discount" value={`-${fmt(shippingDiscount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
             )}
           </>
         ) : discount > 0 ? (
-          <Row label="Voucher Discount" value={`-${fmt(discount)}`} valueClass="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md" />
+          <Row label="Voucher Discount" value={`-${fmt(discount)}`} valueClass="text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 rounded-md" />
         ) : null}
       </div>
 
       {/* Total */}
       <div className="flex items-end justify-between border-t border-gray-200 pt-5 mb-8 relative">
-        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total</span>
+        <span className="text-xs font-black text-gray-500 uppercase tracking-wider mb-1">Total</span>
         <div className="text-right">
-          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ff6a00] to-[#ff4500] tracking-tight">
+          <span className="text-3xl font-black text-[#ff4f00] tracking-tight">
             {fmt(total)}
           </span>
-          <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-widest">(VAT included)</p>
+          <p className="text-[9px] text-gray-400 font-black mt-1 uppercase tracking-widest">(VAT included)</p>
         </div>
       </div>
 
@@ -647,14 +721,11 @@ export default function OrderSummary({
       <button
         onClick={handleOrder}
         disabled={isOrdering || isAddressLoading || items.length === 0 || checkoutLines.length === 0 || (preview?.itemErrors?.length ?? 0) > 0}
-        className="group relative overflow-hidden w-full bg-gradient-to-r from-[#ff6a00] to-[#ff4500] hover:from-[#ff7a1a] hover:to-[#ff551a] disabled:from-gray-400 disabled:to-gray-500 text-white font-extrabold text-base py-4.5 rounded-2xl shadow-[0_8px_24px_-6px_rgba(255,106,0,0.5)] hover:shadow-[0_12px_32px_-6px_rgba(255,106,0,0.6)] disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+        className="group relative overflow-hidden w-full bg-[#ff4f00] hover:bg-[#ff5f1a] disabled:bg-gray-300 text-white font-black text-sm uppercase tracking-wider py-4 rounded-xl shadow-sm hover:shadow active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
       >
-        {/* Shine effect */}
-        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-
         {isOrdering ? (
           <>
-            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -662,8 +733,8 @@ export default function OrderSummary({
           </>
         ) : (
           <>
-            <span className="text-lg">Place Order Now</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span>Place Order Now</span>
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </>
@@ -671,36 +742,49 @@ export default function OrderSummary({
       </button>
 
       {(preview?.itemErrors?.length ?? 0) > 0 && (
-        <p className="text-xs text-center text-red-600 font-semibold mt-3">
-          Vui lòng kiểm tra lại sản phẩm — có mặt hàng không khả dụng.
+        <p className="text-xs text-center text-red-600 font-bold mt-3">
+          Please check your items — some products are unavailable.
         </p>
       )}
 
-      <p className="text-[11px] text-center text-gray-400 mt-4 font-medium">
+      <p className="text-[11px] text-center text-gray-400 mt-4 font-semibold">
         By placing an order, you agree to{" "}
-        <a href="#" className="text-[#ff6a00] hover:text-[#ff4500] hover:underline transition-colors font-bold">Terms of Service</a> of ShopX.
+        <a href="#" className="text-[#ff4f00] hover:underline font-black">Terms of Service</a> of Toy Store.
       </p>
 
       {isVoucherModalOpen && (
-        <VoucherModal
+        <UnifiedVoucherModal
           subtotal={subtotal}
-          target={voucherModalTarget}
           vouchers={voucherList}
           loading={voucherLoading}
           error={voucherError}
-          selectedCode={
-            voucherModalTarget === "ORDER_TOTAL"
-              ? appliedOrderVoucherCode
-              : appliedShippingVoucherCode
-          }
+          initialOrderCode={appliedOrderVoucherCode}
+          initialShippingCode={appliedShippingVoucherCode}
           onClose={() => setIsVoucherModalOpen(false)}
-          onSelect={(voucher) => {
-            // Đóng modal rồi apply đúng luồng (preview → validate → commit giá)
+          onApply={async (oCode, sCode) => {
             setIsVoucherModalOpen(false);
-            void applyVoucher(voucherModalTarget, voucher);
+            if (oCode !== appliedOrderVoucherCode || sCode !== appliedShippingVoucherCode) {
+              await applyMultipleVouchers(oCode, sCode);
+            }
           }}
         />
       )}
+
+      {/* Wallet PIN Modal */}
+      <WalletPinModal
+        isOpen={isPinModalOpen}
+        isVerifying={isPinVerifying}
+        errorMessage={pinError}
+        remainingAttempts={pinRemainingAttempts}
+        lockedUntil={pinLockedUntil}
+        onConfirm={(pin) => void handlePinConfirm(pin)}
+        onCancel={() => {
+          if (!isPinVerifying) {
+            setIsPinModalOpen(false);
+            setPinError(null);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -708,15 +792,15 @@ export default function OrderSummary({
 function Row({
   label,
   value,
-  valueClass = "text-gray-900 font-bold",
+  valueClass = "text-[#201515] font-black",
 }: {
   label: string;
   value: string;
   valueClass?: string;
 }) {
   return (
-    <div className="flex justify-between items-center text-gray-500">
-      <span className="font-medium">{label}</span>
+    <div className="flex justify-between items-center text-[#605d52] font-semibold text-xs">
+      <span>{label}</span>
       <span className={valueClass}>{value}</span>
     </div>
   );
@@ -745,19 +829,19 @@ function CouponInput({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1.5">{label}</p>
       {applied ? (
-        <div className="flex items-center gap-2 p-2.5 bg-green-50 rounded-xl border border-green-200">
-          <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-green-200">
+          <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
           <span className="text-xs font-bold text-green-700">{appliedLabel}</span>
           <button
             type="button"
             onClick={onClear}
-            className="ml-auto text-[11px] font-bold text-green-700 hover:text-green-800"
+            className="ml-auto text-xs font-black text-green-700 hover:text-green-800"
           >
-            Bỏ voucher
+            Remove
           </button>
         </div>
       ) : (
@@ -768,13 +852,13 @@ function CouponInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
-            className="flex-1 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#ff6a00] focus:ring-2 focus:ring-[#ff6a00]/20 px-3 py-2.5 outline-none transition-all font-medium placeholder:text-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex-1 text-sm rounded-xl border border-gray-200 bg-white focus:border-[#ff4f00] focus:ring-2 focus:ring-[#ff4f00]/10 px-3 py-2.5 outline-none transition-all font-semibold placeholder:text-gray-400 disabled:opacity-60 disabled:cursor-not-allowed text-gray-900"
           />
           <button
             type="button"
             onClick={onApply}
             disabled={disabled}
-            className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 text-xs font-bold rounded-xl transition-colors whitespace-nowrap"
+            className="px-4 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl transition-colors whitespace-nowrap uppercase tracking-wider"
           >
             Apply
           </button>
@@ -784,118 +868,345 @@ function CouponInput({
   );
 }
 
-function VoucherModal({
+function UnifiedVoucherModal({
   subtotal,
-  target,
   vouchers,
   loading,
   error,
-  selectedCode,
+  initialOrderCode,
+  initialShippingCode,
   onClose,
-  onSelect,
+  onApply,
 }: {
   subtotal: number;
-  target: "ORDER_TOTAL" | "SHIPPING_FEE";
   vouchers: IVoucher[];
   loading: boolean;
   error: string | null;
-  selectedCode?: string;
+  initialOrderCode?: string;
+  initialShippingCode?: string;
   onClose: () => void;
-  onSelect: (voucher: IVoucher) => void;
+  onApply: (orderCode?: string, shippingCode?: string) => void;
 }) {
+  const [selectedOrderCode, setSelectedOrderCode] = useState<string | undefined>(initialOrderCode);
+  const [selectedShippingCode, setSelectedShippingCode] = useState<string | undefined>(initialShippingCode);
+  const [typedCode, setTypedCode] = useState("");
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
+
   const formatCurrency = (value: number) => value.toLocaleString("vi-VN") + " ₫";
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = smartParseDate(dateString);
+    if (isNaN(date.getTime())) return "---";
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
   const isEligible = (voucher: IVoucher) => {
+    if (smartParseDate(voucher.startDate).getTime() > now) return false;
     if (voucher.minOrderAmount && subtotal < voucher.minOrderAmount) return false;
     return true;
   };
 
-  const filteredVouchers = vouchers.filter((v) => v.discountTarget === target);
-  const targetLabel = target === "ORDER_TOTAL" ? "Đơn hàng" : "Vận chuyển";
+  const orderVouchers = vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL");
+  const shippingVouchers = vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE");
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <h3 className="text-lg font-extrabold text-gray-900">Chọn voucher</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Chỉ hiển thị voucher đang hoạt động cho {targetLabel.toLowerCase()}.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
-          >
-            <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+  const handleApplyTypedCode = () => {
+    const code = typedCode.trim().toUpperCase();
+    if (!code) {
+      setInputError("Please enter a voucher code.");
+      return;
+    }
+
+    const matchedVoucher = vouchers.find(
+      (v) => v.voucherCode.trim().toUpperCase() === code
+    );
+
+    if (!matchedVoucher) {
+      setInputError("Voucher code not found or expired.");
+      return;
+    }
+
+    // Check eligibility
+    if (!isEligible(matchedVoucher)) {
+      if (matchedVoucher.minOrderAmount && subtotal < matchedVoucher.minOrderAmount) {
+        setInputError(`This voucher requires a minimum spend of ${formatCurrency(matchedVoucher.minOrderAmount)}.`);
+      } else {
+        setInputError("This voucher is not eligible for your order.");
+      }
+      return;
+    }
+
+    // Select it
+    if (matchedVoucher.discountTarget === "ORDER_TOTAL") {
+      setSelectedOrderCode(matchedVoucher.voucherCode);
+      toast.success(`Applied Discount Voucher: ${matchedVoucher.voucherCode}`);
+    } else {
+      setSelectedShippingCode(matchedVoucher.voucherCode);
+      toast.success(`Applied Free Shipping Voucher: ${matchedVoucher.voucherCode}`);
+    }
+    setTypedCode("");
+    setInputError(null);
+  };
+
+  const renderVoucherCard = (voucher: IVoucher) => {
+    const eligible = isEligible(voucher);
+    const selectedCode = voucher.discountTarget === "ORDER_TOTAL" ? selectedOrderCode : selectedShippingCode;
+    const isSelected = voucher.voucherCode === selectedCode;
+    const remainingUsage = voucher.maxUsagePerUser !== null
+      ? Math.max(0, voucher.maxUsagePerUser - (voucher.currentUserUsageCount ?? 0))
+      : null;
+
+    const toggleSelect = () => {
+      if (!eligible) return;
+      if (voucher.discountTarget === "ORDER_TOTAL") {
+        setSelectedOrderCode(isSelected ? undefined : voucher.voucherCode);
+      } else {
+        setSelectedShippingCode(isSelected ? undefined : voucher.voucherCode);
+      }
+    };
+
+    return (
+      <div
+        key={voucher.voucherId}
+        onClick={toggleSelect}
+        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
+          !eligible
+            ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
+            : isSelected
+            ? voucher.discountTarget === "ORDER_TOTAL"
+              ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
+              : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
+            : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
+        }`}
+      >
+        {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
+        <div
+          className="relative w-[116px] shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden"
+          style={{
+            maskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            WebkitMaskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            maskSize: "100% 12px",
+            WebkitMaskSize: "100% 12px",
+            maskRepeat: "repeat-y",
+            WebkitMaskRepeat: "repeat-y",
+          }}
+        >
+          {voucher.imageUrl ? (
+            <Image
+              src={voucher.imageUrl}
+              alt={voucher.voucherName}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          ) : (
+            <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
+              voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
+            }`}>
+              <span className="material-symbols-outlined text-4xl">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+              </span>
+              <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
-          {loading && (
-            <p className="text-sm text-gray-400">Đang tải voucher...</p>
-          )}
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
-          {!loading && !error && filteredVouchers.length === 0 && (
-            <p className="text-sm text-gray-400">Không có voucher khả dụng.</p>
-          )}
-          <div className="space-y-3">
-            {filteredVouchers.map((voucher) => {
-              const eligible = isEligible(voucher);
-              const isSelected = voucher.voucherCode === selectedCode;
-              const discountLabel =
-                voucher.discountType === "PERCENTAGE"
-                  ? `${voucher.discountValue}%`
-                  : formatCurrency(voucher.discountValue);
-              return (
-                <div
-                  key={voucher.voucherId}
-                  className="flex items-center justify-between gap-4 border border-gray-100 rounded-xl p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">
-                      {voucher.voucherName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Mã: <span className="font-mono font-bold text-orange-600">{voucher.voucherCode}</span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Giảm: <span className="font-semibold">{discountLabel}</span>
-                      {voucher.minOrderAmount
-                        ? ` · Đơn tối thiểu ${formatCurrency(voucher.minOrderAmount)}`
-                        : ""}
-                    </p>
-                    <p className="text-[11px] text-gray-400">HSD: {formatDate(voucher.endDate)}</p>
-                  </div>
-                  <button
-                    disabled={!eligible || isSelected}
-                    onClick={() => onSelect(voucher)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
-                      isSelected
-                        ? "bg-emerald-100 text-emerald-700 cursor-default"
-                        : eligible
-                          ? "bg-orange-500 hover:bg-orange-600 text-white"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    {isSelected ? "Đã chọn" : eligible ? "Áp dụng" : "Chưa đủ điều kiện"}
-                  </button>
-                </div>
-              );
-            })}
+        {/* Right side: Content */}
+        <div className="grow bg-white p-3 flex flex-row relative min-w-0">
+          {/* Info Column */}
+          <div className="grow flex flex-col justify-between min-w-0 pr-8">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${
+                  voucher.discountTarget === "ORDER_TOTAL"
+                    ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
+                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                }`}>
+                  {voucher.voucherCode}
+                </span>
+              </div>
+              <h3
+                className="text-slate-900 text-xs font-bold leading-tight line-clamp-2"
+                title={voucher.voucherName}
+              >
+                {voucher.voucherName}
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-1 truncate">
+                Minimum spend{" "}
+                {voucher.minOrderAmount
+                  ? formatCurrency(voucher.minOrderAmount)
+                  : "0 ₫"}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span
+                className="material-symbols-outlined text-slate-400"
+                style={{
+                  fontSize: "16px",
+                  fontVariationSettings:
+                    '"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 20',
+                }}
+              >
+                schedule
+              </span>
+              <p className="text-[10px] text-slate-500">
+                {new Date(voucher.startDate).getTime() > Date.now()
+                  ? `Starts: ${formatDate(voucher.startDate)}`
+                  : `HSD: ${formatDate(voucher.endDate)}`}
+              </p>
+            </div>
           </div>
+
+          {/* Max Usage Ribbon - Shopee Style at Top Right */}
+          {remainingUsage !== null && (
+            <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
+              <div className="bg-red-50 text-red-600 text-[10px] px-2.5 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
+                x{remainingUsage}
+              </div>
+              {/* The Fold */}
+              <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
+            </div>
+          )}
+
+          {/* Selection indicator inside card */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+              isSelected
+                ? voucher.discountTarget === "ORDER_TOTAL"
+                  ? "border-[#ff4f00] bg-[#ff4f00]"
+                  : "border-emerald-500 bg-emerald-500"
+                : "border-gray-300"
+            }`}>
+              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
+
+      {/* Card */}
+      <div className="relative w-full max-w-lg rounded-xl bg-white border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[80vh]">
+        {/* Header */}
+        <div className="bg-gray-900 px-6 py-5 text-white border-b border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">
+                  confirmation_number
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black leading-tight tracking-tight uppercase">Platform Vouchers</h3>
+                <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                  Select up to 1 voucher per category
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors">
+              <span className="material-symbols-outlined text-white text-[18px] font-bold">close</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Voucher Code Input */}
+        <div className="px-6 py-4 bg-white border-b border-gray-100 flex flex-col gap-2">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Enter voucher code (e.g. TOY100K)"
+              value={typedCode}
+              onChange={(e) => {
+                setTypedCode(e.target.value);
+                setInputError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleApplyTypedCode();
+              }}
+              className="flex-1 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-semibold placeholder:text-gray-400 focus:outline-none focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] uppercase text-gray-900"
+            />
+            <button
+              type="button"
+              onClick={handleApplyTypedCode}
+              className="px-5 py-2.5 bg-gray-900 hover:bg-gray-855 text-white rounded-xl text-xs font-black shadow transition-colors shrink-0 uppercase tracking-wider"
+            >
+              Apply
+            </button>
+          </div>
+          {inputError && (
+            <div className="flex items-center gap-1.5 text-red-500 pl-1 text-[11.5px] font-bold animate-in fade-in duration-200">
+              <span className="material-symbols-outlined text-[15px]">error</span>
+              {inputError}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-5 overflow-y-auto grow bg-gray-50/80 space-y-6">
+          {loading && <p className="text-sm text-center text-gray-400 py-10 font-semibold animate-pulse">Loading vouchers...</p>}
+          {error && <p className="text-sm text-center text-red-500 py-10 font-semibold">{error}</p>}
+          {!loading && !error && vouchers.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center opacity-60">
+              <span className="material-symbols-outlined text-4xl mb-3 text-gray-300">confirmation_number</span>
+              <p className="text-sm font-black text-gray-400">No vouchers available</p>
+            </div>
+          )}
+
+          {!loading && !error && vouchers.length > 0 && (
+            <>
+              {/* Group 1: Order Vouchers */}
+              {orderVouchers.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
+                    <span className="material-symbols-outlined text-[15px] text-[#ff4f00] font-bold">sell</span>
+                    Order Discount Vouchers ({orderVouchers.length})
+                  </h4>
+                  <div className="space-y-4">
+                    {orderVouchers.map((voucher) => renderVoucherCard(voucher))}
+                  </div>
+                </div>
+              )}
+
+              {/* Group 2: Shipping Vouchers */}
+              {shippingVouchers.length > 0 && (
+                <div className={orderVouchers.length > 0 ? "pt-4 border-t border-gray-200/60" : ""}>
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 pl-1">
+                    <span className="material-symbols-outlined text-[15px] text-[#ff4f00] font-bold">local_shipping</span>
+                    Free Shipping Vouchers ({shippingVouchers.length})
+                  </h4>
+                  <div className="space-y-4">
+                    {shippingVouchers.map((voucher) => renderVoucherCard(voucher))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-100 bg-white">
+          <button
+            onClick={() => onApply(selectedOrderCode, selectedShippingCode)}
+            className="w-full bg-[#ff4f00] hover:bg-[#ff5f1a] text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm transition-all"
+          >
+            Confirm Selection
+          </button>
         </div>
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : null;
 }
