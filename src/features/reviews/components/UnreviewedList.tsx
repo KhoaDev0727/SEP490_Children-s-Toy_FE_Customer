@@ -45,8 +45,8 @@ export default function UnreviewedList() {
     return (
       <div className="flex flex-col justify-center items-center py-20 space-y-4">
         <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-4 border-orange-100"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-[#ff4f00] border-t-transparent animate-spin"></div>
         </div>
         <p className="text-sm text-slate-500 animate-pulse font-medium">
           Loading products...
@@ -79,7 +79,7 @@ export default function UnreviewedList() {
         {products.map((product) => (
           <div
             key={`${product.orderId}-${product.productId}`}
-            className="group bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col md:flex-row gap-5 items-start md:items-center hover:shadow-xl hover:shadow-orange-500/5 hover:border-orange-200 transition-all duration-300"
+            className="group bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col md:flex-row gap-5 items-start md:items-center hover:shadow-xl hover:shadow-[#ff4f00]/5 hover:border-[#ff4f00]/30 transition-all duration-300"
           >
             <Link href={`/products/${product.productId}`} className="shrink-0">
               <div className="relative w-24 h-24 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 group-hover:scale-105 transition-transform duration-300">
@@ -107,11 +107,10 @@ export default function UnreviewedList() {
                 </span>
                 {product.remainingDays > 0 && (
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
-                      product.remainingDays <= 3
-                        ? "bg-red-50 text-red-600"
-                        : "bg-emerald-50 text-emerald-600"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${product.remainingDays <= 3
+                      ? "bg-red-50 text-red-600"
+                      : "bg-emerald-50 text-emerald-600"
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[12px]">
                       schedule
@@ -122,7 +121,7 @@ export default function UnreviewedList() {
               </div>
 
               <Link href={`/products/${product.productId}`}>
-                <h4 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 truncate transition-colors leading-tight mb-1">
+                <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#ff4f00] truncate transition-colors leading-tight mb-1">
                   {product.productName}
                 </h4>
               </Link>
@@ -143,11 +142,10 @@ export default function UnreviewedList() {
                     productImage: product.productImage || undefined,
                   })
                 }
-                className={`w-full md:w-auto px-8 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 hover:cursor-pointer ${
-                  product.remainingDays > 0
-                    ? "bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                }`}
+                className={`w-full md:w-auto px-4 py-2 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 hover:cursor-pointer ${product.remainingDays > 0
+                  ? "bg-[#ff4f00] text-white hover:bg-[#ff4f00]/95 shadow-md shadow-[#ff4f00]/10 active:scale-95"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  }`}
               >
                 <span className="material-symbols-outlined text-[18px]">
                   edit_note
@@ -165,13 +163,13 @@ export default function UnreviewedList() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-orange-300 transition-all text-slate-600 disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-[#ff4f00]/30 transition-all text-slate-600 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
 
           <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-sm font-bold text-orange-600">{page}</span>
+            <span className="text-sm font-bold text-[#ff4f00]">{page}</span>
             <span className="text-xs text-slate-400 font-medium">/</span>
             <span className="text-sm font-bold text-slate-600">
               {totalPages}
@@ -181,7 +179,7 @@ export default function UnreviewedList() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-orange-300 transition-all text-slate-600 disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 hover:border-[#ff4f00]/30 transition-all text-slate-600 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">chevron_right</span>
           </button>

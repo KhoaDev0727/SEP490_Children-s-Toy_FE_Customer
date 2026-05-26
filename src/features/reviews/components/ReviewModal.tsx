@@ -139,13 +139,13 @@ export default function ReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-100 bg-linear-to-r from-orange-50/50 to-white shrink-0">
+        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-100 bg-slate-50 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Product review</h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -163,8 +163,8 @@ export default function ReviewModal({
 
         {/* Scrollable Body */}
         <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-4">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-50 shrink-0">
+          <div className="p-4 bg-slate-50 rounded-md border border-slate-100 flex items-center gap-4">
+            <div className="relative w-12 h-12 rounded-md overflow-hidden border border-slate-50 shrink-0">
               {productImage ? (
                 <Image
                   src={productImage}
@@ -203,8 +203,8 @@ export default function ReviewModal({
                 >
                   <span
                     className={`material-symbols-outlined text-[48px] transition-all duration-300 ${star <= rating
-                        ? "text-orange-400 drop-shadow-sm"
-                        : "text-slate-200 group-hover:text-orange-200"
+                        ? "text-[#ff4f00] drop-shadow-sm"
+                        : "text-slate-200 group-hover:text-[#ff4f00]/30"
                       }`}
                     style={{
                       fontVariationSettings:
@@ -238,7 +238,7 @@ export default function ReviewModal({
             <textarea
               {...register("comment")}
               rows={4}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all resize-none placeholder:text-slate-400 text-slate-700"
+              className="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-sm focus:ring-2 focus:ring-[#ff4f00]/10 focus:border-[#ff4f00] outline-none transition-all resize-none placeholder:text-slate-400 text-slate-700"
               placeholder="Share what you liked about the product or service..."
             ></textarea>
             {errors.comment && (
@@ -265,7 +265,7 @@ export default function ReviewModal({
               {selectedImages.map((imgObj, idx) => (
                 <div
                   key={idx}
-                  className="relative group/img w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in zoom-in duration-200"
+                  className="relative group/img w-20 h-20 rounded-md overflow-hidden border border-slate-200 shadow-sm animate-in zoom-in duration-200"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -286,7 +286,7 @@ export default function ReviewModal({
               ))}
 
               {selectedImages.length < 3 && (
-                <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/30 hover:text-orange-500 transition-all text-slate-400">
+                <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-[#ff4f00]/40 hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] transition-all text-slate-400">
                   <span className="material-symbols-outlined text-[24px]">
                     add_circle
                   </span>
@@ -307,7 +307,7 @@ export default function ReviewModal({
         </div>
 
         {/* Fixed Footer */}
-        <div className="px-8 py-6 border-t border-slate-100 bg-slate-100 flex gap-4 shrink-0">
+        <div className="px-8 py-6 border-t border-slate-100 bg-slate-50 flex gap-4 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -319,7 +319,7 @@ export default function ReviewModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-2 px-6 py-3 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 hover:cursor-pointer"
+            className="flex-2 px-6 py-3 bg-[#ff4f00] text-white rounded-xl text-sm font-bold hover:bg-[#ff4f00]/95 transition-all shadow-md shadow-[#ff4f00]/10 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 hover:cursor-pointer"
           >
             {isSubmitting ? (
               <>

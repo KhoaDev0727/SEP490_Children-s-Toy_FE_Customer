@@ -82,7 +82,7 @@ export default function RefundDetailModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
@@ -93,25 +93,24 @@ export default function RefundDetailModal({
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100"
-          style={{ background: "linear-gradient(135deg, #fff7f3 0%, #fff 100%)" }}
+          className="px-6 py-5 border-b border-slate-100 bg-slate-50"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                style={{ background: "#ff4f00" }}
               >
                 <span className="material-symbols-outlined text-white text-[20px]">
                   assignment_return
                 </span>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#261812]">
+                <h2 className="text-lg font-bold text-[#0f172a]">
                   Refund Details
                 </h2>
                 {refund && (
-                  <p className="text-xs text-[#5a4136]">
+                  <p className="text-xs text-[#475569]">
                     Order #{refund.orderCode}
                   </p>
                 )}
@@ -147,7 +146,7 @@ export default function RefundDetailModal({
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-slate-500 mb-1">Refund Amount</p>
-                  <p className="text-xl font-black text-[#ff6a00]">
+                  <p className="text-xl font-black text-[#ff4f00]">
                     {formatPrice(refund.approvedAmount)}
                   </p>
                 </div>
@@ -180,13 +179,13 @@ export default function RefundDetailModal({
               {/* Details */}
               {refund.reasonDetails && (
                 <div className="rounded-xl border border-slate-100 p-4">
-                  <p className="text-xs font-bold text-[#5a4136] mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#ff6a00]">
+                  <p className="text-xs font-bold text-[#475569] mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       notes
                     </span>
                     Additional Details
                   </p>
-                  <p className="text-sm text-[#261812] leading-relaxed">
+                  <p className="text-sm text-[#0f172a] leading-relaxed">
                     {refund.reasonDetails}
                   </p>
                 </div>
@@ -195,8 +194,8 @@ export default function RefundDetailModal({
               {/* Evidence Images */}
               {refund.images && refund.images.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-[#5a4136] mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#ff6a00]">
+                  <p className="text-xs font-bold text-[#475569] mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       image
                     </span>
                     Evidence Photos ({refund.images.length})
@@ -233,7 +232,7 @@ export default function RefundDetailModal({
                   </span>
                   <div>
                     <p className="text-xs text-slate-400">Last Updated</p>
-                    <p className="text-sm font-semibold text-[#261812]">
+                    <p className="text-sm font-semibold text-[#0f172a]">
                       {formatDate(refund.updatedAt)}
                     </p>
                   </div>
@@ -244,7 +243,7 @@ export default function RefundDetailModal({
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors"
+                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
                 >
                   Close
                 </button>
@@ -292,12 +291,12 @@ function InfoRow({
   return (
     <div className="rounded-xl border border-slate-100 p-3">
       <div className="flex items-center gap-2 mb-1">
-        <span className="material-symbols-outlined text-[14px] text-[#ff6a00]">
+        <span className="material-symbols-outlined text-[14px] text-[#ff4f00]">
           {icon}
         </span>
         <p className="text-xs text-slate-400 font-medium">{label}</p>
       </div>
-      <p className="text-sm font-semibold text-[#261812] truncate">{value}</p>
+      <p className="text-sm font-semibold text-[#0f172a] truncate">{value}</p>
     </div>
   );
 }
