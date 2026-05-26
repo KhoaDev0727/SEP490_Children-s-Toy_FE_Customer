@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import OrderHistoryView from "./_components/OrderHistoryView";
 
@@ -8,7 +9,13 @@ export default function OrderHistoryPage() {
       <ProfileSidebar />
 
       {/* Main Content */}
-      <OrderHistoryView />
+      <Suspense fallback={
+        <div className="md:col-span-3 flex justify-center items-center py-20">
+          <div className="w-10 h-10 border-4 border-[#ff6a00] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <OrderHistoryView />
+      </Suspense>
     </main>
   );
 }
