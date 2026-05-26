@@ -12,12 +12,12 @@ export default function ProfileReviewsPage() {
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
       <ProfileSidebar />
 
-      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden flex flex-col min-h-[600px]">
-        <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-          <h1 className="text-2xl font-bold text-[#261812]">
+      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px]">
+        <div className="px-6 py-4 border-b border-slate-200 bg-white">
+          <h1 className="text-2xl font-bold text-[#0f172a]">
             My Reviews
           </h1>
-          <p className="mt-1 text-sm text-[#5a4136]">
+          <p className="mt-1 text-sm text-[#475569]">
             Review purchased products and share your experience.
           </p>
         </div>

@@ -39,7 +39,7 @@ export default function NotificationPopup() {
     show: false,
     title: "",
     message: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const loadItems = useCallback(async () => {
@@ -144,7 +144,7 @@ export default function NotificationPopup() {
       {/* Bell button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2 hover:bg-gray-100 rounded-full relative text-gray-600 transition-colors"
+        className="p-2 hover:bg-gray-100 rounded-full relative dark:hover:bg-slate-800 dark:text-slate-300 text-gray-600 transition-colors"
         aria-label="Notifications"
       >
         <span className="material-symbols-outlined">notifications</span>

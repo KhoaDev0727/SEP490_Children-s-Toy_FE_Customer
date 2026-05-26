@@ -971,57 +971,121 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative flex flex-row min-h-[110px] h-auto bg-white rounded-xl border transition-all ${!eligible ? "opacity-60 grayscale cursor-not-allowed border-gray-150" :
-          isSelected ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer" : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm"
-          }`}
+        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
+          !eligible
+            ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
+            : isSelected
+            ? voucher.discountTarget === "ORDER_TOTAL"
+              ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
+              : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
+            : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
+        }`}
       >
-        {remainingUsage !== null && (
-          <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
-            <div className="bg-white text-[#ff4f00] text-[10px] px-2 rounded-l-full border border-[#ff4f00]/30 shadow-sm whitespace-nowrap font-black">
-              x{remainingUsage}
-            </div>
-            <div className="w-1 h-1 bg-[#ff4f00] [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
-          </div>
-        )}
-        {/* Left Ribbon / Perforated Stub */}
-        <div className={`w-28 flex flex-col items-center justify-center border-r border-dashed border-gray-200 shrink-0 relative overflow-hidden rounded-l-xl ${isSelected ? "bg-[#ff4f00]/5 text-[#ff4f00]" : "bg-gray-50 text-gray-800"
-          }`}>
-          <span className="material-symbols-outlined text-2xl mb-1">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "sell" : "local_shipping"}
-          </span>
-          <span className="text-[9px] font-black tracking-wider uppercase">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "Discount" : "Shipping"}
-          </span>
-          <div className="absolute -right-1.5 top-0 w-3 h-3 bg-white rounded-full border border-gray-200"></div>
-          <div className="absolute -right-1.5 bottom-0 w-3 h-3 bg-white rounded-full border border-gray-200"></div>
-        </div>
-
-        {/* Right Content */}
-        <div className="flex-1 p-3 flex flex-col justify-center min-w-0 pr-12">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="text-[9px] font-black bg-[#ff4f00]/10 text-[#ff4f00] px-1.5 py-0.5 rounded border border-[#ff4f00]/15 uppercase tracking-wider shrink-0">
-              {voucher.voucherCode}
-            </span>
-          </div>
-          <p className="text-xs font-black text-gray-900 line-clamp-2 leading-snug" title={voucher.voucherName}>
-            {voucher.voucherName}
-          </p>
-          <p className="text-[11px] font-bold text-gray-600 mt-1">
-            Min. spend: {voucher.minOrderAmount ? formatCurrency(voucher.minOrderAmount) : "0 ₫"}
-          </p>
-          <p className={`text-[10px] mt-1 flex items-center gap-1 ${new Date(voucher.startDate).getTime() > Date.now() ? "text-red-500 font-bold" : "text-gray-400"}`}>
-            <span className="material-symbols-outlined text-[12px] font-bold">schedule</span>
-            {new Date(voucher.startDate).getTime() > Date.now()
-              ? `Starts: ${formatDate(voucher.startDate)}`
-              : `Exp: ${formatDate(voucher.endDate)}`}
-          </p>
-        </div>
-
-        {/* Radio selector inside card */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-[#ff4f00] bg-[#ff4f00]" : "border-gray-300"
+        {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
+        <div
+          className="relative w-[116px] shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden"
+          style={{
+            maskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            WebkitMaskImage:
+              "radial-gradient(circle at 0px 6px, transparent 3px, black 3.5px)",
+            maskSize: "100% 12px",
+            WebkitMaskSize: "100% 12px",
+            maskRepeat: "repeat-y",
+            WebkitMaskRepeat: "repeat-y",
+          }}
+        >
+          {voucher.imageUrl ? (
+            <Image
+              src={voucher.imageUrl}
+              alt={voucher.voucherName}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          ) : (
+            <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
+              voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
             }`}>
-            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+              <span className="material-symbols-outlined text-4xl">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+              </span>
+              <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
+                {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Right side: Content */}
+        <div className="grow bg-white p-3 flex flex-row relative min-w-0">
+          {/* Info Column */}
+          <div className="grow flex flex-col justify-between min-w-0 pr-8">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${
+                  voucher.discountTarget === "ORDER_TOTAL"
+                    ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
+                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                }`}>
+                  {voucher.voucherCode}
+                </span>
+              </div>
+              <h3
+                className="text-slate-900 text-xs font-bold leading-tight line-clamp-2"
+                title={voucher.voucherName}
+              >
+                {voucher.voucherName}
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-1 truncate">
+                Minimum spend{" "}
+                {voucher.minOrderAmount
+                  ? formatCurrency(voucher.minOrderAmount)
+                  : "0 ₫"}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span
+                className="material-symbols-outlined text-slate-400"
+                style={{
+                  fontSize: "16px",
+                  fontVariationSettings:
+                    '"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 20',
+                }}
+              >
+                schedule
+              </span>
+              <p className="text-[10px] text-slate-500">
+                {new Date(voucher.startDate).getTime() > Date.now()
+                  ? `Starts: ${formatDate(voucher.startDate)}`
+                  : `HSD: ${formatDate(voucher.endDate)}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Max Usage Ribbon - Shopee Style at Top Right */}
+          {remainingUsage !== null && (
+            <div className="absolute top-1 -right-1 z-20 flex flex-col items-end">
+              <div className="bg-red-50 text-red-600 text-[10px] px-2.5 rounded-l-full border border-red-100 shadow-sm whitespace-nowrap font-bold">
+                x{remainingUsage}
+              </div>
+              {/* The Fold */}
+              <div className="w-1 h-1 bg-red-700 [clip-path:polygon(0_0,100%_0,0_100%)]"></div>
+            </div>
+          )}
+
+          {/* Selection indicator inside card */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+              isSelected
+                ? voucher.discountTarget === "ORDER_TOTAL"
+                  ? "border-[#ff4f00] bg-[#ff4f00]"
+                  : "border-emerald-500 bg-emerald-500"
+                : "border-gray-300"
+            }`}>
+              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+            </div>
           </div>
         </div>
       </div>

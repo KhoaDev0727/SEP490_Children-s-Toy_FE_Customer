@@ -82,7 +82,7 @@ export default function WalletOverview({
   return (
     <div>
       <div className="p-6">
-        <div className="bg-gradient-to-r from-[#a14000] to-[#ff6a00] rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#ff4f00] to-[#ff6c24] rounded-xl p-6 text-white shadow-md relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-sm text-white/85 mb-1">Available Balance</p>
             <h2 className="text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
@@ -93,7 +93,7 @@ export default function WalletOverview({
               <button
                 type="button"
                 onClick={onTopUp}
-                className="bg-white text-[#a14000] px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#fff3eb] transition-colors flex items-center gap-2"
+                className="bg-white text-[#ff4f00] px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#fff5f0] transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 Top Up
@@ -101,7 +101,7 @@ export default function WalletOverview({
               <button
                 type="button"
                 onClick={onToggleBalanceVisibility}
-                className="bg-white/15 border border-white/30 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/20 transition-colors flex items-center gap-2"
+                className="bg-white/15 border border-white/30 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-white/20 transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">
                   {isBalanceVisible ? "visibility_off" : "visibility"}
@@ -111,7 +111,7 @@ export default function WalletOverview({
               <button
                 type="button"
                 onClick={onChangePin}
-                className="bg-white/15 border border-white/30 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/20 transition-colors flex items-center gap-2"
+                className="bg-white/15 border border-white/30 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-white/20 transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">pin</span>
                 Change PIN
@@ -122,16 +122,16 @@ export default function WalletOverview({
             account_balance_wallet
           </span>
         </div>
-        <p className="mt-3 text-xs text-[#5a4136]">
+        <p className="mt-3 text-xs text-slate-500">
           Total incoming transactions:{" "}
           <span className="font-semibold text-emerald-700">{formatVnd(totalCredit)}</span>
         </p>
       </div>
 
-      <div className="px-6 py-4 border-t border-b border-[#e2bfb0]/30 flex flex-wrap justify-between items-center gap-3 bg-white">
-        <h3 className="text-xl font-bold text-[#261812]">Transaction History</h3>
+      <div className="px-6 py-4 border-t border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-white">
+        <h3 className="text-xl font-bold text-[#0f172a]">Transaction History</h3>
         <div className="flex items-center gap-2">
-          <label htmlFor="wallet-history-filter" className="text-xs font-semibold text-[#5a4136]">
+          <label htmlFor="wallet-history-filter" className="text-xs font-semibold text-slate-500">
             Filter
           </label>
           <select
@@ -140,7 +140,7 @@ export default function WalletOverview({
             onChange={(event) =>
               setHistoryFilter(event.target.value as "latest" | "topup" | "payment" | "refund")
             }
-            className="text-sm rounded-md border border-[#e2bfb0] px-2.5 py-1.5 text-[#261812] bg-white focus:outline-none focus:ring-2 focus:ring-[#ff6a00]/30"
+            className="text-sm rounded-md border border-slate-200 px-2.5 py-1.5 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/10 focus:border-[#ff4f00]"
           >
             <option value="latest">Latest</option>
             <option value="topup">Top Up</option>
@@ -150,7 +150,7 @@ export default function WalletOverview({
         </div>
       </div>
 
-      <div className="px-6 py-3 bg-[#fff8f6] border-b border-[#e2bfb0]/20 text-xs text-[#5a4136] flex items-center justify-between gap-2">
+      <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 text-xs text-slate-500 flex items-center justify-between gap-2">
         <span>
           Page {transactionPageNumber}/{transactionTotalPages} • Total transactions: {transactionTotalCount}
         </span>
@@ -159,18 +159,18 @@ export default function WalletOverview({
 
       <div className="flex flex-col relative">
         {isTransactionsLoading && transactions.length === 0 ? (
-          <div className="p-6 text-sm text-[#5a4136]">Loading transaction history...</div>
+          <div className="p-6 text-sm text-slate-500">Loading transaction history...</div>
         ) : filteredTransactions.length === 0 ? (
-          <div className="p-6 text-sm text-[#5a4136]">No wallet transactions yet.</div>
+          <div className="p-6 text-sm text-slate-500">No wallet transactions yet.</div>
         ) : (
           filteredTransactions.map((transaction) => {
             const isExpanded = expandedTransactionId === transaction.id;
             return (
-              <div key={transaction.id} className="bg-white border-b border-[#e2bfb0]/20 last:border-b-0">
+              <div key={transaction.id} className="bg-white border-b border-slate-100 last:border-b-0">
                 <button
                   type="button"
                   onClick={() => toggleTransactionExpansion(transaction.id)}
-                  className="w-full text-left flex items-center gap-4 p-6 hover:bg-[#fff8f6] transition-colors"
+                  className="w-full text-left flex items-center gap-4 p-6 hover:bg-slate-50/50 transition-colors"
                 >
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${getTransactionIconStyles(transaction.kind)}`}
@@ -178,10 +178,10 @@ export default function WalletOverview({
                     <span className="material-symbols-outlined">{transaction.icon}</span>
                   </div>
                   <div className="flex-grow pl-2 min-w-0">
-                    <h4 className="text-sm md:text-base font-semibold text-[#261812] mb-1 truncate">
+                    <h4 className="text-sm md:text-base font-semibold text-[#0f172a] mb-1 truncate">
                       {transaction.title}
                     </h4>
-                    <span className="text-xs text-[#565e74]">{transaction.time}</span>
+                    <span className="text-xs text-slate-500">{transaction.time}</span>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p
@@ -195,35 +195,35 @@ export default function WalletOverview({
                       {transaction.statusLabel}
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-[#a14000] text-[20px]">
+                  <span className="material-symbols-outlined text-slate-400 text-[20px]">
                     {isExpanded ? "expand_less" : "expand_more"}
                   </span>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-6 pb-5 pl-[88px] text-sm text-[#5a4136] space-y-1">
+                  <div className="px-6 pb-5 pl-[88px] text-sm text-slate-600 space-y-1">
                     <p>
-                      <span className="font-semibold text-[#261812]">Type:</span> {transaction.rawTxnType}
+                      <span className="font-semibold text-slate-900">Type:</span> {transaction.rawTxnType}
                     </p>
                     <p>
-                      <span className="font-semibold text-[#261812]">Method:</span> {transaction.method}
+                      <span className="font-semibold text-slate-900">Method:</span> {transaction.method}
                     </p>
                     {transaction.relatedOrderCode && (
                       <p>
-                        <span className="font-semibold text-[#261812]">Order:</span> #{transaction.relatedOrderCode}
+                        <span className="font-semibold text-slate-900">Order:</span> #{transaction.relatedOrderCode}
                       </p>
                     )}
                     {transaction.reason && (
                       <p>
-                        <span className="font-semibold text-[#261812]">Note:</span> {transaction.reason}
+                        <span className="font-semibold text-slate-900">Note:</span> {transaction.reason}
                       </p>
                     )}
                     <p>
-                      <span className="font-semibold text-[#261812]">Created:</span> {transaction.time}
+                      <span className="font-semibold text-slate-900">Created:</span> {transaction.time}
                     </p>
                     {transaction.completedTime && (
                       <p>
-                        <span className="font-semibold text-[#261812]">Completed:</span> {transaction.completedTime}
+                        <span className="font-semibold text-slate-900">Completed:</span> {transaction.completedTime}
                       </p>
                     )}
                   </div>
@@ -234,8 +234,8 @@ export default function WalletOverview({
         )}
 
         {isTransactionsLoading && transactions.length > 0 && (
-          <div className="absolute inset-0 bg-white/55 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
-            <div className="px-3 py-1.5 rounded-md border border-[#e2bfb0] bg-white text-xs font-semibold text-[#5a4136]">
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center pointer-events-none">
+            <div className="px-3 py-1.5 rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-600">
               Loading...
             </div>
           </div>
@@ -243,12 +243,12 @@ export default function WalletOverview({
       </div>
 
       {!isTransactionsLoading && transactionTotalPages > 1 && (
-        <div className="px-6 py-4 border-t border-[#e2bfb0]/20 bg-white flex items-center justify-center gap-2">
+        <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-center gap-2">
           <button
             type="button"
             disabled={!hasPreviousTransactionPage || isTransactionsLoading}
             onClick={() => onTransactionPageChange(transactionPageNumber - 1)}
-            className="px-3 py-1.5 text-sm rounded-md border border-[#e2bfb0] text-[#5a4136] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#fff8f6]"
+            className="px-3 py-1.5 text-sm rounded-md border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
           >
             Previous
           </button>
@@ -261,8 +261,8 @@ export default function WalletOverview({
               onClick={() => onTransactionPageChange(page)}
               className={`px-3 py-1.5 text-sm rounded-md border ${
                 page === transactionPageNumber
-                  ? "border-[#a14000] bg-[#a14000] text-white"
-                  : "border-[#e2bfb0] text-[#5a4136] hover:bg-[#fff8f6]"
+                  ? "border-[#ff4f00] bg-[#ff4f00] text-white"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
               {page}
@@ -273,7 +273,7 @@ export default function WalletOverview({
             type="button"
             disabled={!hasNextTransactionPage || isTransactionsLoading}
             onClick={() => onTransactionPageChange(transactionPageNumber + 1)}
-            className="px-3 py-1.5 text-sm rounded-md border border-[#e2bfb0] text-[#5a4136] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#fff8f6]"
+            className="px-3 py-1.5 text-sm rounded-md border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
           >
             Next
           </button>

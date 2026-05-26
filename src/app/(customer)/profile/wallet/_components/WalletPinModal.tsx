@@ -63,7 +63,7 @@ function PinInput({
           autoComplete="new-password"
           value={value}
           onChange={(event) => onValueChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="w-full h-11 rounded-xl border border-slate-200 px-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-orange-200"
+          className="w-full h-11 rounded-xl border border-slate-200 px-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-[#ff4f00]/10 focus:border-[#ff4f00]"
         />
         <button
           type="button"
@@ -118,7 +118,7 @@ export default function WalletPinModal({
     <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/60" 
+        className="absolute inset-0 bg-[#0f172a]/50" 
         onClick={isActionLocked ? undefined : onClose} 
       />
       <div
@@ -160,7 +160,7 @@ export default function WalletPinModal({
                 autoComplete="one-time-code"
                 value={otpCode}
                 onChange={(event) => onOtpCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-200"
+                className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#ff4f00]/10 focus:border-[#ff4f00]"
               />
             </div>
             <PinInput
@@ -183,7 +183,7 @@ export default function WalletPinModal({
               type="button"
               onClick={onSendForgotPinOtp}
               disabled={isSendingForgotOtp || isResettingPin}
-              className="text-xs font-semibold text-[#a14000] hover:text-[#ff6a00] transition-colors disabled:opacity-60"
+              className="text-xs font-semibold text-[#ff4f00] hover:text-[#ff4f00]/80 hover:underline transition-colors disabled:opacity-60"
             >
               {isSendingForgotOtp ? "Sending OTP..." : "Resend OTP"}
             </button>
@@ -242,7 +242,7 @@ export default function WalletPinModal({
                 type="button"
                 onClick={onSendForgotPinOtp}
                 disabled={isSendingForgotOtp || isSubmittingPin}
-                className="text-xs font-semibold text-[#a14000] hover:text-[#ff6a00] transition-colors disabled:opacity-60"
+                className="text-xs font-semibold text-[#ff4f00] hover:text-[#ff4f00]/80 hover:underline transition-colors disabled:opacity-60"
               >
                 {isSendingForgotOtp ? "Sending OTP..." : "Forgot PIN?"}
               </button>
@@ -263,7 +263,7 @@ export default function WalletPinModal({
             type="button"
             onClick={isForgotPinFlow ? onResetPinWithOtp : onSubmitPinModal}
             disabled={isActionLocked}
-            className="h-10 px-4 rounded-xl text-white text-sm font-semibold bg-gradient-to-r from-[#ff6a00] to-[#ff8a1f] disabled:opacity-60"
+            className="h-10 px-4 rounded-xl text-white text-sm font-semibold bg-[#ff4f00] hover:bg-[#ff4f00]/95 transition-all disabled:opacity-60"
           >
             {isForgotPinFlow
               ? isResettingPin
