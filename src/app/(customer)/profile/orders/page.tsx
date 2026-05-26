@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import OrderHistoryView from "./_components/OrderHistoryView";
 
@@ -8,7 +9,9 @@ export default function OrderHistoryPage() {
       <ProfileSidebar />
 
       {/* Main Content */}
-      <OrderHistoryView />
+      <Suspense fallback={<div>Loading...</div>}>
+        <OrderHistoryView />
+      </Suspense>
     </main>
   );
 }
