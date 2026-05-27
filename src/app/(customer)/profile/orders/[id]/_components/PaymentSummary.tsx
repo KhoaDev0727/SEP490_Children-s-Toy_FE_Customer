@@ -5,6 +5,7 @@ export interface PaymentSummaryData {
   shippingFee: number;
   discount: number;
   paymentMethod: string;
+  paymentStatus: string;
 }
 
 function formatPrice(p: number) {
@@ -16,6 +17,7 @@ export default function PaymentSummary({
   shippingFee,
   discount,
   paymentMethod,
+  paymentStatus,
 }: PaymentSummaryData) {
   const total = subtotal + shippingFee - discount;
 
@@ -58,11 +60,36 @@ export default function PaymentSummary({
         </span>
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-[#5a4136] bg-slate-50/50 p-4 rounded-xl border border-[#e2bfb0]/20">
-        <span className="material-symbols-outlined text-[#ff6a00] text-[20px]">
-          credit_card
-        </span>
-        {paymentMethod}
+      <div className="flex flex-col gap-3 bg-slate-50/50 p-4 rounded-xl border border-[#e2bfb0]/20">
+        <div className="flex items-center gap-2 text-sm text-[#5a4136]">
+          <span className="material-symbols-outlined text-[#ff6a00] text-[20px]">
+            credit_card
+          </span>
+          {paymentMethod}
+        </div>
+        
+        {paymentStatus && (
+          <div className="flex items-center gap-2 pt-2 border-t border-[#e2bfb0]/10">
+            <span className="text-xs text-gray-500 font-medium">Status:</span>
+            {paymentStatus.toUpperCase() === "REFUNDED" ? (
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-50 text-blue-600 border border-blue-200">
+                REFUNDED
+              </span>
+            ) : paymentStatus.toUpperCase() === "PARTIALLY_REFUNDED" ? (
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-orange-50 text-orange-600 border border-orange-200">
+                PARTIALLY REFUNDED
+              </span>
+            ) : paymentStatus.toUpperCase() === "PAID" ? (
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-green-50 text-green-600 border border-green-200">
+                PAID
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-gray-50 text-gray-600 border border-gray-200">
+                {paymentStatus}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

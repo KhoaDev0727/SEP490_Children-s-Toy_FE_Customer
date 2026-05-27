@@ -37,6 +37,14 @@ export interface RefundListItem {
   createdAt: string;
 }
 
+export interface RefundDetailItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  refundAmount: number;
+}
+
 export interface RefundDetail {
   refundId: number;
   orderId: number;
@@ -58,6 +66,13 @@ export interface RefundDetail {
   createdAt: string;
   updatedAt?: string | null;
   images: string[];
+  refundCode?: string | null;
+  shippingOrderCode?: string | null;
+  shippingFee?: number;
+  subTotal?: number;
+  totalAmount?: number;
+  adminNote?: string | null;
+  details?: RefundDetailItem[];
 }
 
 export interface CreateRefundRequest {
@@ -65,6 +80,7 @@ export interface CreateRefundRequest {
   refundReasonId: number;
   reasonDetails?: string;
   images?: string[];
+  items?: { productId: number; quantity: number }[];
 }
 
 export interface RefundFilterQuery {
@@ -77,8 +93,12 @@ export interface RefundFilterQuery {
 }
 
 export type RefundStatus =
-  | "Requested"
-  | "Approved"
-  | "Rejected"
-  | "Completed"
-  | "Cancelled";
+  | "RefundRequested"
+  | "RefundApproved"
+  | "RefundRejected"
+  | "RefundPickupCreated"
+  | "RefundShipping"
+  | "RefundReceived"
+  | "RefundInspectionPending"
+  | "RefundCompleted"
+  | "RefundCancelled";

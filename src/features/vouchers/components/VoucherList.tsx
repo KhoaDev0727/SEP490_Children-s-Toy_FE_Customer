@@ -28,6 +28,7 @@ export default function VoucherList() {
           const activeVouchers = res.items.filter((v) => {
             const endDate = new Date(v.endDate).getTime();
             if (endDate <= now) return false;
+            if (v.discountTarget === "FINAL_PRICE") return false;
             if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
             return true;
           });

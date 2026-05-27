@@ -96,7 +96,17 @@ export default function OrderSummary({
     const v = target === "ORDER_TOTAL" ? appliedOrderVoucher : appliedShippingVoucher;
     if (!v) return 0;
 
+    if (v.discountTarget === "FINAL_PRICE") {
+      const base = subtotal + shipping;
+      let discountAmount = base > v.discountValue ? base - v.discountValue : 0;
+      if (v.maxDiscountCap) {
+        discountAmount = Math.min(discountAmount, v.maxDiscountCap);
+      }
+      return discountAmount;
+    }
+
     const base = target === "ORDER_TOTAL" ? subtotal : shipping;
+
     if (v.discountType === "PERCENTAGE") {
       const val = (base * v.discountValue) / 100;
       return v.maxDiscountCap ? Math.min(val, v.maxDiscountCap) : val;
@@ -442,10 +452,12 @@ export default function OrderSummary({
           if (target === "ORDER_TOTAL") {
             setOrderVoucherCode(best.voucher.voucherCode);
             setAppliedOrderVoucherCode(best.voucher.voucherCode);
+            setAppliedOrderVoucher(best.voucher);
             setOrderVoucherError(null);
           } else {
             setShippingVoucherCode(best.voucher.voucherCode);
             setAppliedShippingVoucherCode(best.voucher.voucherCode);
+            setAppliedShippingVoucher(best.voucher);
             setShippingVoucherError(null);
           }
         } else {
@@ -939,7 +951,7 @@ function UnifiedVoucherModal({
     }
 
     // Select it
-    if (matchedVoucher.discountTarget === "ORDER_TOTAL") {
+    if (matchedVoucher.discountTarget === "ORDER_TOTAL" || matchedVoucher.discountTarget === "FINAL_PRICE") {
       setSelectedOrderCode(matchedVoucher.voucherCode);
       toast.success(`Applied Discount Voucher: ${matchedVoucher.voucherCode}`);
     } else {
@@ -952,7 +964,8 @@ function UnifiedVoucherModal({
 
   const renderVoucherCard = (voucher: IVoucher) => {
     const eligible = isEligible(voucher);
-    const selectedCode = voucher.discountTarget === "ORDER_TOTAL" ? selectedOrderCode : selectedShippingCode;
+    const isOrderTarget = voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE";
+    const selectedCode = isOrderTarget ? selectedOrderCode : selectedShippingCode;
     const isSelected = voucher.voucherCode === selectedCode;
     const remainingUsage = voucher.maxUsagePerUser !== null
       ? Math.max(0, voucher.maxUsagePerUser - (voucher.currentUserUsageCount ?? 0))
@@ -960,7 +973,7 @@ function UnifiedVoucherModal({
 
     const toggleSelect = () => {
       if (!eligible) return;
-      if (voucher.discountTarget === "ORDER_TOTAL") {
+      if (isOrderTarget) {
         setSelectedOrderCode(isSelected ? undefined : voucher.voucherCode);
       } else {
         setSelectedShippingCode(isSelected ? undefined : voucher.voucherCode);
@@ -975,7 +988,7 @@ function UnifiedVoucherModal({
           !eligible
             ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
             : isSelected
-            ? voucher.discountTarget === "ORDER_TOTAL"
+            ? isOrderTarget
               ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
               : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
             : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
@@ -1005,13 +1018,13 @@ function UnifiedVoucherModal({
             />
           ) : (
             <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
-              voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
+              isOrderTarget ? "bg-orange-500" : "bg-emerald-500"
             }`}>
               <span className="material-symbols-outlined text-4xl">
-                {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+                {isOrderTarget ? "confirmation_number" : "local_shipping"}
               </span>
               <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-                {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
+                {isOrderTarget ? "Voucher" : "Shipping"}
               </span>
             </div>
           )}
@@ -1024,7 +1037,7 @@ function UnifiedVoucherModal({
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${
-                  voucher.discountTarget === "ORDER_TOTAL"
+                  isOrderTarget
                     ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
                     : "bg-emerald-50 text-emerald-600 border-emerald-100"
                 }`}>
@@ -1079,7 +1092,7 @@ function UnifiedVoucherModal({
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
               isSelected
-                ? voucher.discountTarget === "ORDER_TOTAL"
+                ? isOrderTarget
                   ? "border-[#ff4f00] bg-[#ff4f00]"
                   : "border-emerald-500 bg-emerald-500"
                 : "border-gray-300"
