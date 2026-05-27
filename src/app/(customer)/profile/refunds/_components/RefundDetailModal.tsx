@@ -310,7 +310,7 @@ export default function RefundDetailModal({
                 >
                   Close
                 </button>
-                {refund.refundStatus === "Requested" && (
+                {refund.refundStatus === "RefundRequested" && (
                   <button
                     onClick={handleCancel}
                     disabled={isCancelling}

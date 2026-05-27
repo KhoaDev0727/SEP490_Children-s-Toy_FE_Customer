@@ -8,11 +8,11 @@ import type { RefundListItem } from "@/features/refunds/types/refunds";
 
 const TABS = [
   { key: "", label: "All" },
-  { key: "Requested", label: "Requested" },
-  { key: "Approved", label: "Approved" },
-  { key: "Completed", label: "Completed" },
-  { key: "Rejected", label: "Rejected" },
-  { key: "Cancelled", label: "Cancelled" },
+  { key: "RefundRequested", label: "Requested" },
+  { key: "RefundApproved", label: "Approved" },
+  { key: "RefundCompleted", label: "Completed" },
+  { key: "RefundRejected", label: "Rejected" },
+  { key: "RefundCancelled", label: "Cancelled" },
 ];
 
 const PAGE_SIZE = 5;

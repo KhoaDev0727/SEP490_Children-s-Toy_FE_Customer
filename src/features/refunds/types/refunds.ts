@@ -101,4 +101,9 @@ export type RefundStatus =
   | "RefundReceived"
   | "RefundInspectionPending"
   | "RefundCompleted"
-  | "RefundCancelled";
+  | "RefundCancelled"
+  | "Requested"
+  | "Approved"
+  | "Rejected"
+  | "Completed"
+  | "Cancelled";
