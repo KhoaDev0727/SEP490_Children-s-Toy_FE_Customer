@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "@/features/auth/services/auth-api";
 import {
   AUTH_ERROR_ACCOUNT_INACTIVE,
+  AUTH_ERROR_ACCOUNT_NOT_FOUND,
   resolveAuthOperationErrorMessage,
 } from "@/features/auth/utils/auth-api-error";
 import Link from "next/link";
@@ -65,7 +66,7 @@ export default function ForgotPasswordForm() {
         error,
         "Unable to send OTP. Please try again.",
       );
-      if (code === AUTH_ERROR_ACCOUNT_INACTIVE) {
+      if (code === AUTH_ERROR_ACCOUNT_INACTIVE || code === AUTH_ERROR_ACCOUNT_NOT_FOUND) {
         forgotForm.setError("email", { type: "server", message });
       }
       toast.error(message);
