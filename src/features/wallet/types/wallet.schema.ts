@@ -53,7 +53,7 @@ export const resetForgotWalletPinSchema = z
   });
 
 const QUICK_TOP_UP_AMOUNTS = [
-  2000, 20000, 50000, 100000, 200000, 500000,
+  10000, 20000, 50000, 100000, 200000, 500000,
 ] as const;
 
 export const createSePayTopUpQrSchema = z.object({
