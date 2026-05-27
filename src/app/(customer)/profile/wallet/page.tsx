@@ -30,7 +30,7 @@ import {
 } from "./_components/wallet-shared";
 
 const TOP_UP_QUICK_AMOUNTS = [
-  2000, 20000, 50000, 100000, 200000, 500000,
+  10000, 20000, 50000, 100000, 200000, 500000,
 ] as const;
 const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
 const TRANSACTION_HISTORY_PAGE_SIZE = 10;
