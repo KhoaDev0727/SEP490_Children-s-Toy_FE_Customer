@@ -314,7 +314,31 @@ export default function RefundDetailModal({
                   </div>
                 </div>
               )}
-
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={onClose}
+                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Close
+                </button>
+                {refund.refundStatus === "RefundRequested" && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={isCancelling}
+                    className="flex-1 h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCancelling ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                        Cancelling...
+                      </span>
+                    ) : (
+                      "Cancel Request"
+                    )}
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
