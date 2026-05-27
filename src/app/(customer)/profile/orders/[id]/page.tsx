@@ -1,5 +1,17 @@
+import { Suspense } from "react";
 import ProfileSidebar from "../../_components/ProfileSidebar";
 import OrderDetailView from "./_components/OrderDetailView";
+
+function OrderDetailFallback() {
+  return (
+    <section className="col-span-1 md:col-span-3 flex flex-col gap-6">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e2bfb0]/30 flex items-center gap-3">
+        <span className="material-symbols-outlined text-[#ff6a00]">hourglass_top</span>
+        <p className="text-sm text-[#5a4136]">Loading order details...</p>
+      </div>
+    </section>
+  );
+}
 
 export default async function OrderDetailPage({
   params,
@@ -15,7 +27,9 @@ export default async function OrderDetailPage({
       <ProfileSidebar />
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <OrderDetailView orderId={Number.isNaN(orderId) ? 0 : orderId} />
+      <Suspense fallback={<OrderDetailFallback />}>
+        <OrderDetailView orderId={Number.isNaN(orderId) ? 0 : orderId} />
+      </Suspense>
     </main>
   );
 }

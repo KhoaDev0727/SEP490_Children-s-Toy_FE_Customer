@@ -14,6 +14,7 @@ import { ordersApi } from "@/features/orders/services/orders-api";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import axiosClient from "@/configs/axios-client";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
+import { mapCustomerStatusNameToUi } from "@/features/orders/utils/map-customer-order-status";
 
 const ORDERS_PER_PAGE = 3;
 
@@ -66,29 +67,7 @@ export default function OrderHistoryView() {
   const [isCompletingId, setIsCompletingId] = useState<number | null>(null);
 
   const mapStatusNameToUi = useCallback(
-    (statusName?: string | null): OrderStatus => {
-      if (!statusName) return "pending";
-
-      switch (statusName.toLowerCase()) {
-        case "pending":
-          return "pending";
-        case "confirmed":
-        case "processing":
-        case "shipped":
-          return "shipping";
-        case "delivering":
-          return "delivering";
-        case "delivered":
-        case "completed":
-          return "completed";
-        case "cancelled":
-          return "cancelled";
-        case "refunded":
-          return "refunded";
-        default:
-          return "pending";
-      }
-    },
+    (statusName?: string | null): OrderStatus => mapCustomerStatusNameToUi(statusName),
     [],
   );
 

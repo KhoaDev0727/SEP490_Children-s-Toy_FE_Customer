@@ -3,6 +3,10 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  getCustomerOrderDisplay,
+  isCustomerOrderDelivered,
+} from "@/features/orders/utils/map-customer-order-status";
 
 export type OrderStatus =
   | "delivering"
@@ -32,36 +36,6 @@ export interface Order {
   hasActiveRefund?: boolean;
 }
 
-const STATUS_CONFIG: Record<
-  OrderStatus,
-  { label: string; className: string }
-> = {
-  delivering: {
-    label: "DELIVERING",
-    className: "text-orange-600",
-  },
-  completed: {
-    label: "COMPLETED",
-    className: "text-emerald-600",
-  },
-  pending: {
-    label: "PENDING",
-    className: "text-amber-600",
-  },
-  shipping: {
-    label: "SHIPPING",
-    className: "text-indigo-600",
-  },
-  cancelled: {
-    label: "CANCELLED",
-    className: "text-red-600",
-  },
-  refunded: {
-    label: "REFUNDED",
-    className: "text-sky-600",
-  },
-};
-
 const ACTION_BUTTONS: Record<
   OrderStatus,
   { secondary?: string; primary: string }
@@ -89,46 +63,26 @@ interface OrderCardProps {
 
 export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund, onCompleteAction }: OrderCardProps) {
   const { label, className, primaryLabel } = useMemo(() => {
-    const config = STATUS_CONFIG[order.status];
+    const display = getCustomerOrderDisplay({
+      statusName: order.rawStatusName,
+      paymentMethod: order.paymentMethod,
+      hasActiveRefund: order.hasActiveRefund,
+    });
     const actions = ACTION_BUTTONS[order.status];
-    let finalLabel = config.label;
-    let finalClassName = config.className;
     let finalPrimaryLabel = actions.primary;
-
-    if (order.status === "pending") {
-      if (order.paymentMethod === "SHIP_COD") {
-        finalLabel = "AWAITING CONFIRMATION";
-        finalPrimaryLabel = "View Details";
-      } else {
-        finalLabel = "PENDING PAYMENT";
-      }
-    } else if (order.status === "shipping") {
-      const raw = order.rawStatusName?.toLowerCase();
-      if (raw === "confirmed") {
-        finalLabel = "CONFIRMED";
-      } else if (raw === "processing") {
-        finalLabel = "PROCESSING";
-      } else if (raw === "shipped") {
-        finalLabel = "SHIPPED";
-      }
-    } else if (order.status === "completed") {
-      if (order.rawStatusName?.toLowerCase() === "delivered") {
-        finalLabel = "DELIVERED";
-        finalClassName = "text-emerald-600";
-      }
+    if (order.status === "pending" && order.paymentMethod === "SHIP_COD") {
+      finalPrimaryLabel = "View Details";
     }
-
-    if (order.hasActiveRefund) {
-      finalLabel = "REFUND REQUESTED";
-      finalClassName = "text-sky-600";
-    }
-
-    return { label: finalLabel, className: finalClassName, primaryLabel: finalPrimaryLabel };
+    return {
+      label: display.label,
+      className: display.className,
+      primaryLabel: finalPrimaryLabel,
+    };
   }, [order]);
 
   const actions = ACTION_BUTTONS[order.status];
 
-  // SHIP_COD rule: Chỉ được hủy khi chưa confirmed
+  // SHIP_COD: cancel only before confirmed
   const canCancel = order.status === "pending" &&
     !(order.paymentMethod === "SHIP_COD" && order.rawStatusName?.toLowerCase() === "confirmed");
 
@@ -236,7 +190,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           >
             {primaryLabel}
           </button>
-          {order.rawStatusName?.toLowerCase() === "delivered" && onCompleteAction && (
+          {isCustomerOrderDelivered(order.rawStatusName) && onCompleteAction && (
             <button
               onClick={(e) => {
                 e.preventDefault();
