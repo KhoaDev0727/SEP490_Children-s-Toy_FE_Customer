@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-hot-toast";
@@ -59,6 +60,18 @@ export default function EditReviewModal({
       selectedImages.forEach((img) => URL.revokeObjectURL(img.preview));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -129,14 +142,16 @@ export default function EditReviewModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 transition-all">
+  if (!isOpen) return null;
+
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-100 bg-linear-to-r from-blue-50/50 to-white shrink-0">
+        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-100 bg-slate-50 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Edit review</h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -154,8 +169,8 @@ export default function EditReviewModal({
 
         {/* Scrollable Body */}
         <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-4">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-50 shrink-0">
+          <div className="p-4 bg-slate-50 rounded-md border border-slate-100 flex items-center gap-4">
+            <div className="relative w-12 h-12 rounded-md overflow-hidden border border-slate-50 shrink-0">
               {review.productImage ? (
                 <Image
                   src={review.productImage}
@@ -194,8 +209,8 @@ export default function EditReviewModal({
                 >
                   <span
                     className={`material-symbols-outlined text-[48px] transition-all duration-300 ${star <= rating
-                        ? "text-orange-400 drop-shadow-sm"
-                        : "text-slate-200 group-hover:text-orange-200"
+                        ? "text-[#ff4f00] drop-shadow-sm"
+                        : "text-slate-200 group-hover:text-[#ff4f00]/30"
                       }`}
                     style={{
                       fontVariationSettings:
@@ -224,7 +239,7 @@ export default function EditReviewModal({
             <textarea
               {...register("comment")}
               rows={4}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none placeholder:text-slate-400 text-slate-700"
+              className="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-sm focus:ring-2 focus:ring-[#ff4f00]/10 focus:border-[#ff4f00] outline-none transition-all resize-none placeholder:text-slate-400 text-slate-700"
               placeholder="Review content..."
             ></textarea>
             {errors.comment && (
@@ -234,7 +249,7 @@ export default function EditReviewModal({
             )}
           </div>
 
-          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3">
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 flex gap-3">
             <span className="material-symbols-outlined text-amber-500 shrink-0">
               info
             </span>
@@ -262,7 +277,7 @@ export default function EditReviewModal({
               {selectedImages.map((imgObj, idx) => (
                 <div
                   key={idx}
-                  className="relative group/img w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in zoom-in duration-200"
+                  className="relative group/img w-20 h-20 rounded-md overflow-hidden border border-slate-200 shadow-sm animate-in zoom-in duration-200"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -283,7 +298,7 @@ export default function EditReviewModal({
               ))}
 
               {selectedImages.length < 3 && (
-                <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 hover:text-blue-600 transition-all text-slate-400">
+                <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-[#ff4f00]/40 hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] transition-all text-slate-400">
                   <span className="material-symbols-outlined text-[24px]">
                     add_photo_alternate
                   </span>
@@ -304,7 +319,7 @@ export default function EditReviewModal({
         </div>
 
         {/* Fixed Footer */}
-        <div className="px-8 py-6 border-t border-slate-100 bg-slate-100 flex gap-4 shrink-0">
+        <div className="px-8 py-6 border-t border-slate-100 bg-slate-50 flex gap-4 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -316,7 +331,7 @@ export default function EditReviewModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 hover:cursor-pointer"
+            className="flex-2 px-6 py-3 bg-[#ff4f00] text-white rounded-xl text-sm font-bold hover:bg-[#ff4f00]/95 transition-all shadow-md shadow-[#ff4f00]/10 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 hover:cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -336,4 +351,8 @@ export default function EditReviewModal({
       </form>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

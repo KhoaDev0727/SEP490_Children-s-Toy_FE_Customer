@@ -8,11 +8,11 @@ import type { RefundListItem } from "@/features/refunds/types/refunds";
 
 const TABS = [
   { key: "", label: "All" },
-  { key: "Requested", label: "Requested" },
-  { key: "Approved", label: "Approved" },
-  { key: "Completed", label: "Completed" },
-  { key: "Rejected", label: "Rejected" },
-  { key: "Cancelled", label: "Cancelled" },
+  { key: "RefundRequested", label: "Requested" },
+  { key: "RefundApproved", label: "Approved" },
+  { key: "RefundCompleted", label: "Completed" },
+  { key: "RefundRejected", label: "Rejected" },
+  { key: "RefundCancelled", label: "Cancelled" },
 ];
 
 const PAGE_SIZE = 5;
@@ -74,13 +74,13 @@ export default function RefundHistoryView() {
     : refunds;
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-[#e2bfb0]/30 bg-white">
+      <div className="px-6 py-5 border-b border-slate-200 bg-white">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-xl font-bold text-[#261812]">My Refunds</h1>
-            <p className="text-sm text-[#5a4136] mt-0.5">
+            <h1 className="text-xl font-bold text-[#0f172a]">My Refunds</h1>
+            <p className="text-sm text-[#475569] mt-0.5">
               Track and manage your refund requests.
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function RefundHistoryView() {
       </div>
 
       {/* Tabs */}
-      <div className="px-6 pt-4 border-b border-[#e2bfb0]/20 overflow-x-auto">
+      <div className="px-6 pt-4 border-b border-slate-200 overflow-x-auto">
         <div className="flex gap-1 min-w-max pb-0">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -98,9 +98,9 @@ export default function RefundHistoryView() {
                 onClick={() => handleTabChange(tab.key)}
                 className="px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2"
                 style={{
-                  color: isActive ? "#ff6a00" : "#5a4136",
-                  borderBottomColor: isActive ? "#ff6a00" : "transparent",
-                  backgroundColor: isActive ? "#fff7f3" : "transparent",
+                  color: isActive ? "#ff4f00" : "#475569",
+                  borderBottomColor: isActive ? "#ff4f00" : "transparent",
+                  backgroundColor: isActive ? "#fff5f0" : "transparent",
                 }}
               >
                 {tab.label}
@@ -121,10 +121,10 @@ export default function RefundHistoryView() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by order code..."
-            className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-[#261812] outline-none transition-all focus:bg-white"
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 outline-none transition-all focus:bg-white"
             onFocus={(e) =>
             (e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(255,106,0,0.12)")
+              "0 0 0 3px rgba(255,79,0,0.12)")
             }
             onBlur={(e) =>
               (e.currentTarget.style.boxShadow = "0 0 0 0 transparent")
@@ -136,26 +136,26 @@ export default function RefundHistoryView() {
       {/* List */}
       <div className="px-6 pb-6 space-y-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
+          <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200">
             <span className="material-symbols-outlined text-6xl opacity-40">
               hourglass_top
             </span>
             <p className="text-base font-bold">Loading refunds...</p>
           </div>
         ) : errorMessage ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
+          <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200">
             <span className="material-symbols-outlined text-6xl opacity-40">
               error
             </span>
             <p className="text-base font-bold">{errorMessage}</p>
           </div>
         ) : filteredRefunds.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#5a4136]/70 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-[#e2bfb0]/30">
+          <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200">
             <span className="material-symbols-outlined text-6xl opacity-40">
               inbox
             </span>
             <p className="text-base font-bold">No refund requests found.</p>
-            <p className="text-sm text-center text-[#5a4136]/60 max-w-xs">
+            <p className="text-sm text-center text-slate-400 max-w-xs">
               Refund requests for completed orders will appear here.
             </p>
           </div>
@@ -181,7 +181,7 @@ export default function RefundHistoryView() {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-[#5a4136] disabled:opacity-40 hover:bg-slate-50 transition-colors"
+            className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">
               chevron_left
@@ -195,11 +195,11 @@ export default function RefundHistoryView() {
               style={
                 p === page
                   ? {
-                    background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",
+                    background: "#ff4f00",
                     color: "#fff",
-                    boxShadow: "0 4px 12px rgba(255,106,0,0.25)",
+                    boxShadow: "0 4px 12px rgba(255,79,0,0.15)",
                   }
-                  : { border: "1px solid #e2e8f0", color: "#5a4136" }
+                  : { border: "1px solid #e2e8f0", color: "#475569" }
               }
             >
               {p}
@@ -208,7 +208,7 @@ export default function RefundHistoryView() {
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-[#5a4136] disabled:opacity-40 hover:bg-slate-50 transition-colors"
+            className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">
               chevron_right

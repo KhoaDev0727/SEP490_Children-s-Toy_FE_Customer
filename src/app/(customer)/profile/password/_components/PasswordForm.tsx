@@ -214,10 +214,10 @@ export default function PasswordForm() {
   };
 
   return (
-    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-        <h1 className="text-2xl font-bold text-[#261812]">Change Password</h1>
-        <p className="mt-1 text-sm text-[#5a4136]">Update your password to keep your account secure.</p>
+    <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-200 bg-white">
+        <h1 className="text-2xl font-bold text-[#0f172a]">Change Password</h1>
+        <p className="mt-1 text-sm text-[#475569]">Update your password to keep your account secure.</p>
       </div>
 
       <div className="p-6">
@@ -236,8 +236,8 @@ export default function PasswordForm() {
                   value={currentPasswordValue}
                   onChange={(event) => setField("currentPassword", event.target.value)}
                   readOnly={isFirstGooglePasswordChange}
-                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white read-only:bg-slate-50/90 read-only:text-slate-600"
-                  style={{ "--tw-ring-color": "#ff6a00" } as CSSProperties}
+                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white read-only:bg-slate-50/90 read-only:text-slate-600"
+                  style={{ "--tw-ring-color": "#ff4f00" } as CSSProperties}
                 />
                 <button
                   type="button"
@@ -268,8 +268,8 @@ export default function PasswordForm() {
                   type={show.newPassword ? "text" : "password"}
                   value={form.newPassword}
                   onChange={(event) => setField("newPassword", event.target.value)}
-                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white"
-                  style={{ "--tw-ring-color": "#ff6a00" } as CSSProperties}
+                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white"
+                  style={{ "--tw-ring-color": "#ff4f00" } as CSSProperties}
                 />
                 <button
                   type="button"
@@ -295,8 +295,8 @@ export default function PasswordForm() {
                   type={show.confirmNewPassword ? "text" : "password"}
                   value={form.confirmNewPassword}
                   onChange={(event) => setField("confirmNewPassword", event.target.value)}
-                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-2xl text-[15px] outline-none focus:ring-2 focus:border-orange-300 transition bg-white"
-                  style={{ "--tw-ring-color": "#ff6a00" } as CSSProperties}
+                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white"
+                  style={{ "--tw-ring-color": "#ff4f00" } as CSSProperties}
                 />
                 <button
                   type="button"
@@ -318,8 +318,8 @@ export default function PasswordForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-12 px-7 text-white text-sm font-semibold rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.35)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
-                style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                className="h-12 px-7 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(255,79,0,0.2)] hover:shadow-[0_6px_20px_rgba(255,79,0,0.3)] disabled:opacity-60 transition hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0"
+                style={{ background: "#ff4f00" }}
               >
                 {isSubmitting ? "Saving..." : "Update Password"}
               </button>

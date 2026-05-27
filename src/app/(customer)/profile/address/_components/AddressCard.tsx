@@ -23,25 +23,25 @@ interface AddressCardProps {
 
 export default function AddressCard({ address, onEdit, onDelete, onSetDefault }: AddressCardProps) {
   return (
-    <div className={`border rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start gap-4 transition-all ${address.isDefault ? "border-[#e2bfb0]" : "border-[#e2bfb0]/50"}`}>
+    <div className={`border rounded-xl p-6 flex flex-col sm:flex-row justify-between items-start gap-4 transition-all ${address.isDefault ? "border-[#ff4f00] bg-[#ff4f00]/5" : "border-slate-200 bg-white"}`}>
       <div className="flex-1">
         <div className="flex items-center gap-4 mb-2">
           {address.name && (
-            <span className="font-bold text-[#261812] border-r border-[#e2bfb0] pr-4">
+            <span className="font-bold text-[#0f172a] border-r border-slate-200 pr-4">
               {address.name}
             </span>
           )}
-          <span className="text-[#5a4136] text-sm">{address.phone || "No phone number"}</span>
+          <span className="text-[#475569] text-sm">{address.phone || "No phone number"}</span>
         </div>
-        <p className="text-[#5a4136] text-sm mb-1">{address.street}</p>
-        <p className="text-[#5a4136] text-sm mb-2">
+        <p className="text-[#475569] text-sm mb-1">{address.street}</p>
+        <p className="text-[#475569] text-sm mb-2">
           {address.ward}, {address.district}, {address.city}
         </p>
 
         <div className="flex flex-wrap items-center gap-2 mt-2">
-          {address.isDefault && <span className="inline-block border border-[#ff6a00] text-[#ff6a00] text-xs px-2 py-1 rounded">DEFAULT</span>}
+          {address.isDefault && <span className="inline-block border border-[#ff4f00]/20 text-[#ff4f00] bg-[#ff4f00]/5 text-xs px-2 py-0.5 rounded-md">DEFAULT</span>}
           {!address.isDefault && onSetDefault && (
-            <button onClick={() => onSetDefault(address.id)} className="text-xs border border-[#e2bfb0] text-[#5a4136] px-2 py-1 rounded hover:border-[#a14000] hover:text-[#a14000] transition-colors">
+            <button onClick={() => onSetDefault(address.id)} className="text-xs border border-slate-200 text-[#475569] px-2 py-1 rounded-md hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 transition-colors">
               Set default
             </button>
           )}
@@ -51,7 +51,7 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
       <div className="flex flex-row sm:flex-col gap-2 sm:items-end shrink-0">
         <button
           onClick={() => onEdit(address)}
-          className="text-[#a14000] hover:text-[#ff6a00] transition-colors"
+          className="text-slate-500 hover:text-[#ff4f00] transition-colors"
           title="Edit address"
           aria-label="Edit address"
         >

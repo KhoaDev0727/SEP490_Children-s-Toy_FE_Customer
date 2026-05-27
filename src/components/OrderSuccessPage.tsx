@@ -249,10 +249,10 @@ function OrderSuccessContent() {
 
 
               <div
-                className="slide-up bg-gray-50 border border-gray-150 rounded-xl p-5 mb-8 text-left"
+                className="slide-up bg-gray-50 border border-gray-200 rounded-xl p-5 mb-8 text-left"
                 style={{ animationDelay: "0.36s" }}
               >
-                <h2 className="font-bold text-gray-900 text-sm uppercase tracking-widest mb-4 pb-2 border-b border-gray-250/60">
+                <h2 className="font-bold text-gray-900 text-sm uppercase tracking-widest mb-4 pb-2 border-b border-gray-400">
                   Order summary
                 </h2>
 
@@ -260,7 +260,7 @@ function OrderSuccessContent() {
                   <p className="text-sm text-gray-500 text-center py-3">Loading order details...</p>
                 ) : (
                   <>
-                    <ul className="divide-y divide-gray-150">
+                    <ul className="">
                       {order.items.map((item) => (
                         <li key={item.orderDetailId} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                           <img
@@ -279,7 +279,7 @@ function OrderSuccessContent() {
                       ))}
                     </ul>
 
-                    <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                    <div className="mt-4 pt-3 border-t border-gray-400 space-y-2">
                       <div className="flex justify-between items-center text-sm text-gray-600">
                         <span>Subtotal</span>
                         <span className="font-semibold">{fmt(order.subTotal)}</span>
@@ -294,7 +294,7 @@ function OrderSuccessContent() {
                           <span className="text-emerald-600 font-semibold">-{fmt(order.voucherDiscountAmount)}</span>
                         </div>
                       )}
-                      <div className="pt-2 mt-2 border-t border-gray-100 flex justify-between items-center">
+                      <div className="pt-2 mt-2 border-t border-gray-400 flex justify-between items-center">
                         <span className="text-sm font-semibold text-gray-600">Total</span>
                         <span className="text-lg font-extrabold text-[#ff4f00]">{fmt(order.totalAmount)}</span>
                       </div>

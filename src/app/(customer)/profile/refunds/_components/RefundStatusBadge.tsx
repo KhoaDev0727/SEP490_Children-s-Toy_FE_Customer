@@ -9,31 +9,55 @@ const STATUS_CONFIG: Record<
   RefundStatus,
   { label: string; bg: string; text: string; dot: string }
 > = {
-  Requested: {
-    label: "Requested",
+  RefundRequested: {
+    label: "Pending Approval",
     bg: "#fffbeb",
     text: "#b45309",
     dot: "#f59e0b",
   },
-  Approved: {
+  RefundApproved: {
     label: "Approved",
-    bg: "#eff6ff",
-    text: "#1d4ed8",
-    dot: "#3b82f6",
-  },
-  Completed: {
-    label: "Completed",
     bg: "#f0fdf4",
     text: "#15803d",
     dot: "#22c55e",
   },
-  Rejected: {
+  RefundPickupCreated: {
+    label: "Pickup Created",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    dot: "#3b82f6",
+  },
+  RefundShipping: {
+    label: "In Transit",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    dot: "#3b82f6",
+  },
+  RefundReceived: {
+    label: "Received",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    dot: "#3b82f6",
+  },
+  RefundInspectionPending: {
+    label: "Inspection Pending",
+    bg: "#fffbeb",
+    text: "#b45309",
+    dot: "#f59e0b",
+  },
+  RefundCompleted: {
+    label: "Refunded",
+    bg: "#f0fdf4",
+    text: "#15803d",
+    dot: "#22c55e",
+  },
+  RefundRejected: {
     label: "Rejected",
     bg: "#fef2f2",
     text: "#b91c1c",
     dot: "#ef4444",
   },
-  Cancelled: {
+  RefundCancelled: {
     label: "Cancelled",
     bg: "#f8fafc",
     text: "#64748b",

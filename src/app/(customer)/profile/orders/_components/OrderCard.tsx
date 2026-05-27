@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -86,6 +86,11 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
   const canCancel = order.status === "pending" &&
     !(order.paymentMethod === "SHIP_COD" && order.rawStatusName?.toLowerCase() === "confirmed");
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  const items = order.items || [];
+  const displayedItems = isExpanded ? items : items.slice(0, 2);
+  const hasMore = items.length > 2;
+
   return (
     <div className="border border-gray-200/80 rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <Link href={`/profile/orders/${order.orderId}`} className="block group">
@@ -109,14 +114,17 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           </div>
         </div>
 
-        {/* Product Info - Render all items */}
-        {(order.items || []).map((item, idx) => {
+        {/* Product Info - Render items */}
+        {displayedItems.map((item, idx) => {
           const classification = item.categoryName || item.variant || "N/A";
+          const isLastDisplayed = idx === displayedItems.length - 1;
+          const showBorder = !isLastDisplayed;
           return (
             <div
               key={idx}
-              className={`p-6 flex flex-col md:flex-row gap-6 ${idx < order.items.length - 1 ? "border-b border-gray-100" : ""
-                } group-hover:bg-gray-50/30 transition-colors`}
+              className={`p-6 flex flex-col md:flex-row gap-6 ${
+                showBorder ? "border-b border-gray-100" : ""
+              } group-hover:bg-gray-50/30 transition-colors`}
             >
               <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
                 <Image
@@ -148,6 +156,28 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           );
         })}
       </Link>
+
+      {/* Toggle button */}
+      {hasMore && (
+        <div className="px-6 py-4 border-t border-gray-100 bg-white">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-center gap-1.5 mx-auto px-6 py-2 rounded-full border border-orange-100 text-[#ff4f00] font-bold text-sm hover:bg-orange-50 transition-all duration-300 shadow-sm"
+          >
+            {isExpanded ? (
+              <>
+                Show less
+                <span className="material-symbols-outlined text-[18px]">expand_less</span>
+              </>
+            ) : (
+              <>
+                See {items.length - 2} more products
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
@@ -205,6 +235,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
             <button
               onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
               disabled={order.hasActiveRefund}
+              title={order.hasActiveRefund ? "Each order is only allowed to have exactly 1 refund request." : undefined}
               className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
                 order.hasActiveRefund
                   ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"

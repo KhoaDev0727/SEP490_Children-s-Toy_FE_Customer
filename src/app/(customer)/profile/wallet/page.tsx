@@ -440,16 +440,16 @@ export default function WalletPage() {
     <main className="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
       <ProfileSidebar />
 
-      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-[#e2bfb0]/30 overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#e2bfb0]/30 bg-white">
-          <h1 className="text-2xl font-bold text-[#261812]">My Wallet</h1>
-          <p className="mt-1 text-sm text-[#5a4136]">
+      <section className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 bg-white">
+          <h1 className="text-2xl font-bold text-[#0f172a]">My Wallet</h1>
+          <p className="mt-1 text-sm text-[#475569]">
             Manage your wallet balance, PIN code, and transaction history.
           </p>
         </div>
 
         {isWalletLoading ? (
-          <div className="px-6 py-20 text-center text-[#5a4136] text-sm">
+          <div className="px-6 py-20 text-center text-slate-500 text-sm">
             Loading wallet information...
           </div>
         ) : !isWalletActivated ? (

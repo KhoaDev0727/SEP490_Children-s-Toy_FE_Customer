@@ -46,7 +46,11 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
   };
 
   return (
-    <div className="relative group flex flex-row h-[116px] w-full transition-all hover:-translate-y-1 z-0 hover:z-30 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:drop-shadow-[0_8px_20px_rgba(249,115,22,0.15)]">
+    <div className={`relative group flex flex-row h-[116px] w-full transition-all hover:-translate-y-1 z-0 hover:z-30 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
+      voucher.discountTarget === "ORDER_TOTAL"
+        ? "hover:drop-shadow-[0_8px_20px_rgba(249,115,22,0.15)]"
+        : "hover:drop-shadow-[0_8px_20px_rgba(16,185,129,0.15)]"
+    }`}>
       {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
       <div
         className="relative w-[116px] shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden"
@@ -70,12 +74,14 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
             className="object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-orange-500 flex flex-col items-center justify-center text-white px-2">
+          <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
+            voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
+          }`}>
             <span className="material-symbols-outlined text-4xl">
-              confirmation_number
+              {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
             </span>
             <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-              Voucher
+              {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
             </span>
           </div>
         )}
@@ -186,7 +192,9 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
             onClick={copyCode}
             className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 hover:cursor-pointer ${isCopied
               ? "border-green-700 text-green-700 bg-green-50"
-              : "border-orange-500 text-orange-500 hover:bg-orange-50"
+              : voucher.discountTarget === "ORDER_TOTAL"
+              ? "border-orange-500 text-orange-500 hover:bg-orange-50"
+              : "border-emerald-500 text-emerald-500 hover:bg-emerald-50"
               }`}
           >
             {isCopied ? "Saved" : "Copy"}

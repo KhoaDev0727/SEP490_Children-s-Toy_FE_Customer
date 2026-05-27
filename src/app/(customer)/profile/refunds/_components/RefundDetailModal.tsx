@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import RefundStatusBadge from "./RefundStatusBadge";
@@ -60,6 +61,18 @@ export default function RefundDetailModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const handleCancel = async () => {
     if (!refundId) return;
     setIsCancelling(true);
@@ -79,39 +92,38 @@ export default function RefundDetailModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden"
-        style={{ maxHeight: "92vh", overflowY: "auto" }}
+        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "92vh" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100"
-          style={{ background: "linear-gradient(135deg, #fff7f3 0%, #fff 100%)" }}
+          className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex-shrink-0"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #ff6a00, #ff8a1f)" }}
+                style={{ background: "#ff4f00" }}
               >
                 <span className="material-symbols-outlined text-white text-[20px]">
                   assignment_return
                 </span>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#261812]">
+                <h2 className="text-lg font-bold text-[#0f172a]">
                   Refund Details
                 </h2>
                 {refund && (
-                  <p className="text-xs text-[#5a4136]">
+                  <p className="text-xs text-[#475569]">
                     Order #{refund.orderCode}
                   </p>
                 )}
@@ -126,8 +138,8 @@ export default function RefundDetailModal({
           </div>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Scrollable Body */}
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
               {[...Array(5)].map((_, i) => (
@@ -147,7 +159,7 @@ export default function RefundDetailModal({
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-slate-500 mb-1">Refund Amount</p>
-                  <p className="text-xl font-black text-[#ff6a00]">
+                  <p className="text-xl font-black text-[#ff4f00]">
                     {formatPrice(refund.approvedAmount)}
                   </p>
                 </div>
@@ -180,14 +192,77 @@ export default function RefundDetailModal({
               {/* Details */}
               {refund.reasonDetails && (
                 <div className="rounded-xl border border-slate-100 p-4">
-                  <p className="text-xs font-bold text-[#5a4136] mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#ff6a00]">
+                  <p className="text-xs font-bold text-[#475569] mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       notes
                     </span>
                     Additional Details
                   </p>
-                  <p className="text-sm text-[#261812] leading-relaxed">
+                  <p className="text-sm text-[#0f172a] leading-relaxed">
                     {refund.reasonDetails}
+                  </p>
+                </div>
+              )}
+
+              {/* Returned Items */}
+              {refund.details && refund.details.length > 0 && (
+                <div className="rounded-xl border border-slate-100 p-4">
+                  <p className="text-xs font-bold text-[#475569] mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
+                      inventory_2
+                    </span>
+                    Sản phẩm trả lại
+                  </p>
+                  <div className="space-y-2">
+                    {refund.details.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-100 last:border-0">
+                        <span className="font-medium text-slate-700 w-[280px] truncate">{item.productName}</span>
+                        <span className="text-slate-400">SL: <strong className="text-slate-700">{item.quantity}</strong></span>
+                        <span className="font-bold text-[#ff4f00]">{formatPrice(item.refundAmount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Shipping Order Code (Courier Tracking) */}
+              {refund.shippingOrderCode && (
+                <div className="rounded-xl border border-orange-100 bg-orange-50/15 p-4 flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[#ff4f00] text-[20px] mt-0.5">
+                    local_shipping
+                  </span>
+                  <div className="flex-grow">
+                    <p className="text-xs font-bold text-slate-700 mb-0.5">Mã vận đơn thu hồi (Courier Tracking)</p>
+                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">Đơn hàng thu hồi đã được nhân viên khởi tạo thủ công. Bạn có thể theo dõi hành trình giao nhận bằng mã vận đơn sau:</p>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-slate-100 px-3 py-1 rounded font-mono text-xs font-bold text-slate-800 tracking-wider">
+                        {refund.shippingOrderCode}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(refund.shippingOrderCode || "");
+                          toast.success("Đã sao chép mã vận đơn!");
+                        }}
+                        className="text-[11px] font-bold text-[#ff4f00] hover:underline"
+                      >
+                        Sao chép
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin note (Quality Inspection) */}
+              {refund.adminNote && (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/15 p-4">
+                  <p className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-blue-500">
+                      fact_check
+                    </span>
+                    Kết quả kiểm kho / chất lượng
+                  </p>
+                  <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
+                    {refund.adminNote}
                   </p>
                 </div>
               )}
@@ -195,8 +270,8 @@ export default function RefundDetailModal({
               {/* Evidence Images */}
               {refund.images && refund.images.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-[#5a4136] mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#ff6a00]">
+                  <p className="text-xs font-bold text-[#475569] mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       image
                     </span>
                     Evidence Photos ({refund.images.length})
@@ -233,22 +308,21 @@ export default function RefundDetailModal({
                   </span>
                   <div>
                     <p className="text-xs text-slate-400">Last Updated</p>
-                    <p className="text-sm font-semibold text-[#261812]">
+                    <p className="text-sm font-semibold text-[#0f172a]">
                       {formatDate(refund.updatedAt)}
                     </p>
                   </div>
                 </div>
               )}
-
               {/* Actions */}
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors"
+                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
                 >
                   Close
                 </button>
-                {refund.refundStatus === "Requested" && (
+                {refund.refundStatus === "RefundRequested" && (
                   <button
                     onClick={handleCancel}
                     disabled={isCancelling}
@@ -275,9 +349,42 @@ export default function RefundDetailModal({
             </div>
           )}
         </div>
+
+        {/* Fixed Footer */}
+        {!isLoading && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0">
+            <button
+              onClick={onClose}
+              disabled={isCancelling}
+              className="flex-grow h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors bg-white"
+            >
+              Close
+            </button>
+            {refund && refund.refundStatus === "Requested" && (
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className="flex-grow h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+              >
+                {isCancelling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    Cancelling...
+                  </span>
+                ) : (
+                  "Cancel Request"
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
 
 function InfoRow({
@@ -292,12 +399,12 @@ function InfoRow({
   return (
     <div className="rounded-xl border border-slate-100 p-3">
       <div className="flex items-center gap-2 mb-1">
-        <span className="material-symbols-outlined text-[14px] text-[#ff6a00]">
+        <span className="material-symbols-outlined text-[14px] text-[#ff4f00]">
           {icon}
         </span>
         <p className="text-xs text-slate-400 font-medium">{label}</p>
       </div>
-      <p className="text-sm font-semibold text-[#261812] truncate">{value}</p>
+      <p className="text-sm font-semibold text-[#0f172a] truncate">{value}</p>
     </div>
   );
 }

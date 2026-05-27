@@ -12,18 +12,23 @@ const NAV_ITEMS = [
     href: "/profile/wallet",
   },
   { label: "My Orders", icon: "package_2", href: "/profile/orders" },
+  { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
   {
     label: "My Refund",
     icon: "assignment_return",
     href: "/profile/refunds",
   },
-  { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
+  { label: "My Addresses", icon: "location_on", href: "/profile/address" },
   {
     label: "My Little Ones",
     icon: "cake",
     href: "/profile/birthday-management",
   },
-  { label: "Address", icon: "location_on", href: "/profile/address" },
+  {
+    label: "My Vouchers",
+    icon: "confirmation_number",
+    href: "/profile/vouchers",
+  },
   { label: "Change Password", icon: "lock", href: "/profile/password" },
   {
     label: "Notifications",
@@ -34,11 +39,6 @@ const NAV_ITEMS = [
     label: "Notification Settings",
     icon: "settings",
     href: "/profile/setting-notifications",
-  },
-  {
-    label: "My Vouchers",
-    icon: "confirmation_number",
-    href: "/profile/vouchers",
   },
 ];
 
@@ -80,9 +80,9 @@ export default function ProfileSidebar() {
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center text-white text-sm font-bold"
+              className="w-full h-full flex items-center justify-center text-white text-sm font-bold animate-fade-in"
               style={{
-                background: "linear-gradient(135deg, #ff6a00, #ff9a3c)",
+                background: "#ff4f00",
               }}
             >
               {initials}
@@ -91,23 +91,11 @@ export default function ProfileSidebar() {
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">{name}</p>
-          <Link
-            href="/profile/edit"
-            className="text-xs text-slate-500 flex items-center gap-1 hover:text-[#ff6a00] transition-colors"
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 13 }}
-            >
-              edit
-            </span>
-            Edit Profile
-          </Link>
         </div>
       </div>
 
       {/* Nav links */}
-      <nav className="flex flex-col">
+      <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -117,21 +105,21 @@ export default function ProfileSidebar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
               style={
                 isActive
-                  ? { color: "#ff6a00", backgroundColor: "#ffeae1" }
-                  : { color: "#5a4136" }
+                  ? { color: "#ff4f00", backgroundColor: "#fff5f0" }
+                  : { color: "#475569" }
               }
               onMouseEnter={(e) => {
                 if (!isActive) {
                   (e.currentTarget as HTMLAnchorElement).style.color =
-                    "#ff6a00";
+                    "#ff4f00";
                   (e.currentTarget as HTMLAnchorElement).style.backgroundColor =
-                    "#fff1eb";
+                    "#fff5f0";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   (e.currentTarget as HTMLAnchorElement).style.color =
-                    "#5a4136";
+                    "#475569";
                   (e.currentTarget as HTMLAnchorElement).style.backgroundColor =
                     "transparent";
                 }
@@ -141,7 +129,7 @@ export default function ProfileSidebar() {
                 className="material-symbols-outlined"
                 style={{
                   fontSize: 20,
-                  color: isActive ? "#ff6a00" : "#565e74",
+                  color: isActive ? "#ff4f00" : "#64748b",
                 }}
               >
                 {item.icon}
