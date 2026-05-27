@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -65,7 +66,7 @@ export default function ConfirmModal({
 
   const styles = getTypeStyles();
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
@@ -113,4 +114,8 @@ export default function ConfirmModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

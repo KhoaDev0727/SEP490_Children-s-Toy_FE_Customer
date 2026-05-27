@@ -51,4 +51,10 @@ export const reviewApi = {
       },
     });
   },
+  
+  toggleLike: async (
+    id: number
+  ): Promise<{ reviewId: number; likeCount: number; isLiked: boolean }> => {
+    return axiosClient.post(`/reviews/${id}/like`);
+  },
 };

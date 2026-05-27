@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Child, CreateChildPayload, UpdateChildPayload } from "@/features/profile/types/children";
 
 type Props = {
@@ -39,6 +40,18 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
     }
   }, [editTarget, isOpen]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,10 +77,9 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       setIsSubmitting(false);
     }
   };
-
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
     >
@@ -196,4 +208,8 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
