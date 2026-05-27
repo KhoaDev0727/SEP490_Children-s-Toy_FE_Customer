@@ -326,6 +326,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             shippingFee={order.estimatedShippingFee}
             discount={order.voucherDiscountAmount}
             paymentMethod={order.paymentMethod}
+            paymentStatus={order.paymentStatus}
           />
         </div>
       </div>

@@ -67,7 +67,7 @@ export default function CreateRefundModal({
       const data = await refundsApi.getRefundReasons();
       setReasons(data);
     } catch {
-      toast.error("Không thể tải danh sách lý do trả hàng.");
+      toast.error("Unable to load return reasons.");
     } finally {
       setIsLoadingReasons(false);
     }
@@ -88,7 +88,7 @@ export default function CreateRefundModal({
       }
       setSelectedItems(initial);
     } catch {
-      toast.error("Không thể tải chi tiết đơn hàng.");
+      toast.error("Unable to load order details.");
     } finally {
       setIsLoadingOrder(false);
     }
@@ -131,7 +131,7 @@ export default function CreateRefundModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reasonId) {
-      toast.error("Vui lòng chọn lý do hoàn trả.");
+      toast.error("Please select a return reason.");
       return;
     }
 
@@ -143,7 +143,7 @@ export default function CreateRefundModal({
       }));
 
     if (returnItems.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một sản phẩm để hoàn trả.");
+      toast.error("Please select at least one product to return.");
       return;
     }
 
@@ -156,14 +156,14 @@ export default function CreateRefundModal({
         images: [],
         items: returnItems,
       });
-      toast.success("Gửi yêu cầu hoàn tiền thành công!");
+      toast.success("Refund request submitted successfully!");
       onSuccess();
       onClose();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Gửi yêu cầu hoàn tiền thất bại.",
+          : "Failed to submit refund request.",
       );
     } finally {
       setIsSubmitting(false);
@@ -201,9 +201,9 @@ export default function CreateRefundModal({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-[#261812]">
-                  Yêu cầu hoàn trả
+                  Refund Request
                 </h2>
-                <p className="text-xs text-[#5a4136]">Đơn hàng #{orderCode}</p>
+                <p className="text-xs text-[#5a4136]">Order #{orderCode}</p>
               </div>
             </div>
             <button
@@ -227,11 +227,10 @@ export default function CreateRefundModal({
             </span>
             <div>
               <p className="text-sm font-bold text-amber-800 mb-1">
-                Yêu cầu kích hoạt Ví
+                Wallet Activation Required
               </p>
               <p className="text-xs text-amber-700 leading-relaxed">
-                Bạn cần kích hoạt Ví của mình để nhận tiền hoàn trả. Số tiền hoàn
-                sẽ được cộng trực tiếp vào ví sau khi yêu cầu được duyệt thành công.
+                You need to activate your wallet to receive refunds. The refunded amount will be credited directly to your wallet once the request is approved.
               </p>
               <a
                 href="/profile/wallet"
@@ -240,7 +239,7 @@ export default function CreateRefundModal({
                 <span className="material-symbols-outlined text-[14px]">
                   account_balance_wallet
                 </span>
-                Cài đặt Ví của tôi
+                Set Up My Wallet
               </a>
             </div>
           </div>
@@ -252,16 +251,31 @@ export default function CreateRefundModal({
               check_circle
             </span>
             <p className="text-xs font-semibold text-green-700">
-              Ví đang hoạt động — tiền hoàn trả sẽ được tự động cộng khi được duyệt.
+              Wallet is active — refunds will be automatically credited upon approval.
             </p>
           </div>
         )}
+
+        {/* Caution Single Request Banner */}
+        <div className="mx-6 mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4 flex gap-3">
+          <span className="material-symbols-outlined text-orange-500 text-[22px] flex-shrink-0 mt-0.5">
+            warning
+          </span>
+          <div>
+            <p className="text-sm font-bold text-orange-800 mb-1">
+              Important Notice
+            </p>
+            <p className="text-xs text-orange-700 leading-relaxed">
+              Each order is only allowed to have <strong>exactly 1 refund request</strong> in its entire lifecycle. Please ensure you select <strong>all products</strong> you wish to return in this single submission.
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-5">
           {/* Product Checklist */}
           <div>
             <label className="block text-sm font-bold text-[#261812] mb-2">
-              Sản phẩm muốn hoàn trả <span className="text-red-500">*</span>
+              Products to Return <span className="text-red-500">*</span>
             </label>
             {isLoadingOrder ? (
               <div className="space-y-2 animate-pulse">
@@ -310,7 +324,7 @@ export default function CreateRefundModal({
                           {item.productName}
                         </p>
                         <p className="text-[11px] text-slate-400">
-                          {formatPrice(item.unitPrice)} · tối đa {item.quantity} sản phẩm
+                          {formatPrice(item.unitPrice)} · max {item.quantity} items
                         </p>
                       </div>
                       {state.checked && (
@@ -357,7 +371,7 @@ export default function CreateRefundModal({
                 })}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">Không tìm thấy sản phẩm hợp lệ.</p>
+              <p className="text-xs text-slate-400 italic">No eligible products found.</p>
             )}
           </div>
 
@@ -367,20 +381,20 @@ export default function CreateRefundModal({
             style={{ backgroundColor: "#f8fafc" }}
           >
             <div className="flex justify-between items-center">
-              <span className="text-sm text-[#5a4136] font-medium">Số tiền ước tính hoàn trả</span>
+              <span className="text-sm text-[#5a4136] font-medium">Estimated Refund Amount</span>
               <span className="text-lg font-black text-[#ff6a00]">
                 {formatPrice(estimatedRefundAmount)}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
-              Số tiền hoàn trả cuối cùng sẽ được đối soát theo điều khoản giảm giá của đơn hàng.
+              The final refund amount will be reconciled based on the order's discount terms.
             </p>
           </div>
 
           {/* Reason Select */}
           <div>
             <label className="block text-sm font-bold text-[#261812] mb-2">
-              Lý do hoàn trả <span className="text-red-500">*</span>
+              Refund Reason <span className="text-red-500">*</span>
             </label>
             {isLoadingReasons ? (
               <div className="h-11 rounded-xl bg-slate-100 animate-pulse" />
@@ -393,7 +407,7 @@ export default function CreateRefundModal({
                 required
                 className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm text-[#261812] outline-none transition-all focus:border-[#ff6a00]"
               >
-                <option value="">Chọn lý do hoàn trả...</option>
+                <option value="">Select refund reason...</option>
                 {reasons.map((r) => (
                   <option key={r.refundReasonId} value={r.refundReasonId}>
                     {r.content}
@@ -406,15 +420,15 @@ export default function CreateRefundModal({
           {/* Additional Details */}
           <div>
             <label className="block text-sm font-bold text-[#261812] mb-2">
-              Chi tiết bổ sung{" "}
-              <span className="text-xs font-normal text-slate-400">(không bắt buộc)</span>
+              Additional Details{" "}
+              <span className="text-xs font-normal text-slate-400">(optional)</span>
             </label>
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="Nhập thêm lý do hoặc mô tả chất lượng sản phẩm..."
+              placeholder="Enter more details or describe product quality..."
               className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm text-[#261812] resize-none outline-none transition-all focus:border-[#ff6a00]"
             />
             <p className="text-right text-xs text-slate-400 mt-1">
@@ -428,7 +442,7 @@ export default function CreateRefundModal({
               info
             </span>
             <p className="text-[11px] text-blue-700 leading-relaxed">
-              Yêu cầu hoàn trả phải được gửi trong vòng <strong>3 ngày</strong> kể từ khi đơn hàng giao thành công.
+              Refund requests must be submitted within <strong>3 days</strong> of successful order delivery.
             </p>
           </div>
 
@@ -440,7 +454,7 @@ export default function CreateRefundModal({
               disabled={isSubmitting}
               className="flex-1 h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
@@ -454,10 +468,10 @@ export default function CreateRefundModal({
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang gửi...
+                  Submitting...
                 </span>
               ) : (
-                "Gửi yêu cầu"
+                "Submit Request"
               )}
             </button>
           </div>

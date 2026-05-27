@@ -251,6 +251,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
             <button
               onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
               disabled={order.hasActiveRefund}
+              title={order.hasActiveRefund ? "Each order is only allowed to have exactly 1 refund request." : undefined}
               className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
                 order.hasActiveRefund
                   ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
