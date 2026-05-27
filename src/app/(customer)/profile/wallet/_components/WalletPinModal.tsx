@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   getPinModalDescription,
   getPinModalTitle,
@@ -110,12 +112,24 @@ export default function WalletPinModal({
   onNewPinChange,
   onConfirmNewPinChange,
 }: WalletPinModalProps) {
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isActionLocked = isSubmittingPin || isSendingForgotOtp || isResettingPin;
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-[#0f172a]/50" 
@@ -277,4 +291,8 @@ export default function WalletPinModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

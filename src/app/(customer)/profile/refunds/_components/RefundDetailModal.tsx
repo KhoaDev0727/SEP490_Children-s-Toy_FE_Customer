@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import RefundStatusBadge from "./RefundStatusBadge";
@@ -60,6 +61,18 @@ export default function RefundDetailModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const handleCancel = async () => {
     if (!refundId) return;
     setIsCancelling(true);
@@ -79,21 +92,21 @@ export default function RefundDetailModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden"
-        style={{ maxHeight: "92vh", overflowY: "auto" }}
+        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "92vh" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100 bg-slate-50"
+          className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex-shrink-0"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -125,8 +138,8 @@ export default function RefundDetailModal({
           </div>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Scrollable Body */}
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
               {[...Array(5)].map((_, i) => (
@@ -203,7 +216,7 @@ export default function RefundDetailModal({
                   <div className="space-y-2">
                     {refund.details.map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-100 last:border-0">
-                        <span className="font-medium text-slate-700 max-w-[280px] truncate">{item.productName}</span>
+                        <span className="font-medium text-slate-700 w-[280px] truncate">{item.productName}</span>
                         <span className="text-slate-400">SL: <strong className="text-slate-700">{item.quantity}</strong></span>
                         <span className="font-bold text-[#ff4f00]">{formatPrice(item.refundAmount)}</span>
                       </div>
@@ -302,31 +315,6 @@ export default function RefundDetailModal({
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-                {refund.refundStatus === "Requested" && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                    className="flex-1 h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isCancelling ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                        Cancelling...
-                      </span>
-                    ) : (
-                      "Cancel Request"
-                    )}
-                  </button>
-                )}
-              </div>
             </>
           ) : (
             <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
@@ -337,9 +325,42 @@ export default function RefundDetailModal({
             </div>
           )}
         </div>
+
+        {/* Fixed Footer */}
+        {!isLoading && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0">
+            <button
+              onClick={onClose}
+              disabled={isCancelling}
+              className="flex-grow h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors bg-white"
+            >
+              Close
+            </button>
+            {refund && refund.refundStatus === "Requested" && (
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className="flex-grow h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+              >
+                {isCancelling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    Cancelling...
+                  </span>
+                ) : (
+                  "Cancel Request"
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
 
 function InfoRow({

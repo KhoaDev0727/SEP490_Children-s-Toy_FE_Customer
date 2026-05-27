@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface CancelOrderModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export default function CancelOrderModal({
     void onConfirm(trimmedReason);
   };
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
@@ -162,4 +163,8 @@ export default function CancelOrderModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
