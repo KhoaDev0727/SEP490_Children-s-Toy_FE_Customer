@@ -191,6 +191,69 @@ export default function RefundDetailModal({
                 </div>
               )}
 
+              {/* Returned Items */}
+              {refund.details && refund.details.length > 0 && (
+                <div className="rounded-xl border border-slate-100 p-4">
+                  <p className="text-xs font-bold text-[#475569] mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
+                      inventory_2
+                    </span>
+                    Sản phẩm trả lại
+                  </p>
+                  <div className="space-y-2">
+                    {refund.details.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-100 last:border-0">
+                        <span className="font-medium text-slate-700 max-w-[280px] truncate">{item.productName}</span>
+                        <span className="text-slate-400">SL: <strong className="text-slate-700">{item.quantity}</strong></span>
+                        <span className="font-bold text-[#ff4f00]">{formatPrice(item.refundAmount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Shipping Order Code (Courier Tracking) */}
+              {refund.shippingOrderCode && (
+                <div className="rounded-xl border border-orange-100 bg-orange-50/15 p-4 flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[#ff4f00] text-[20px] mt-0.5">
+                    local_shipping
+                  </span>
+                  <div className="flex-grow">
+                    <p className="text-xs font-bold text-slate-700 mb-0.5">Mã vận đơn thu hồi (Courier Tracking)</p>
+                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">Đơn hàng thu hồi đã được nhân viên khởi tạo thủ công. Bạn có thể theo dõi hành trình giao nhận bằng mã vận đơn sau:</p>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-slate-100 px-3 py-1 rounded font-mono text-xs font-bold text-slate-800 tracking-wider">
+                        {refund.shippingOrderCode}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(refund.shippingOrderCode || "");
+                          toast.success("Đã sao chép mã vận đơn!");
+                        }}
+                        className="text-[11px] font-bold text-[#ff4f00] hover:underline"
+                      >
+                        Sao chép
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin note (Quality Inspection) */}
+              {refund.adminNote && (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/15 p-4">
+                  <p className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-blue-500">
+                      fact_check
+                    </span>
+                    Kết quả kiểm kho / chất lượng
+                  </p>
+                  <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
+                    {refund.adminNote}
+                  </p>
+                </div>
+              )}
+
               {/* Evidence Images */}
               {refund.images && refund.images.length > 0 && (
                 <div>
