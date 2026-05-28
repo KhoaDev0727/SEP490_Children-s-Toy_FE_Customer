@@ -215,10 +215,26 @@ export default function RefundDetailModal({
                   </p>
                   <div className="space-y-2">
                     {refund.details.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-100 last:border-0">
-                        <span className="font-medium text-slate-700 w-[280px] truncate">{item.productName}</span>
-                        <span className="text-slate-400">SL: <strong className="text-slate-700">{item.quantity}</strong></span>
-                        <span className="font-bold text-[#ff4f00]">{formatPrice(item.refundAmount)}</span>
+                      <div key={idx} className="flex items-center gap-3 text-xs py-2 border-b border-dashed border-slate-100 last:border-0">
+                        <div className="relative w-10 h-10 shrink-0 bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+                          {item.productImage ? (
+                            <Image
+                              src={item.productImage}
+                              alt={item.productName}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                              <span className="material-symbols-outlined text-lg">image</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-700 truncate">{item.productName}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">SL: <strong className="text-slate-600">{item.quantity}</strong></p>
+                        </div>
+                        <span className="font-bold text-[#ff4f00] shrink-0 ml-4">{formatPrice(item.refundAmount)}</span>
                       </div>
                     ))}
                   </div>
@@ -314,31 +330,6 @@ export default function RefundDetailModal({
                   </div>
                 </div>
               )}
-              {/* Actions */}
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-                {refund.refundStatus === "RefundRequested" && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                    className="flex-1 h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isCancelling ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                        Cancelling...
-                      </span>
-                    ) : (
-                      "Cancel Request"
-                    )}
-                  </button>
-                )}
-              </div>
             </>
           ) : (
             <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
