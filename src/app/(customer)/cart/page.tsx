@@ -171,6 +171,12 @@ export default function CartPage() {
                           <p className="mt-1 text-sm text-slate-500">
                             Stock: {item.stockQuantity} | Status: {item.productStatus}
                           </p>
+                          {item.warningMessage && (
+                            <div className="mt-2 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/50 p-3 text-xs font-semibold text-red-600">
+                              <span className="material-symbols-outlined text-sm leading-none mt-0.5">warning</span>
+                              <span>{item.warningMessage}</span>
+                            </div>
+                          )}
                           {isReadOnlyItem ? (
                             <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
                               Read only: this item can only be removed from cart

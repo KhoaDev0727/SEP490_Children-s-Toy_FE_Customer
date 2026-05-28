@@ -40,6 +40,7 @@ export interface RefundListItem {
 export interface RefundDetailItem {
   productId: number;
   productName: string;
+  productImage?: string | null;
   quantity: number;
   unitPrice: number;
   refundAmount: number;

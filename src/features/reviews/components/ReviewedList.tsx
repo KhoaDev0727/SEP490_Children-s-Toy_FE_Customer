@@ -58,9 +58,8 @@ export default function ReviewedList() {
         {[1, 2, 3, 4, 5].map((star) => (
           <span
             key={star}
-            className={`material-symbols-outlined text-[20px] ${
-              star <= rating ? "text-[#ff4f00] fill-1" : "text-slate-200"
-            }`}
+            className={`material-symbols-outlined text-[20px] ${star <= rating ? "text-[#ff4f00] fill-1" : "text-slate-200"
+              }`}
             style={{
               fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0",
             }}
@@ -76,29 +75,26 @@ export default function ReviewedList() {
     switch (status) {
       case "Approved":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
             Approved
           </span>
         );
       case "Pending":
       case "ManualReview":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-100">
             Pending
           </span>
         );
       case "Rejected":
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
             Rejected
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-slate-50 text-slate-500 border border-slate-100">
+          <span className="px-2 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-slate-50 text-slate-500 border border-slate-100">
             {status}
           </span>
         );
@@ -107,7 +103,7 @@ export default function ReviewedList() {
 
   const isEditable = (review: MyReviewDto) => {
     if (review.isEdited) return false;
-    if (review.moderationStatus !== "Approved") return false;
+    if (review.moderationStatus !== "Approved" && review.moderationStatus !== "Rejected") return false;
     if (!review.moderatedAt) return false;
 
     const modDate = new Date(review.moderatedAt);
@@ -144,11 +140,10 @@ export default function ReviewedList() {
           <button
             key={tab.value}
             onClick={() => handleFilterChange(tab.value)}
-            className={`px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 border ${
-              statusFilter === tab.value
-                ? "bg-[#ff4f00] border-[#ff4f00] text-white shadow-md shadow-[#ff4f00]/10"
-                : "bg-white border-slate-200 text-slate-600 hover:border-[#ff4f00]/30 hover:text-[#ff4f00]"
-            }`}
+            className={`px-5 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 border ${statusFilter === tab.value
+              ? "bg-[#ff4f00] border-[#ff4f00] text-white shadow-md shadow-[#ff4f00]/10"
+              : "bg-white border-slate-200 text-slate-600 hover:border-[#ff4f00]/30 hover:text-[#ff4f00]"
+              }`}
           >
             {tab.label}
           </button>
@@ -215,7 +210,7 @@ export default function ReviewedList() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-between items-end gap-4 mb-4">
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <div className="space-y-1.5">
                   {renderStars(review.rating)}
                   <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
@@ -231,11 +226,8 @@ export default function ReviewedList() {
                 {isEditable(review) && (
                   <button
                     onClick={() => setSelectedReview(review)}
-                    className="flex items-center gap-1 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all active:scale-95"
+                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-gray-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all active:scale-95 hover:cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[16px]">
-                      edit
-                    </span>
                     Edit review
                   </button>
                 )}

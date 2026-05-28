@@ -5,10 +5,10 @@ interface RefundStatusBadgeProps {
   size?: "sm" | "md";
 }
 
-const STATUS_CONFIG: Record<
+const STATUS_CONFIG: Partial<Record<
   RefundStatus,
   { label: string; bg: string; text: string; dot: string }
-> = {
+>> = {
   RefundRequested: {
     label: "Pending Approval",
     bg: "#fffbeb",
