@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import ShippingTracker, { type ShippingEvent } from "./ShippingTracker";
+import { useRouter, useSearchParams } from "next/navigation";
+import ShippingTracker from "./ShippingTracker";
 import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
@@ -10,6 +10,13 @@ import CancelOrderModal from "@/components/common/CancelOrderModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
+import { toast } from "react-hot-toast";
+import {
+  buildOrderTimelineEvents,
+  isCustomerOrderCancellable,
+  isCustomerOrderDelivered,
+  type OrderTimelineEvent,
+} from "@/features/orders/utils/map-customer-order-status";
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -53,8 +60,10 @@ const formatDate = (value?: string | null): string => {
 
 export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromCheckoutSuccess = searchParams.get("from") === "checkout-success";
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
-  const [trackingEvents, setTrackingEvents] = useState<ShippingEvent[]>([]);
+  const [trackingEvents, setTrackingEvents] = useState<OrderTimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -62,6 +71,11 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [isCompleting, setIsCompleting] = useState(false);
 
   const handleBack = () => {
+    if (fromCheckoutSuccess) {
+      router.replace("/profile/orders");
+      return;
+    }
+
     if (window.history.length > 2) {
       router.back();
     } else {
@@ -81,55 +95,12 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
       setOrder(detail);
 
-      // Merge internal status history and external tracking events
-      const allEvents: ShippingEvent[] = [];
-
-      // 1. Add GHN tracking events (already translated by backend)
-      if (tracking?.events?.length) {
-        tracking.events.forEach((e) => {
-          allEvents.push({
-            time: e.time,
-            status: e.status,
-            description: e.description,
-          });
-        });
-      }
-
-      // 2. Add internal status history (and translate common legacy Vietnamese notes)
-      if (detail.statusHistory?.length) {
-        detail.statusHistory.forEach((h) => {
-          let note = h.note || h.statusName;
-
-          // Simple inline translation for legacy Vietnamese notes
-          const n = note.toLowerCase();
-          if (n.includes("chờ lấy hàng")) note = "Ready to pick";
-          else if (n.includes("đang lấy hàng")) note = "Picking up";
-          else if (n.includes("đã lấy hàng")) note = "Picked up";
-          else if (n.includes("đang giao hàng")) note = "Out for delivery";
-          else if (n.includes("giao hàng thành công")) note = "Delivered successfully";
-          else if (n.includes("đã hủy")) note = "Cancelled";
-          else if (n.includes("order completed")) note = "Order completed";
-
-          // Filter out internal noisy webhook messages
-          if (n.includes("webhook")) return;
-          if (n.includes("marked as delivered")) return;
-
-          allEvents.push({
-            time: h.createdAt,
-            status: h.statusName,
-            description: note,
-          });
-        });
-      }
-
-      // 3. Sort by time descending and remove duplicates
-      const uniqueEvents = allEvents
-        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-        .filter((ev, idx, self) =>
-          idx === self.findIndex((t) => t.description === ev.description)
-        );
-
-      setTrackingEvents(uniqueEvents);
+      setTrackingEvents(
+        buildOrderTimelineEvents(tracking?.events ?? [], detail.statusHistory ?? [], {
+          cancelledAt: detail.cancelledAt,
+          currentStatusName: detail.statusName,
+        }),
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to load orders.");
       setOrder(null);
@@ -181,24 +152,19 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     return value ? formatDate(value) : "";
   }, [order]);
 
-  const isCancellable = useMemo(() => {
-    if (!order?.statusName) return false;
-    const status = order.statusName.toLowerCase();
+  const isCancellable = useMemo(
+    () =>
+      order?.canCancel ??
+      isCustomerOrderCancellable(order?.statusCode ?? order?.statusName, order?.paymentMethod),
+    [order],
+  );
 
-    // SHIP_COD rule: Chỉ được hủy khi chưa confirmed (tức là chỉ được hủy khi đang Pending)
-    if (order.paymentMethod === "SHIP_COD" && status === "confirmed") {
-      return false;
-    }
-
-    return ["pending", "confirmed"].includes(status);
-  }, [order]);
-
-  const isCompletable = useMemo(() => {
-    if (!order?.statusName) return false;
-    const status = order.statusName.toLowerCase();
-    // Match backend: Delivered only
-    return status === "delivered";
-  }, [order]);
+  const isCompletable = useMemo(
+    () =>
+      order?.canComplete ??
+      isCustomerOrderDelivered(order?.statusCode ?? order?.statusName),
+    [order],
+  );
 
   const handleCancel = useCallback(async (reason: string) => {
     if (!order) return;
@@ -206,9 +172,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     setIsCancelling(true);
     try {
       await checkoutApi.cancelOrder(order.orderId, reason);
+      toast.success("Order cancelled successfully.");
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order.");
     } finally {
       setIsCancelling(false);
       setIsCancelModalOpen(false);
@@ -220,9 +187,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     setIsCompleting(true);
     try {
       await ordersApi.completeOrder(order.orderId);
+      toast.success("Order received successfully.");
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to complete order.");
+      toast.error(error instanceof Error ? error.message : "Failed to complete order.");
     } finally {
       setIsCompleting(false);
     }
@@ -305,7 +273,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         {/* Left: tracker + products */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <ShippingTracker
-            currentStatus={order.statusName}
+            statusName={order.statusName}
+            paymentMethod={order.paymentMethod}
             events={trackingEvents}
             hasActiveRefund={order.hasActiveRefund}
           />

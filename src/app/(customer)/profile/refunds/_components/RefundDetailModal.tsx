@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -40,6 +40,15 @@ export default function RefundDetailModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  const rejectReason = useMemo(() => {
+    if (!refund || !refund.reasonDetails) return null;
+    const parts = refund.reasonDetails.split("Reject Reason:");
+    if (parts.length > 1) {
+      return parts[parts.length - 1].trim();
+    }
+    return null;
+  }, [refund]);
 
   useEffect(() => {
     if (!isOpen || !refundId) return;
@@ -330,6 +339,7 @@ export default function RefundDetailModal({
                   </div>
                 </div>
               )}
+              {/* Actions removed from scrollable body to prevent duplicates. Kept only in the fixed footer. */}
             </>
           ) : (
             <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
@@ -351,7 +361,7 @@ export default function RefundDetailModal({
             >
               Close
             </button>
-            {refund && refund.refundStatus === "Requested" && (
+            {refund && (refund.refundStatus === "RefundRequested" || refund.refundStatus === "Requested") && (
               <button
                 onClick={handleCancel}
                 disabled={isCancelling}
