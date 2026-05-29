@@ -14,6 +14,7 @@ import { ordersApi } from "@/features/orders/services/orders-api";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import axiosClient from "@/configs/axios-client";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
+import { toast } from "react-hot-toast";
 import { mapCustomerStatusNameToUi } from "@/features/orders/utils/map-customer-order-status";
 
 const ORDERS_PER_PAGE = 3;
@@ -67,7 +68,12 @@ export default function OrderHistoryView() {
   const [isCompletingId, setIsCompletingId] = useState<number | null>(null);
 
   const mapStatusNameToUi = useCallback(
-    (statusName?: string | null): OrderStatus => mapCustomerStatusNameToUi(statusName),
+    (item: CustomerOrderListItem): OrderStatus => {
+      if (item.statusBucket) {
+        return item.statusBucket as OrderStatus;
+      }
+      return mapCustomerStatusNameToUi(item.statusCode ?? item.statusName);
+    },
     [],
   );
 
@@ -78,7 +84,7 @@ export default function OrderHistoryView() {
       return {
         orderId: item.orderId,
         orderCode: item.orderCode,
-        status: mapStatusNameToUi(item.statusName),
+        status: mapStatusNameToUi(item),
         items: (item.items || []).map((p) => ({
           name: p.productName,
           variant: p.variant ?? "",
@@ -89,8 +95,10 @@ export default function OrderHistoryView() {
         })),
         total: item.totalAmount,
         paymentMethod: item.paymentMethod,
-        rawStatusName: item.statusName,
+        rawStatusName: item.statusCode ?? item.statusName,
+        displayLabel: item.displayLabel,
         hasActiveRefund: item.hasActiveRefund,
+        canCancel: item.canCancel,
       };
     },
     [mapStatusNameToUi],
@@ -182,9 +190,10 @@ export default function OrderHistoryView() {
     setIsCancelling(true);
     try {
       await checkoutApi.cancelOrder(orderToCancel.orderId, reason);
+      toast.success("Order cancelled successfully.");
       await loadOrders();
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error instanceof Error ? error.message : "Failed to cancel order.",
       );
     } finally {
@@ -199,9 +208,10 @@ export default function OrderHistoryView() {
     setIsCompletingId(order.orderId);
     try {
       await ordersApi.completeOrder(order.orderId);
+      toast.success("Order received successfully.");
       await loadOrders();
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error instanceof Error ? error.message : "Failed to complete order.",
       );
     } finally {

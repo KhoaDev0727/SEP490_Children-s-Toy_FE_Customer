@@ -10,6 +10,7 @@ import CancelOrderModal from "@/components/common/CancelOrderModal";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
+import { toast } from "react-hot-toast";
 import {
   buildOrderTimelineEvents,
   isCustomerOrderCancellable,
@@ -152,13 +153,17 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   }, [order]);
 
   const isCancellable = useMemo(
-    () => isCustomerOrderCancellable(order?.statusName, order?.paymentMethod),
+    () =>
+      order?.canCancel ??
+      isCustomerOrderCancellable(order?.statusCode ?? order?.statusName, order?.paymentMethod),
     [order],
   );
 
   const isCompletable = useMemo(
-    () => isCustomerOrderDelivered(order?.statusName),
-    [order?.statusName],
+    () =>
+      order?.canComplete ??
+      isCustomerOrderDelivered(order?.statusCode ?? order?.statusName),
+    [order],
   );
 
   const handleCancel = useCallback(async (reason: string) => {
@@ -167,9 +172,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     setIsCancelling(true);
     try {
       await checkoutApi.cancelOrder(order.orderId, reason);
+      toast.success("Order cancelled successfully.");
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to cancel order.");
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order.");
     } finally {
       setIsCancelling(false);
       setIsCancelModalOpen(false);
@@ -181,9 +187,10 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     setIsCompleting(true);
     try {
       await ordersApi.completeOrder(order.orderId);
+      toast.success("Order received successfully.");
       await loadOrder();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to complete order.");
+      toast.error(error instanceof Error ? error.message : "Failed to complete order.");
     } finally {
       setIsCompleting(false);
     }

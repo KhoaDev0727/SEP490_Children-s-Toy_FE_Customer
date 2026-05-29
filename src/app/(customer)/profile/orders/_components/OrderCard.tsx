@@ -14,7 +14,8 @@ export type OrderStatus =
   | "pending"
   | "shipping"
   | "cancelled"
-  | "refunded";
+  | "refunded"
+  | "returning"; // Thêm trạng thái hoàn hàng
 
 export interface OrderItem {
   name: string;
@@ -33,7 +34,9 @@ export interface Order {
   total: number;
   paymentMethod?: string;
   rawStatusName?: string;
+  displayLabel?: string;
   hasActiveRefund?: boolean;
+  canCancel?: boolean;
 }
 
 const ACTION_BUTTONS: Record<
@@ -46,6 +49,7 @@ const ACTION_BUTTONS: Record<
   shipping: { primary: "View Details" },
   cancelled: { primary: "View Details" },
   refunded: { primary: "View Details" },
+  returning: { primary: "View Details" }, // Khai báo action button cho returning
 };
 
 function formatPrice(price: number): string {
@@ -67,14 +71,17 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
       statusName: order.rawStatusName,
       paymentMethod: order.paymentMethod,
       hasActiveRefund: order.hasActiveRefund,
+      apiDisplayLabel: order.displayLabel,
+      statusBucket: order.status,
     });
+    const label = order.displayLabel?.toUpperCase() ?? display.label;
     const actions = ACTION_BUTTONS[order.status];
     let finalPrimaryLabel = actions.primary;
     if (order.status === "pending" && order.paymentMethod === "SHIP_COD") {
       finalPrimaryLabel = "View Details";
     }
     return {
-      label: display.label,
+      label,
       className: display.className,
       primaryLabel: finalPrimaryLabel,
     };
@@ -176,6 +183,14 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Banner Refund/Return Processing Info */}
+      {order.status === "delivering" && order.hasActiveRefund && (
+        <div className="px-6 py-3 bg-sky-50 border-t border-gray-100 text-sky-700 text-xs font-semibold flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px] text-sky-600">info</span>
+          <span>The order has been or is being returned to the warehouse. The system is automatically processing your refund request. Please track the details in the Refunds section.</span>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { OrderStatus } from "@/app/(customer)/profile/orders/_components/OrderCard";
 import {
   getCustomerOrderDisplay,
@@ -98,6 +98,13 @@ export default function ShippingTracker({
     statusName?.toLowerCase().trim() === "đang xử lý hoàn tiền";
   const isFinalStatus = isCancelled || isRefundFlow;
   const [showAll, setShowAll] = useState(false);
+
+  const refundRejectedReason = useMemo(() => {
+    const ev = events.find((e) => e.description.toLowerCase().includes("refund rejected"));
+    if (!ev) return null;
+    const match = ev.description.match(/Refund Rejected:\s*(.*)/i);
+    return match ? match[1].replace(/[()]/g, "").trim() : null;
+  }, [events]);
 
   const historyItems = events.length
     ? events.map((event, index) => ({
@@ -219,12 +226,20 @@ export default function ShippingTracker({
                 ? "Refund has been requested"
                 : "Order has been refunded"}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
-            {isCancelled
-              ? "If you have questions, please contact support"
-              : hasActiveRefund
-                ? "Our staff is reviewing your refund request"
-                : "Refund has been returned to your wallet"}
+          <p className="text-xs text-slate-400 mt-1 max-w-[85%] text-center leading-relaxed">
+            {isCancelled ? (
+              refundRejectedReason ? (
+                <span className="text-rose-600 font-bold block mt-2 px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                  ⚠️ Yêu cầu hoàn tiền bị từ chối: {refundRejectedReason}
+                </span>
+              ) : (
+                "If you have questions, please contact support"
+              )
+            ) : hasActiveRefund ? (
+              "Our staff is reviewing your refund request"
+            ) : (
+              "Refund has been returned to your wallet"
+            )}
           </p>
         </div>
       )}

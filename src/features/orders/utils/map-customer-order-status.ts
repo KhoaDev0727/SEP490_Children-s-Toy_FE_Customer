@@ -14,22 +14,44 @@ const INTERNAL_STATUS_NAMES = new Set([
   "refunded",
   "returning",
   "returncompleted",
+  "deliveryfailed",
+  "waitingreturn",
+  "returnfailed",
+  "lost",
+  "damaged",
 ]);
 
-/** English display labels from CustomerOrderDisplayStatusMapper (API statusName). */
+/**
+ * English display labels từ CustomerOrderDisplayStatusMapper (API statusName dạng display).
+ * Tất cả các trạng thái vận chuyển, trả hàng và sự cố trung gian đều được gộp về tab "delivering".
+ */
 const ENGLISH_DISPLAY_STATUS_TO_UI: Record<string, OrderStatus> = {
   delivering: "delivering",
+  "returning to shop": "delivering",
   "returning to warehouse": "delivering",
-  "returned to warehouse": "delivering",
-  "refund processing": "delivering",
+  "returned to shop": "delivering",      // GHN: đã về kho
+  "return completed": "delivering",      // Hệ thống: hàng về kho, chờ hoàn tiền
+  "delivery failed": "delivering",       // Giao thất bại
+  "waiting return": "delivering",        // GHN: đang chờ shipper lấy về
+  "return failed": "delivering",         // Hoàn hàng thất bại
+  lost: "delivering",
+  damaged: "delivering",
+  "refund processing": "delivering",     // Đang xử lý hoàn tiền
   cancelled: "cancelled",
   refunded: "refunded",
 };
 
 const ENGLISH_DISPLAY_LABELS: Record<string, string> = {
   delivering: "DELIVERING",
+  "returning to shop": "RETURNING TO SHOP",
   "returning to warehouse": "RETURNING TO WAREHOUSE",
-  "returned to warehouse": "RETURNED TO WAREHOUSE",
+  "returned to shop": "RETURNED TO SHOP",
+  "return completed": "RETURN COMPLETED",
+  "delivery failed": "DELIVERY FAILED",
+  "waiting return": "WAITING FOR RETURN",
+  "return failed": "RETURN FAILED",
+  lost: "LOST",
+  damaged: "DAMAGED",
   "refund processing": "REFUND PROCESSING",
   cancelled: "CANCELLED",
   refunded: "REFUNDED",
@@ -48,6 +70,7 @@ const VIETNAMESE_DISPLAY_STATUS_TO_UI: Record<string, OrderStatus> = {
 
 export const CUSTOMER_ORDER_STATUS_CLASS: Record<OrderStatus, string> = {
   delivering: "text-orange-600",
+  returning: "text-amber-600",
   completed: "text-emerald-600",
   pending: "text-amber-600",
   shipping: "text-indigo-600",
@@ -89,7 +112,12 @@ export function mapCustomerStatusNameToUi(statusName?: string | null): OrderStat
     case "delivering":
     case "returning":
     case "returncompleted":
-      return "delivering";
+    case "waitingreturn":
+    case "deliveryfailed":
+    case "returnfailed":
+    case "lost":
+    case "damaged":
+      return "delivering"; // Tất cả các trạng thái này gộp về tab delivering của khách
     case "delivered":
     case "completed":
       return "completed";
@@ -134,9 +162,15 @@ export function getCustomerOrderDisplay(params: {
   statusName?: string | null;
   paymentMethod?: string;
   hasActiveRefund?: boolean;
+  apiDisplayLabel?: string | null;
+  statusBucket?: OrderStatus;
 }): CustomerOrderDisplay {
-  const uiStatus = mapCustomerStatusNameToUi(params.statusName);
-  let label = resolveCustomerStatusDisplayLabel(params.statusName, uiStatus);
+  const uiStatus = params.statusBucket ?? mapCustomerStatusNameToUi(params.statusName);
+  const raw = params.statusName?.toLowerCase().trim() ?? "";
+
+  let label = params.apiDisplayLabel
+    ? params.apiDisplayLabel.toUpperCase()
+    : resolveCustomerStatusDisplayLabel(params.statusName, uiStatus);
   let className = CUSTOMER_ORDER_STATUS_CLASS[uiStatus];
 
   if (uiStatus === "pending") {
@@ -145,24 +179,83 @@ export function getCustomerOrderDisplay(params: {
     } else {
       label = "PENDING PAYMENT";
     }
-  } else if (uiStatus === "delivering" && params.hasActiveRefund) {
-    label = "REFUND REQUESTED";
-    className = "text-sky-600";
   } else if (uiStatus === "shipping") {
-    const raw = params.statusName?.toLowerCase();
     if (raw === "confirmed") label = "CONFIRMED";
     else if (raw === "processing") label = "PROCESSING";
     else if (raw === "shipped") label = "SHIPPED";
+  } else if (uiStatus === "delivering") {
+    if (raw === "delivering") {
+      if (params.hasActiveRefund) {
+        label = "REFUND REQUESTED";
+        className = "text-sky-600";
+      } else {
+        label = "DELIVERING";
+        className = "text-orange-600";
+      }
+    } else if (raw === "waitingreturn" || raw === "waiting return") {
+      label = "WAITING FOR RETURN";
+      className = "text-orange-600";
+    } else if (raw === "returning" || raw === "returning to shop") {
+      label = "RETURNING TO WAREHOUSE";
+      className = "text-orange-600";
+    } else if (raw === "returncompleted" || raw === "return completed") {
+      if (params.hasActiveRefund) {
+        label = "REFUND PROCESSING";
+        className = "text-sky-600";
+      } else {
+        label = "RETURN COMPLETED";
+        className = "text-amber-600";
+      }
+    } else if (raw === "refund processing") {
+      label = "REFUND PROCESSING";
+      className = "text-sky-600";
+    } else if (raw === "lost") {
+      if (params.hasActiveRefund) {
+        label = "REFUND PROCESSING";
+        className = "text-sky-600";
+      } else {
+        label = "LOST";
+        className = "text-red-600";
+      }
+    } else if (raw === "damaged") {
+      if (params.hasActiveRefund) {
+        label = "REFUND PROCESSING";
+        className = "text-sky-600";
+      } else {
+        label = "DAMAGED";
+        className = "text-red-600";
+      }
+    } else if (raw === "deliveryfailed" || raw === "delivery failed") {
+      if (params.hasActiveRefund) {
+        label = "REFUND PROCESSING";
+        className = "text-sky-600";
+      } else {
+        label = "DELIVERY FAILED";
+        className = "text-red-600";
+      }
+    } else if (raw === "returnfailed" || raw === "return failed") {
+      if (params.hasActiveRefund) {
+        label = "REFUND PROCESSING";
+        className = "text-sky-600";
+      } else {
+        label = "RETURN FAILED";
+        className = "text-red-600";
+      }
+    }
+  } else if (uiStatus === "cancelled") {
+    label = "CANCELLED";
+    className = "text-red-600";
+  } else if (uiStatus === "refunded") {
+    label = "REFUNDED";
+    className = "text-sky-600";
   } else if (uiStatus === "completed") {
-    if (params.statusName?.toLowerCase() === "delivered") {
+    if (raw === "delivered") {
       label = "DELIVERED";
       className = "text-emerald-600";
+    } else {
+      label = "COMPLETED";
+      className = "text-emerald-600";
     }
-  }
-
-  if (params.hasActiveRefund && uiStatus !== "delivering") {
-    label = "REFUND REQUESTED";
-    className = "text-sky-600";
   }
 
   return { uiStatus, label, className };
@@ -199,6 +292,11 @@ const NON_CANCELLABLE_STATUSES = new Set([
   "delivering",
   "returning",
   "returncompleted",
+  "deliveryfailed",
+  "waitingreturn",
+  "returnfailed",
+  "lost",
+  "damaged",
   "shipped",
   "processing",
   "delivered",
@@ -367,7 +465,7 @@ export function buildOrderTimelineEvents(
     if (note && note !== h.statusName) {
       const translatedNote = translateLegacyHistoryNote(note);
       description = description
-        ? `${description} — ${translatedNote}`
+        ? `${description}: (${translatedNote})`
         : translatedNote;
     }
     if (!description && note) {
