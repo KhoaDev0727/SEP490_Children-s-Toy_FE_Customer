@@ -5,10 +5,10 @@ interface RefundStatusBadgeProps {
   size?: "sm" | "md";
 }
 
-const STATUS_CONFIG: Record<
-  string,
+const STATUS_CONFIG: Partial<Record<
+  RefundStatus,
   { label: string; bg: string; text: string; border: string }
-> = {
+>> = {
   // ── Dạng đầy đủ (Refund* prefix) ─────────────────────────────
   RefundRequested: {
     label: "Pending Approval",
