@@ -1147,8 +1147,8 @@ export default function ProductDetailsView({
       <RecommendationWidget
         widgetCode={WIDGET_CODES.PDP_SIMILAR}
         productId={product.productId}
-        title="Sản phẩm tương tự"
-        subtitle="Các sản phẩm có đặc điểm gần với sản phẩm bạn đang xem"
+        title="Similar Products"
+        subtitle="Products with features similar to the one you're viewing"
         source={`pdp:${product.productId}`}
         className="relative mt-24 mb-12 flow-root lg:mt-28"
       />
@@ -1156,8 +1156,8 @@ export default function ProductDetailsView({
       <RecommendationWidget
         widgetCode={WIDGET_CODES.PDP_ALSO_BOUGHT}
         productId={product.productId}
-        title="Khách hàng cũng mua"
-        subtitle="Những sản phẩm thường được mua kèm"
+        title="Customers Also Bought"
+        subtitle="Products frequently purchased together"
         source={`pdp_also_bought:${product.productId}`}
         className="relative mb-16 flow-root"
       />
