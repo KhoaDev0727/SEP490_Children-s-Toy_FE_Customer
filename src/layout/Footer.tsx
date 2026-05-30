@@ -79,7 +79,7 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-          <p>© 2024 Toy Store. All rights reserved.</p>
+          <p>© 2026 Toy Store. All rights reserved.</p>
         </div>
       </div>
     </footer>
