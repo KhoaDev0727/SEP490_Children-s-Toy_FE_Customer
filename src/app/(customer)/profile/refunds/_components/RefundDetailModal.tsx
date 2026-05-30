@@ -220,7 +220,7 @@ export default function RefundDetailModal({
                     <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       inventory_2
                     </span>
-                    Sản phẩm trả lại
+                    Returned Products
                   </p>
                   <div className="space-y-2">
                     {refund.details.map((item, idx) => (
@@ -241,7 +241,7 @@ export default function RefundDetailModal({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-slate-700 truncate">{item.productName}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">SL: <strong className="text-slate-600">{item.quantity}</strong></p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Qty: <strong className="text-slate-600">{item.quantity}</strong></p>
                         </div>
                         <span className="font-bold text-[#ff4f00] shrink-0 ml-4">{formatPrice(item.refundAmount)}</span>
                       </div>
@@ -257,8 +257,8 @@ export default function RefundDetailModal({
                     local_shipping
                   </span>
                   <div className="flex-grow">
-                    <p className="text-xs font-bold text-slate-700 mb-0.5">Mã vận đơn thu hồi (Courier Tracking)</p>
-                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">Đơn hàng thu hồi đã được nhân viên khởi tạo thủ công. Bạn có thể theo dõi hành trình giao nhận bằng mã vận đơn sau:</p>
+                    <p className="text-xs font-bold text-slate-700 mb-0.5">Return Waybill (Courier Tracking)</p>
+                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">A return shipment has been manually initiated by staff. You can track the return journey using this waybill code:</p>
                     <div className="flex items-center gap-2">
                       <span className="bg-slate-100 px-3 py-1 rounded font-mono text-xs font-bold text-slate-800 tracking-wider">
                         {refund.shippingOrderCode}
@@ -266,11 +266,11 @@ export default function RefundDetailModal({
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(refund.shippingOrderCode || "");
-                          toast.success("Đã sao chép mã vận đơn!");
+                          toast.success("Waybill code copied!");
                         }}
                         className="text-[11px] font-bold text-[#ff4f00] hover:underline"
                       >
-                        Sao chép
+                        Copy
                       </button>
                     </div>
                   </div>
@@ -284,7 +284,7 @@ export default function RefundDetailModal({
                     <span className="material-symbols-outlined text-[16px] text-blue-500">
                       fact_check
                     </span>
-                    Kết quả kiểm kho / chất lượng
+                    Warehouse Receipt / Quality Inspection Result
                   </p>
                   <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
                     {refund.adminNote}

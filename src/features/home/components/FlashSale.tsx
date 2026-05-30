@@ -8,6 +8,7 @@ import {
   FlashSaleTimeSlot,
   FlashSaleProduct,
 } from "@/features/home/types/flash-sale";
+import toast from "react-hot-toast";
 
 // ============================================================
 // Helpers
@@ -137,7 +138,12 @@ const ProductCard = memo(function ProductCard({
           ? "cursor-default opacity-90"
           : "hover:border-[#ff6a00]/30 hover:shadow-md cursor-pointer"
       }`}
-      onClick={(e) => isUpcoming && e.preventDefault()}
+      onClick={(e) => {
+        if (isUpcoming) {
+          e.preventDefault();
+          toast("This flash sale has not started yet.", { icon: "ℹ️" });
+        }
+      }}
     >
       {/* Image */}
       <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
@@ -286,7 +292,7 @@ export default function FlashSale() {
   if (!isLoading && promotions.length === 0) return null;
 
   return (
-    <section className="py-8 sm:py-12">
+    <section id="flash-sale" className="py-8 sm:py-12">
       <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-gray-200 p-4 sm:p-6 lg:p-8">
         {/* ── Header Row ────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 gap-4">

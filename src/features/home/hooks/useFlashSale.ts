@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { flashSaleApi } from "@/features/home/services/flash-sale-api";
 import {
   FlashSalePromotion,
@@ -159,6 +161,7 @@ export function useFlashSale(): UseFlashSaleReturn {
   const [promotions, setPromotions] = useState<FlashSalePromotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   const [selectedPromotionId, setSelectedPromotionId] = useState<number | null>(
     null,
@@ -245,6 +248,27 @@ export function useFlashSale(): UseFlashSaleReturn {
     };
   }, []);
 
+  // ── Deep-link: ?flashSale={promotionId} ─────────────────────
+  useEffect(() => {
+    const paramId = searchParams.get("flashSale");
+    if (!paramId || isLoading) return;
+    const id = parseInt(paramId, 10);
+    if (isNaN(id)) return;
+
+    const promo = promotions.find((p) => p.promotionId === id);
+    if (!promo) {
+      toast("This flash sale has ended or is no longer available.");
+      return;
+    }
+    selectPromotion(id);
+    // Scroll to the flash sale section
+    const el = document.getElementById("flash-sale");
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, searchParams]);
+
   // ── Derived: active promotions ─────────────────────────────
   const activePromotions = promotions.filter((p) => toLocal(p.endDate) >= now);
 
@@ -253,24 +277,24 @@ export function useFlashSale(): UseFlashSaleReturn {
 
   const availableDates: FlashSaleDate[] = selectedPromotion
     ? Array.from(
-        new Set(
-          selectedPromotion.promotionTimeSlots.map((s) =>
-            toDateKey(toLocal(s.startAt)),
-          ),
+      new Set(
+        selectedPromotion.promotionTimeSlots.map((s) =>
+          toDateKey(toLocal(s.startAt)),
         ),
-      ).sort()
+      ),
+    ).sort()
     : [];
 
   const timeSlotsForDate: FlashSaleTimeSlot[] = selectedPromotion
     ? selectedPromotion.promotionTimeSlots
-        .filter(
-          (s) =>
-            selectedDate !== null &&
-            toDateKey(toLocal(s.startAt)) === selectedDate,
-        )
-        .sort(
-          (a, b) => toLocal(a.startAt).getTime() - toLocal(b.startAt).getTime(),
-        )
+      .filter(
+        (s) =>
+          selectedDate !== null &&
+          toDateKey(toLocal(s.startAt)) === selectedDate,
+      )
+      .sort(
+        (a, b) => toLocal(a.startAt).getTime() - toLocal(b.startAt).getTime(),
+      )
     : [];
 
   // ── Tự động tính toán Slot (Khắc phục lỗi cascading renders) ──
