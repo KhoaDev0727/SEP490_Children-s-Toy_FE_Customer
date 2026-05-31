@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import FilterSidebar from "./_components/FilterSidebar";
 import ProductGrid from "./_components/ProductGrid";
 import { productApi } from "@/features/products/services/product-api";
 import { ProductFilters, ProductLookups } from "@/features/products/types/product";
+import { useTracking } from "@/hooks/useTracking";
 
 export default function ProductsClient() {
   const searchParams = useSearchParams();
+  const { trackSearch, trackCategoryBrowse } = useTracking();
   const [filters, setFilters] = useState<ProductFilters>({});
   const [lookups, setLookups] = useState<ProductLookups | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(true);
   const searchTerm = searchParams.get("searchTerm")?.trim() ?? "";
+  const lastTrackedSearchRef = useRef<string>("");
+  const lastTrackedCategoryRef = useRef<number | null>(null);
 
   useEffect(() => {
     setFilters((prev) => {
@@ -28,6 +32,22 @@ export default function ProductsClient() {
       };
     });
   }, [searchTerm]);
+
+  useEffect(() => {
+    const keyword = searchTerm.trim();
+    if (!keyword) return;
+    if (lastTrackedSearchRef.current === keyword) return;
+    trackSearch(keyword);
+    lastTrackedSearchRef.current = keyword;
+  }, [searchTerm, trackSearch]);
+
+  useEffect(() => {
+    if (!filters.categoryId) return;
+    if (lastTrackedCategoryRef.current === filters.categoryId) return;
+    const categoryName = lookups?.categories.find((item) => item.id === filters.categoryId)?.label;
+    trackCategoryBrowse(filters.categoryId, categoryName);
+    lastTrackedCategoryRef.current = filters.categoryId;
+  }, [filters.categoryId, lookups, trackCategoryBrowse]);
 
   useEffect(() => {
     let active = true;
