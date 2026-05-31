@@ -151,6 +151,26 @@ export const checkoutApi = {
     }
   },
 
+  /**
+   * Kiểm tra xem user có đơn SE_PAY PENDING nào không.
+   * Trả về orderId nếu có, null nếu không.
+   */
+  getPendingSepayOrder: async (): Promise<{ orderId: number; orderCode: string } | null> => {
+    try {
+      const response = await axiosClient.get<
+        { items?: Array<{ orderId: number; orderCode: string; paymentMethod: string; paymentStatus: string }> } | null
+      >("/orders", { params: { status: "pending", pageSize: 10 } });
+      const data = response as { items?: Array<{ orderId: number; orderCode: string; paymentMethod: string; paymentStatus: string }> } | null;
+      const items = data?.items ?? [];
+      const pending = items.find(
+        (o) => o.paymentMethod === "SE_PAY" && o.paymentStatus === "PENDING",
+      );
+      return pending ? { orderId: pending.orderId, orderCode: pending.orderCode } : null;
+    } catch {
+      return null;
+    }
+  },
+
   /** Lấy thông tin thanh toán nhạy cảm (QR, amount, attemptCode) từ API thay vì URL. */
   getPaymentInfo: async (orderId: number): Promise<OrderPaymentInfo> => {
     try {

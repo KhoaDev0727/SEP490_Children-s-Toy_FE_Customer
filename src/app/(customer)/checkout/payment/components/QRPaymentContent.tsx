@@ -30,7 +30,6 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const [amountValue, setAmountValue] = useState<number | null>(null);
   const [isFetchingInfo, setIsFetchingInfo] = useState(true);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [expiredByServer, setExpiredByServer] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -97,9 +96,25 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
       setIsFetchingInfo(true);
       try {
         const info = await checkoutApi.getPaymentInfo(orderId);
+
+        // Redirect based on effective payment status from the server
+        if (info.paymentStatus === "PAID") {
+          redirectedRef.current = true;
+          await refreshCart().catch(() => {});
+          router.replace(
+            `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(info.orderCode)}`,
+          );
+          return;
+        }
+        if (["EXPIRED", "CANCELLED", "FAILED"].includes(info.paymentStatus ?? "")) {
+          toast.error("This payment has expired or been cancelled. Please go back to your cart and try again.");
+          router.replace("/cart");
+          return;
+        }
+
         setOrderCode(info.orderCode);
-        setAttemptCode(info.paymentAttemptCode);
-        setQrUrl(info.qrImageUrl);
+        setAttemptCode(info.paymentAttemptCode ?? "");
+        setQrUrl(info.qrImageUrl ?? "");
         setAmountValue(Math.round(info.amount));
         if (info.expiresAt) setExpiresAt(info.expiresAt);
       } catch (err) {
@@ -111,7 +126,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
     };
 
     void fetchInfo();
-  }, [orderId]);
+  }, [orderId, refreshCart, router]);
 
 
 
@@ -195,32 +210,6 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
     );
   }
 
-  const handleRefresh = async () => {
-    if (!orderId) return;
-    setIsRefreshing(true);
-    try {
-      const res = await checkoutApi.retryPayment(orderId);
-      setAttemptCode(res.paymentAttemptCode);
-      setQrUrl(res.qrImageUrl);
-      setAmountValue(Math.round(res.totalAmount));
-      try {
-        const status = await checkoutApi.getPaymentStatus(orderId);
-        if (typeof status.expiresAt === "string") setExpiresAt(status.expiresAt);
-        if (["CANCELLED", "EXPIRED", "FAILED"].includes(status.paymentStatus)) {
-          setExpiredByServer(true);
-        }
-      } catch {
-        /* ignore */
-      }
-      toast.success("New QR code generated.");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unable to generate a new QR code.";
-      toast.error(msg);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   const handleConfirmPayment = async () => {
     if (!orderId) return;
     try {
@@ -270,8 +259,6 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
     <>
       <QRCodeCard
         qrUrl={qrImageUrl}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
         expiresAt={expiresAt}
         isExpired={expiredByServer}
       />

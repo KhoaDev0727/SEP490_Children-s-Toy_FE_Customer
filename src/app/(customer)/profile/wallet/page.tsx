@@ -89,7 +89,8 @@ export default function WalletPage() {
   const [isCreatingTopUpQr, setIsCreatingTopUpQr] = useState(false);
   const [isCheckingTopUpStatus, setIsCheckingTopUpStatus] = useState(false);
 
-  const isWalletActivated = wallet !== null;
+  const isWalletActivated = wallet !== null && wallet.hasPin;
+  const hasPendingWallet = wallet !== null && !wallet.hasPin;
   const currentBalance = wallet?.balance ?? 0;
 
   const totalCredit = useMemo(
@@ -331,12 +332,19 @@ export default function WalletPage() {
     setIsSubmittingPin(true);
     try {
       if (pinModalMode === "activate") {
+        const pendingBalance = wallet?.balance ?? 0;
         const createdWallet = await walletApi.createWallet(
           activationValidation!.data,
         );
         setWallet(createdWallet);
-        setTransactions([]);
-        toast.success("Wallet activated successfully.");
+        await loadTransactionPage(1);
+        if (pendingBalance > 0) {
+          toast.success(
+            `PIN set up successfully. You can now use your balance of ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(pendingBalance)} VND.`,
+          );
+        } else {
+          toast.success("Wallet activated successfully.");
+        }
       } else if (pinModalMode === "topup") {
         const verifyResponse = await walletApi.verifyPin(topUpValidation!.data);
         const newTopUpToken = verifyResponse.topUpToken;
@@ -453,7 +461,12 @@ export default function WalletPage() {
             Loading wallet information...
           </div>
         ) : !isWalletActivated ? (
-          <WalletActivationState onActivate={() => openPinModal("activate")} />
+          <WalletActivationState
+            onActivate={() => openPinModal("activate")}
+            pendingBalance={hasPendingWallet ? currentBalance : 0}
+            pendingTransactions={hasPendingWallet ? transactions : []}
+            isTransactionsLoading={isTransactionsLoading}
+          />
         ) : isTopUpPanelOpen ? (
           <WalletTopUpSePayPanel
             quickAmounts={[...TOP_UP_QUICK_AMOUNTS]}
@@ -469,9 +482,6 @@ export default function WalletPage() {
             accountName={SEP_ACCOUNT_NAME}
             onSelectAmount={(amount) => {
               void createTopUpQrForAmount(amount);
-            }}
-            onRefreshQr={() => {
-              void createTopUpQrForAmount(topUpAmount);
             }}
             onCheckStatus={() => {
               void checkTopUpStatus();
@@ -509,6 +519,7 @@ export default function WalletPage() {
       <WalletPinModal
         isOpen={isPinModalOpen}
         pinModalMode={pinModalMode}
+        hasPendingWallet={hasPendingWallet}
         isForgotPinFlow={isForgotPinFlow}
         pin={pin}
         confirmPin={confirmPin}

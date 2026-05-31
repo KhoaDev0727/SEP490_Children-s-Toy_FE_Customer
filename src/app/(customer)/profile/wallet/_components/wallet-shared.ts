@@ -178,16 +178,20 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
   };
 }
 
-export function getPinModalTitle(mode: PinModalMode) {
-  if (mode === "activate") return "Activate Wallet";
+export function getPinModalTitle(mode: PinModalMode, hasPendingWallet = false) {
+  if (mode === "activate") {
+    return hasPendingWallet ? "Set Up Wallet PIN" : "Activate Wallet";
+  }
   if (mode === "topup") return "Verify PIN for Top Up";
   if (mode === "changePin") return "Change Wallet PIN";
   return "Verify PIN for Balance";
 }
 
-export function getPinModalDescription(mode: PinModalMode) {
+export function getPinModalDescription(mode: PinModalMode, hasPendingWallet = false) {
   if (mode === "activate") {
-    return "Create your 6-digit wallet PIN to activate the wallet.";
+    return hasPendingWallet
+      ? "Create a 6-digit PIN to access your refund balance."
+      : "Create your 6-digit wallet PIN to activate the wallet.";
   }
   if (mode === "topup") {
     return "Enter your 6-digit PIN to verify TOP_UP action.";

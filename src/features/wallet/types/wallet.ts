@@ -7,6 +7,7 @@ export interface WalletDto {
   currency: string;
   balance: number;
   status: WalletStatus;
+  hasPin: boolean;
 }
 
 export interface WalletTransactionDto {
