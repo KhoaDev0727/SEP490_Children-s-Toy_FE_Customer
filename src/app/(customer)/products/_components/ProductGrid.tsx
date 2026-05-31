@@ -460,6 +460,7 @@ import {
 import { formatCurrency, formatMysteryPrice } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import { followApi } from "@/features/products/services/follow-api";
+import { useTracking } from "@/hooks/useTracking";
 
 const PAGE_SIZE = 20;
 
@@ -731,6 +732,7 @@ function Pagination({
 
 export default function ProductGrid({ filters }: { filters: ProductFilters }) {
   const { addItem, cart } = useCart();
+  const { trackAddToCart, trackAddToWishlist } = useTracking();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [page, setPage] = useState(1);
@@ -876,6 +878,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     try {
       setAddingProductId(product.productId);
       await addItem(product.productId, 1);
+      trackAddToCart(product.productId, { quantity: 1, source: "plp" });
       toast.success("Item added to cart.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to add item to cart.";
@@ -905,6 +908,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         toast.success("Removed from wishlist.");
       } else {
         await wishlistApi.addItem(productId);
+        trackAddToWishlist(productId);
         setWishlistProductIds((previous) => {
           const next = new Set(previous);
           next.add(productId);

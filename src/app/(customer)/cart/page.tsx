@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import { useTracking } from "@/hooks/useTracking";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import {
   CART_MAX_SUBTOTAL,
@@ -29,6 +30,7 @@ export default function CartPage() {
   const router = useRouter();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
+  const { trackRemoveFromCart } = useTracking();
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
   const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
 
@@ -47,9 +49,13 @@ export default function CartPage() {
   }, [cart, items]);
 
   const handleRemoveItem = async (cartItemId: number) => {
+    const removedItem = items.find((item) => item.cartItemId === cartItemId);
     try {
       setPendingItemId(cartItemId);
       await removeItem(cartItemId);
+      if (removedItem?.productId) {
+        trackRemoveFromCart(removedItem.productId);
+      }
       toast.success("Item removed from cart.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to remove item.";

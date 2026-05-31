@@ -11,6 +11,7 @@ import {
   createReviewSchema,
 } from "../types/review.schema";
 import { reviewApi } from "../services/review-api";
+import { useTracking } from "@/hooks/useTracking";
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function ReviewModal({
   onSuccess,
 }: ReviewModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { trackReviewSubmit } = useTracking();
 
   // Tối ưu: Thay đổi từ File[] thành SelectedImage[] để lưu trữ URL cố định
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
@@ -132,6 +134,7 @@ export default function ReviewModal({
       });
 
       await reviewApi.createReview(formData);
+      trackReviewSubmit(productId, data.rating);
       toast.success("Thank you for your review!");
 
       // Tối ưu: Giải phóng bộ nhớ toàn bộ ảnh sau khi submit thành công
