@@ -565,6 +565,9 @@ export default function OrderSummary({
       });
 
       if (paymentMethod === "SE_PAY") {
+        if (response.hasExistingPendingOrder) {
+          toast("You already have a pending QR payment. Redirecting to it now.", { icon: "⏳" });
+        }
         // Navigate with only orderId — sensitive data (QR URL, amount, attemptCode)
         // is fetched client-side via GET /orders/:orderId/payment-info
         router.push(`/checkout/payment?orderId=${response.orderId}`);

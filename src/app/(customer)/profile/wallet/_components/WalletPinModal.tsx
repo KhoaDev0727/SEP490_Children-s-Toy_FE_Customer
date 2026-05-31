@@ -10,6 +10,7 @@ import {
 type WalletPinModalProps = {
   isOpen: boolean;
   pinModalMode: PinModalMode;
+  hasPendingWallet?: boolean;
   isForgotPinFlow: boolean;
   pin: string;
   confirmPin: string;
@@ -85,6 +86,7 @@ function PinInput({
 export default function WalletPinModal({
   isOpen,
   pinModalMode,
+  hasPendingWallet = false,
   isForgotPinFlow,
   pin,
   confirmPin,
@@ -145,12 +147,12 @@ export default function WalletPinModal({
             {isForgotPinFlow ? (
               <h3 className="text-lg font-bold text-slate-900">Reset Wallet PIN</h3>
             ) : (
-              <h3 className="text-lg font-bold text-slate-900">{getPinModalTitle(pinModalMode)}</h3>
+              <h3 className="text-lg font-bold text-slate-900">{getPinModalTitle(pinModalMode, hasPendingWallet)}</h3>
             )}
             <p className="text-sm text-slate-500 mt-1">
               {isForgotPinFlow
                 ? "Enter the 6-digit OTP from email and set a new wallet PIN."
-                : getPinModalDescription(pinModalMode)}
+                : getPinModalDescription(pinModalMode, hasPendingWallet)}
             </p>
           </div>
           <button

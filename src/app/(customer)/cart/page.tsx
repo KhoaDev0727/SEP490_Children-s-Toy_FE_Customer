@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
+import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import {
   CART_MAX_SUBTOTAL,
   CART_MAX_SUBTOTAL_ERROR_MESSAGE,
@@ -29,6 +30,12 @@ export default function CartPage() {
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
+  const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
+
+  useEffect(() => {
+    if (!isHydrated || !isAuthenticated) return;
+    checkoutApi.getPendingSepayOrder().then(setPendingSepay).catch(() => null);
+  }, [isAuthenticated, isHydrated]);
 
   const items = useMemo(() => cart?.items ?? [], [cart]);
 
@@ -130,6 +137,23 @@ export default function CartPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-black tracking-tight text-slate-900">Shopping Cart</h1>
       </div>
+
+      {pendingSepay && (
+        <div className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-xl text-orange-500">pending</span>
+            <p className="text-sm font-semibold text-orange-800">
+              You have a pending QR payment for order <span className="font-black">#{pendingSepay.orderCode}</span>. Complete it before placing a new order.
+            </p>
+          </div>
+          <Link
+            href={`/checkout/payment?orderId=${pendingSepay.orderId}`}
+            className="shrink-0 rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-orange-600"
+          >
+            Continue payment
+          </Link>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center">

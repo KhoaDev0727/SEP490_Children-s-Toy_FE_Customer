@@ -77,7 +77,9 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
     const label = order.displayLabel?.toUpperCase() ?? display.label;
     const actions = ACTION_BUTTONS[order.status];
     let finalPrimaryLabel = actions.primary;
-    if (order.status === "pending" && order.paymentMethod === "SHIP_COD") {
+    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
+      finalPrimaryLabel = "Continue payment";
+    } else if (order.status === "pending" && order.paymentMethod === "SHIP_COD") {
       finalPrimaryLabel = "View Details";
     }
     return {
