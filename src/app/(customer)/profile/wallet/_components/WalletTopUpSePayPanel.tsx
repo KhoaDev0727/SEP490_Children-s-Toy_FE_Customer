@@ -16,7 +16,6 @@ type WalletTopUpSePayPanelProps = {
   accountNumber: string;
   accountName: string;
   onSelectAmount: (amount: number) => void;
-  onRefreshQr: () => void;
   onCheckStatus: () => void;
   onBack: () => void;
 };
@@ -63,7 +62,6 @@ export default function WalletTopUpSePayPanel({
   accountNumber,
   accountName,
   onSelectAmount,
-  onRefreshQr,
   onCheckStatus,
   onBack,
 }: WalletTopUpSePayPanelProps) {
@@ -120,7 +118,7 @@ export default function WalletTopUpSePayPanel({
 
       <div className="grid gap-4 lg:grid-cols-2">
         {qrImageUrl ? (
-          <QRCodeCard qrUrl={qrImageUrl} onRefresh={onRefreshQr} isRefreshing={isCreatingQr} />
+          <QRCodeCard qrUrl={qrImageUrl} />
         ) : (
           <div className="flex min-h-[460px] items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
             Creating your SePay QR...
