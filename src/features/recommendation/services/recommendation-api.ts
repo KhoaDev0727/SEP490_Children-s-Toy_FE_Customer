@@ -7,6 +7,7 @@ import type {
 interface GetRecommendationsParams {
   widgetCode: WidgetCode;
   productId?: number;
+  orderId?: number;
   accountId?: number;
 }
 
@@ -23,6 +24,9 @@ export const recommendationApi = {
     qs.set("widgetCode", params.widgetCode);
     if (params.productId && params.productId > 0) {
       qs.set("productId", String(params.productId));
+    }
+    if (params.orderId && params.orderId > 0) {
+      qs.set("orderId", String(params.orderId));
     }
     if (params.accountId && params.accountId > 0) {
       qs.set("accountId", String(params.accountId));
