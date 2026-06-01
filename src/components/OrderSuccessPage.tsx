@@ -338,7 +338,7 @@ function OrderSuccessContent() {
             <div className="mt-12 slide-up" style={{ animationDelay: "0.55s" }}>
               <RecommendationWidget
                 widgetCode={WIDGET_CODES.AFTER_PURCHASE}
-                productId={order.items[0]?.productId}
+                orderId={order.orderId}
                 title="Next purchase"
                 subtitle="Customers who bought this product often purchase the following products as well"
                 source={`after_purchase:${order.orderId}`}

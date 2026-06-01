@@ -10,6 +10,7 @@ import type {
 interface UseRecommendationsArgs {
   widgetCode: WidgetCode;
   productId?: number;
+  orderId?: number;
   /** Tự fetch lại khi key này thay đổi (vd. user đổi product). */
   enabled?: boolean;
 }
@@ -34,6 +35,7 @@ interface UseRecommendationsReturn {
 export function useRecommendations({
   widgetCode,
   productId,
+  orderId,
   enabled = true,
 }: UseRecommendationsArgs): UseRecommendationsReturn {
   const [data, setData] = useState<RecommendationWidgetResponse | null>(null);
@@ -51,6 +53,7 @@ export function useRecommendations({
       const response = await recommendationApi.getRecommendations({
         widgetCode,
         productId,
+        orderId,
       });
       setData(response);
     } catch {
@@ -60,7 +63,7 @@ export function useRecommendations({
     } finally {
       setIsLoading(false);
     }
-  }, [enabled, widgetCode, productId]);
+  }, [enabled, widgetCode, productId, orderId]);
 
   useEffect(() => {
     fetchData();

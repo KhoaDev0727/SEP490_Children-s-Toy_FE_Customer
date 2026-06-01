@@ -11,6 +11,8 @@ interface RecommendationWidgetProps {
   widgetCode: WidgetCode;
   /** Bắt buộc với pdp_similar / pdp_also_bought. */
   productId?: number;
+  /** Dùng cho after_purchase để recommend theo toàn bộ sản phẩm trong đơn. */
+  orderId?: number;
   /** Title hiển thị. Nếu không truyền sẽ dùng widgetName từ API. */
   title?: string;
   /** Subtitle/description nhỏ phía dưới title. */
@@ -37,6 +39,7 @@ interface RecommendationWidgetProps {
 export default function RecommendationWidget({
   widgetCode,
   productId,
+  orderId,
   title,
   subtitle,
   source,
@@ -53,9 +56,13 @@ export default function RecommendationWidget({
   const { items, isLoading, hasError, data } = useRecommendations({
     widgetCode,
     productId,
-    enabled: widgetCode !== "pdp_similar" && widgetCode !== "pdp_also_bought"
-      ? true
-      : Boolean(productId && productId > 0),
+    orderId,
+    enabled:
+      widgetCode === "pdp_similar" || widgetCode === "pdp_also_bought"
+        ? Boolean(productId && productId > 0)
+        : widgetCode === "after_purchase"
+        ? Boolean(orderId && orderId > 0)
+        : true,
   });
 
   if (isLoading) {
