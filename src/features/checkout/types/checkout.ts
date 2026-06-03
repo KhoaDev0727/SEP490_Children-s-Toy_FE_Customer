@@ -59,6 +59,12 @@ export interface CheckoutPreviewResponse {
   itemErrors: CheckoutPreviewItemError[];
 }
 
+export interface CheckoutPaymentOptions {
+  isCodRestricted: boolean;
+  suspiciousDeliveryFailOrderCount: number;
+  codRestrictionReason: string | null;
+}
+
 export interface RetryPaymentResponse {
   paymentAttemptCode: string;
   qrImageUrl: string;
