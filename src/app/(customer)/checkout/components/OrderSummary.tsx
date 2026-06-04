@@ -48,7 +48,6 @@ export default function OrderSummary({
   const [shippingVoucherError, setShippingVoucherError] = useState<string | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
-  const [voucherModalTarget, setVoucherModalTarget] = useState<"ORDER_TOTAL" | "SHIPPING_FEE">("ORDER_TOTAL");
   const [voucherList, setVoucherList] = useState<IVoucher[]>([]);
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
@@ -644,7 +643,7 @@ export default function OrderSummary({
           {/* Perforated side cuts */}
           <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-r border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
           <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#fafafa] border-l border-gray-200 group-hover:border-[#ff4f00]/50 transition-colors" />
-          
+
           <div className="flex items-center gap-3.5 pl-2">
             <div className="w-8 h-8 rounded-xl bg-[#ff4f00] flex items-center justify-center text-white shrink-0 shadow-sm">
               <span className="material-symbols-outlined text-[18px] font-bold">confirmation_number</span>
@@ -987,15 +986,14 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
-          !eligible
+        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${!eligible
             ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
             : isSelected
-            ? isOrderTarget
-              ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
-              : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
-            : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
-        }`}
+              ? isOrderTarget
+                ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
+                : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
+              : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
+          }`}
       >
         {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
         <div
@@ -1011,26 +1009,15 @@ function UnifiedVoucherModal({
             WebkitMaskRepeat: "repeat-y",
           }}
         >
-          {voucher.imageUrl ? (
-            <Image
-              src={voucher.imageUrl}
-              alt={voucher.voucherName}
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          ) : (
-            <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
-              isOrderTarget ? "bg-orange-500" : "bg-emerald-500"
+          <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${isOrderTarget ? "bg-orange-500" : "bg-emerald-500"
             }`}>
-              <span className="material-symbols-outlined text-4xl">
-                {isOrderTarget ? "confirmation_number" : "local_shipping"}
-              </span>
-              <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-                {isOrderTarget ? "Voucher" : "Shipping"}
-              </span>
-            </div>
-          )}
+            <span className="material-symbols-outlined text-4xl">
+              {isOrderTarget ? "confirmation_number" : "local_shipping"}
+            </span>
+            <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
+              {isOrderTarget ? "Voucher" : "Shipping"}
+            </span>
+          </div>
         </div>
 
         {/* Right side: Content */}
@@ -1039,11 +1026,10 @@ function UnifiedVoucherModal({
           <div className="grow flex flex-col justify-between min-w-0 pr-8">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${
-                  isOrderTarget
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${isOrderTarget
                     ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
                     : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                }`}>
+                  }`}>
                   {voucher.voucherCode}
                 </span>
               </div>
@@ -1093,13 +1079,12 @@ function UnifiedVoucherModal({
 
           {/* Selection indicator inside card */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-              isSelected
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected
                 ? isOrderTarget
                   ? "border-[#ff4f00] bg-[#ff4f00]"
                   : "border-emerald-500 bg-emerald-500"
                 : "border-gray-300"
-            }`}>
+              }`}>
               {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
             </div>
           </div>
