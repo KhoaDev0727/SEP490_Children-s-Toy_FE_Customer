@@ -107,4 +107,5 @@ export type RefundStatus =
   | "Approved"
   | "Rejected"
   | "Completed"
-  | "Cancelled";
+  | "Cancelled"
+  | "Processing";
