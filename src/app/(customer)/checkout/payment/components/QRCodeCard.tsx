@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_EXPIRE_SECONDS = 5 * 60; // 5 phút
 
@@ -21,17 +21,24 @@ interface QRCodeCardProps {
   qrUrl: string;
   expiresAt?: string | null;
   isExpired?: boolean;
+  onExpired?: () => void;
 }
 
 export default function QRCodeCard({
   qrUrl,
   expiresAt,
   isExpired,
+  onExpired,
 }: QRCodeCardProps) {
   const [secondsLeft, setSecondsLeft] = useState(
     () => getSecondsLeftFromExpiry(expiresAt) ?? DEFAULT_EXPIRE_SECONDS,
   );
   const [expired, setExpired] = useState(false);
+  const onExpiredRef = useRef(onExpired);
+
+  useEffect(() => {
+    onExpiredRef.current = onExpired;
+  });
 
   useEffect(() => {
     const next = getSecondsLeftFromExpiry(expiresAt);
@@ -43,6 +50,7 @@ export default function QRCodeCard({
   useEffect(() => {
     if (secondsLeft <= 0) {
       setExpired(true);
+      onExpiredRef.current?.();
       return;
     }
     const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);

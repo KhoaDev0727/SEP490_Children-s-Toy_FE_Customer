@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import QRCodeCard from "@/app/(customer)/checkout/payment/components/QRCodeCard";
@@ -38,6 +38,23 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const redirectedRef = useRef(false);
   const fetchStartedRef = useRef<number | null>(null);
+  const expiredRedirectFiredRef = useRef(false);
+
+  const handleQRExpired = useCallback(() => {
+    if (redirectedRef.current || expiredRedirectFiredRef.current) return;
+    expiredRedirectFiredRef.current = true;
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    // Signal to cart page: this specific order just expired client-side.
+    // Cart page reads this on mount to instantly clear the banner without waiting for an API call.
+    if (orderId) {
+      try { sessionStorage.setItem("sepay_just_expired", String(orderId)); } catch { /* ignore */ }
+    }
+    toast.error("QR code expired. Redirecting you back to your cart.");
+    router.replace("/cart");
+  }, [orderId, router]);
 
   // ── SignalR: lắng nghe ReceiveNotification từ hub ─────────────────────────
   // Khi backend xác nhận thanh toán thành công (PaymentSuccess event),
@@ -261,6 +278,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
         qrUrl={qrImageUrl}
         expiresAt={expiresAt}
         isExpired={expiredByServer}
+        onExpired={handleQRExpired}
       />
       <PaymentPanel
         bankName={BANK_NAME}
