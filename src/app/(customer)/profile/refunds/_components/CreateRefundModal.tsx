@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import { refundsApi } from "@/features/refunds/services/refunds-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
@@ -131,13 +132,41 @@ export default function CreateRefundModal({
   // Calculate dynamic refund amount estimation based on checked items
   const estimatedRefundAmount = useMemo(() => {
     if (!orderDetail || !orderDetail.items) return 0;
+    
+    const subTotal = orderDetail.subTotal || 0;
+    const voucherDiscountAmount = orderDetail.voucherDiscountAmount || 0;
+    const discountRatio = subTotal > 0 ? voucherDiscountAmount / subTotal : 0;
+    
     let sum = 0;
+    let checkedCount = 0;
+    let isFullReturn = true;
+
     orderDetail.items.forEach((item) => {
       const state = selectedItems[item.productId];
       if (state && state.checked) {
-        sum += item.unitPrice * state.quantity;
+        checkedCount++;
+        // Apply voucher discount ratio (same as backend)
+        const itemRefundAmount = Math.round(state.quantity * item.unitPrice * (1 - discountRatio));
+        sum += itemRefundAmount;
+        
+        if (state.quantity < item.quantity) {
+          isFullReturn = false;
+        }
+      } else {
+        isFullReturn = false;
       }
     });
+
+    if (checkedCount === 0) return 0;
+
+    // If all items are returned with full quantities, add shipping fee
+    if (isFullReturn) {
+      const shippingFee = orderDetail.actualShippingFee !== undefined && orderDetail.actualShippingFee !== null
+        ? orderDetail.actualShippingFee
+        : orderDetail.estimatedShippingFee || 0;
+      sum += shippingFee;
+    }
+
     return sum;
   }, [orderDetail, selectedItems]);
 
@@ -194,12 +223,12 @@ export default function CreateRefundModal({
       }}
     >
       <div
-        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden"
-        style={{ maxHeight: "90vh", overflowY: "auto" }}
+        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "90vh" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100"
+          className="px-6 py-5 border-b border-slate-100 flex-shrink-0"
           style={{ background: "linear-gradient(135deg, #fff7f3 0%, #fff 100%)" }}
         >
           <div className="flex items-center justify-between">
@@ -231,7 +260,9 @@ export default function CreateRefundModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-grow flex flex-col overflow-hidden">
+          {/* Scrollable Body */}
+          <div className="p-6 space-y-6 overflow-y-auto flex-grow">
           {/* Wallet Status Warning */}
           {walletStatus === "none" && (
             <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 flex gap-3">
@@ -307,11 +338,20 @@ export default function CreateRefundModal({
                         />
                       </div>
 
-                      {/* Image Placeholder */}
-                      <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">
-                          toys
-                        </span>
+                      {/* Product Image */}
+                      <div className="relative w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0 overflow-hidden">
+                        {item.productImage ? (
+                          <Image
+                            src={item.productImage}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="material-symbols-outlined text-[20px]">
+                            toys
+                          </span>
+                        )}
                       </div>
 
                       {/* Info & Quantity controls */}
@@ -439,20 +479,22 @@ export default function CreateRefundModal({
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          </div>
+
+          {/* Fixed Footer */}
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0 w-full">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="flex-grow h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50 bg-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || walletStatus !== "active" || !reasonId || estimatedRefundAmount === 0}
-              className="flex-1 h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-grow h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",
                 boxShadow: "0 8px 20px rgba(249,115,22,0.25)",

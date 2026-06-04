@@ -147,10 +147,7 @@ export default function UnreviewedList() {
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
                   }`}
               >
-                <span className="material-symbols-outlined text-[18px]">
-                  edit_note
-                </span>
-                Write review
+                Review
               </button>
             </div>
           </div>

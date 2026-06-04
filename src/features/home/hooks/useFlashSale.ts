@@ -204,10 +204,24 @@ export function useFlashSale(): UseFlashSaleReturn {
             return p.promotionTimeSlots.length > 0;
           });
 
-        setPromotions(validData);
+        const sortedAndLimited = [...validData]
+          .sort((a, b) => {
+            const startA = toLocal(a.startDate);
+            const startB = toLocal(b.startDate);
+            const isOngoingA = startA <= nowTs;
+            const isOngoingB = startB <= nowTs;
+            
+            if (isOngoingA && !isOngoingB) return -1;
+            if (!isOngoingA && isOngoingB) return 1;
+            
+            return startA.getTime() - startB.getTime();
+          })
+          .slice(0, 5);
 
-        if (validData.length > 0) {
-          const firstPromo = validData[0];
+        setPromotions(sortedAndLimited);
+
+        if (sortedAndLimited.length > 0) {
+          const firstPromo = sortedAndLimited[0];
           setSelectedPromotionId(firstPromo.promotionId);
 
           const defaultDate = findDefaultDate(
@@ -375,32 +389,34 @@ export function useFlashSale(): UseFlashSaleReturn {
     }
   }
 
-  // ── Actions ────────────────────────────────────────────────
-  const selectPromotion = useCallback(
-    (id: number) => {
-      if (id === selectedPromotionId) return;
-      setSelectedPromotionId(id);
+  const selectPromotion = (id: number) => {
+    if (id === selectedPromotionId) return;
+    setSelectedPromotionId(id);
 
-      const promo = promotions.find((p) => p.promotionId === id);
-      if (!promo) return;
+    const promo = promotions.find((p) => p.promotionId === id);
+    if (!promo) return;
 
-      const nowTs = new Date();
-      const defaultDate = findDefaultDate(promo.promotionTimeSlots, nowTs);
-      setSelectedDate(defaultDate);
+    const nowTs = new Date();
+    const defaultDate = findDefaultDate(promo.promotionTimeSlots, nowTs);
+    setSelectedDate(defaultDate);
 
-      if (defaultDate) {
-        const defaultSlot = findDefaultSlot(
-          promo.promotionTimeSlots,
-          defaultDate,
-          nowTs,
-        );
-        setManualSlotId(defaultSlot?.timeSlotId ?? null); // Đổi thành setManualSlotId
-      } else {
-        setManualSlotId(null);
-      }
-    },
-    [promotions, selectedPromotionId],
-  );
+    if (defaultDate) {
+      const defaultSlot = findDefaultSlot(
+        promo.promotionTimeSlots,
+        defaultDate,
+        nowTs,
+      );
+      setManualSlotId(defaultSlot?.timeSlotId ?? null);
+    } else {
+      setManualSlotId(null);
+    }
+
+    // Smooth scroll to #flash-sale element
+    const el = document.getElementById("flash-sale");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const selectDate = useCallback(
     (dateKey: FlashSaleDate) => {
