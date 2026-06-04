@@ -8,15 +8,11 @@ import type { RefundListItem } from "@/features/refunds/types/refunds";
 
 const TABS = [
   { key: "", label: "All" },
-  { key: "RefundRequested", label: "Requested" },
-  { key: "RefundApproved", label: "Approved" },
-  { key: "RefundPickupCreated", label: "Awaiting Pickup" },
-  { key: "RefundShipping", label: "In Transit" },
-  { key: "RefundReceived", label: "Received" },
-  { key: "RefundInspectionPending", label: "Under Review" },
-  { key: "RefundCompleted", label: "Completed" },
-  { key: "RefundRejected", label: "Rejected" },
-  { key: "RefundCancelled", label: "Cancelled" },
+  { key: "Requested", label: "Requested" },
+  { key: "Processing", label: "Processing" },
+  { key: "Completed", label: "Completed" },
+  { key: "Rejected", label: "Rejected" },
+  { key: "Cancelled", label: "Cancelled" },
 ];
 
 const PAGE_SIZE = 5;
@@ -125,7 +121,7 @@ export default function RefundHistoryView() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by order code..."
-            className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 outline-none transition-all focus:bg-white"
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-900 outline-none transition-all focus:bg-white"
             onFocus={(e) =>
             (e.currentTarget.style.boxShadow =
               "0 0 0 3px rgba(255,79,0,0.12)")
