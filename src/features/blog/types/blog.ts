@@ -52,6 +52,7 @@ export interface BlogReviewReply {
   comment: string;
   status: "Visible" | "Hidden";
   moderationStatus: "Pending" | "Processing" | "Approved" | "Rejected" | "ManualReview" | "Failed";
+  canReply: boolean;
   banReasonId?: number | null;
   banReasonContent?: string | null;
   likeCount: number;
@@ -73,6 +74,7 @@ export interface BlogReview {
   comment: string;
   status: "Visible" | "Hidden";
   moderationStatus: "Pending" | "Processing" | "Approved" | "Rejected" | "ManualReview" | "Failed";
+  canReply: boolean;
   banReasonId?: number | null;
   banReasonContent?: string | null;
   likeCount: number;
