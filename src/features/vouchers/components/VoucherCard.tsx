@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Image from "next/image";
 import type { IVoucher } from "../types/voucher";
 
 interface VoucherCardProps {
@@ -65,26 +64,16 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
           WebkitMaskRepeat: "repeat-y",
         }}
       >
-        {voucher.imageUrl ? (
-          <Image
-            src={voucher.imageUrl}
-            alt={voucher.voucherName}
-            fill
-            unoptimized
-            className="object-cover"
-          />
-        ) : (
-          <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
-            voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
-          }`}>
-            <span className="material-symbols-outlined text-4xl">
-              {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
-            </span>
-            <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-              {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
-            </span>
-          </div>
-        )}
+        <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
+          voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
+        }`}>
+          <span className="material-symbols-outlined text-4xl">
+            {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+          </span>
+          <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
+            {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
+          </span>
+        </div>
       </div>
 
       {/* Right side: Content */}
