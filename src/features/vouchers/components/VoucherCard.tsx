@@ -46,7 +46,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
 
   return (
     <div className={`relative group flex flex-row h-[116px] w-full transition-all hover:-translate-y-1 z-0 hover:z-30 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
-      voucher.discountTarget === "ORDER_TOTAL"
+      (voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE")
         ? "hover:drop-shadow-[0_8px_20px_rgba(249,115,22,0.15)]"
         : "hover:drop-shadow-[0_8px_20px_rgba(16,185,129,0.15)]"
     }`}>
@@ -65,13 +65,13 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
         }}
       >
         <div className={`w-full h-full flex flex-col items-center justify-center text-white px-2 ${
-          voucher.discountTarget === "ORDER_TOTAL" ? "bg-orange-500" : "bg-emerald-500"
+          (voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE") ? "bg-orange-500" : "bg-emerald-500"
         }`}>
           <span className="material-symbols-outlined text-4xl">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "confirmation_number" : "local_shipping"}
+            {(voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE") ? "confirmation_number" : "local_shipping"}
           </span>
           <span className="text-[10px] font-bold tracking-widest mt-1 text-center uppercase">
-            {voucher.discountTarget === "ORDER_TOTAL" ? "Voucher" : "Shipping"}
+            {(voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE") ? "Voucher" : "Shipping"}
           </span>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function VoucherCard({ voucher }: VoucherCardProps) {
             onClick={copyCode}
             className={`w-full py-1.5 border text-[11px] font-semibold rounded transition-all duration-300 hover:cursor-pointer ${isCopied
               ? "border-green-700 text-green-700 bg-green-50"
-              : voucher.discountTarget === "ORDER_TOTAL"
+              : (voucher.discountTarget === "ORDER_TOTAL" || voucher.discountTarget === "FINAL_PRICE")
               ? "border-orange-500 text-orange-500 hover:bg-orange-50"
               : "border-emerald-500 text-emerald-500 hover:bg-emerald-50"
               }`}

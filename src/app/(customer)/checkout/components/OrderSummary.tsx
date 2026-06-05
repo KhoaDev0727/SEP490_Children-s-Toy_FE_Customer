@@ -291,31 +291,36 @@ export default function OrderSummary({
       setShippingVoucherError(null);
 
       try {
+        const orderV = voucherList.find((v) => v.voucherCode === newOrderCode) || null;
+        const isCompensation = orderV?.discountTarget === "FINAL_PRICE";
+
+        const finalOrderCode = newOrderCode;
+        const finalShippingCode = isCompensation ? undefined : newShippingCode;
+
         const data = await checkoutApi.previewCheckout({
           addressId: formData.addressId,
           paymentMethod,
-          orderVoucherCode: newOrderCode,
-          shippingVoucherCode: newShippingCode,
+          orderVoucherCode: finalOrderCode,
+          shippingVoucherCode: finalShippingCode,
           items: checkoutLines.length > 0 ? checkoutLines : undefined,
         });
 
         setPreview(data);
 
-        if (newOrderCode) {
-          const vObj = voucherList.find((v) => v.voucherCode === newOrderCode) || null;
-          setOrderVoucherCode(newOrderCode);
-          setAppliedOrderVoucherCode(newOrderCode);
-          setAppliedOrderVoucher(vObj);
+        if (finalOrderCode) {
+          setOrderVoucherCode(finalOrderCode);
+          setAppliedOrderVoucherCode(finalOrderCode);
+          setAppliedOrderVoucher(orderV);
         } else {
           setOrderVoucherCode("");
           setAppliedOrderVoucherCode(undefined);
           setAppliedOrderVoucher(null);
         }
 
-        if (newShippingCode) {
-          const vObj = voucherList.find((v) => v.voucherCode === newShippingCode) || null;
-          setShippingVoucherCode(newShippingCode);
-          setAppliedShippingVoucherCode(newShippingCode);
+        if (finalShippingCode) {
+          const vObj = voucherList.find((v) => v.voucherCode === finalShippingCode) || null;
+          setShippingVoucherCode(finalShippingCode);
+          setAppliedShippingVoucherCode(finalShippingCode);
           setAppliedShippingVoucher(vObj);
         } else {
           setShippingVoucherCode("");
@@ -352,6 +357,13 @@ export default function OrderSummary({
     },
     [setAppliedOrderVoucher, setAppliedShippingVoucher],
   );
+
+  const addVoucherToList = useCallback((voucher: IVoucher) => {
+    setVoucherList((prev) => {
+      if (prev.some((v) => v.voucherId === voucher.voucherId)) return prev;
+      return [...prev, voucher];
+    });
+  }, []);
 
   const loadVouchers = useCallback(async () => {
     setVoucherLoading(true);
@@ -402,12 +414,20 @@ export default function OrderSummary({
       if (formData.addressId <= 0 || checkoutLines.length === 0) return;
       if (target === "SHIPPING_FEE" && shipping <= 0) return;
 
+      // If a compensation voucher (FINAL_PRICE) is applied, do not auto-apply shipping voucher
+      if (target === "SHIPPING_FEE" && appliedOrderVoucher?.discountTarget === "FINAL_PRICE") {
+        return;
+      }
+
       // Code already applied to the other target — exclude it to prevent same-code on both
       const otherApplied =
         target === "ORDER_TOTAL" ? appliedShippingVoucherCode : appliedOrderVoucherCode;
 
+      const hasAppliedShipping = !!appliedShippingVoucherCode;
+
       const eligible = voucherList
-        .filter((v) => v.discountTarget === target)
+        .filter((v) => v.discountTarget === target || (target === "ORDER_TOTAL" && v.discountTarget === "FINAL_PRICE"))
+        .filter((v) => !(v.discountTarget === "FINAL_PRICE" && hasAppliedShipping))
         .filter((v) => (v.minOrderAmount ? subtotal >= v.minOrderAmount : true))
         .filter((v) => v.voucherCode !== otherApplied); // ← same-code cross-target guard
       if (eligible.length === 0) return;
@@ -480,6 +500,7 @@ export default function OrderSummary({
       paymentMethod,
       appliedOrderVoucherCode,
       appliedShippingVoucherCode,
+      appliedOrderVoucher,
     ],
   );
 
@@ -781,6 +802,7 @@ export default function OrderSummary({
               await applyMultipleVouchers(oCode, sCode);
             }
           }}
+          onAddVoucher={addVoucherToList}
         />
       )}
 
@@ -891,6 +913,7 @@ function UnifiedVoucherModal({
   initialShippingCode,
   onClose,
   onApply,
+  onAddVoucher,
 }: {
   subtotal: number;
   vouchers: IVoucher[];
@@ -900,12 +923,17 @@ function UnifiedVoucherModal({
   initialShippingCode?: string;
   onClose: () => void;
   onApply: (orderCode?: string, shippingCode?: string) => void;
+  onAddVoucher: (voucher: IVoucher) => void;
 }) {
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | undefined>(initialOrderCode);
   const [selectedShippingCode, setSelectedShippingCode] = useState<string | undefined>(initialShippingCode);
   const [typedCode, setTypedCode] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
+  const [isSearchingCode, setIsSearchingCode] = useState(false);
   const [now] = useState(() => Date.now());
+
+  const selectedOrderVoucher = vouchers.find((v) => v.voucherCode === selectedOrderCode);
+  const isCompensationSelected = selectedOrderVoucher?.discountTarget === "FINAL_PRICE";
 
   const formatCurrency = (value: number) => value.toLocaleString("vi-VN") + " ₫";
   const formatDate = (dateString: string) => {
@@ -923,45 +951,76 @@ function UnifiedVoucherModal({
     return true;
   };
 
-  const orderVouchers = vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL");
+  const orderVouchers = vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE");
   const shippingVouchers = vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE");
 
-  const handleApplyTypedCode = () => {
+  const handleApplyTypedCode = async () => {
     const code = typedCode.trim().toUpperCase();
     if (!code) {
       setInputError("Please enter a voucher code.");
       return;
     }
 
-    const matchedVoucher = vouchers.find(
-      (v) => v.voucherCode.trim().toUpperCase() === code
-    );
-
-    if (!matchedVoucher) {
-      setInputError("Voucher code not found or expired.");
-      return;
-    }
-
-    // Check eligibility
-    if (!isEligible(matchedVoucher)) {
-      if (matchedVoucher.minOrderAmount && subtotal < matchedVoucher.minOrderAmount) {
-        setInputError(`This voucher requires a minimum spend of ${formatCurrency(matchedVoucher.minOrderAmount)}.`);
-      } else {
-        setInputError("This voucher is not eligible for your order.");
-      }
-      return;
-    }
-
-    // Select it
-    if (matchedVoucher.discountTarget === "ORDER_TOTAL" || matchedVoucher.discountTarget === "FINAL_PRICE") {
-      setSelectedOrderCode(matchedVoucher.voucherCode);
-      toast.success(`Applied Discount Voucher: ${matchedVoucher.voucherCode}`);
-    } else {
-      setSelectedShippingCode(matchedVoucher.voucherCode);
-      toast.success(`Applied Free Shipping Voucher: ${matchedVoucher.voucherCode}`);
-    }
-    setTypedCode("");
+    setIsSearchingCode(true);
     setInputError(null);
+
+    try {
+      let matchedVoucher = vouchers.find(
+        (v) => v.voucherCode.trim().toUpperCase() === code
+      );
+
+      if (!matchedVoucher) {
+        const res = await voucherApi.getVouchers({ searchTerm: code, status: "Active", pageSize: 5 });
+        const backendVoucher = res.items.find(
+          (v) => v.voucherCode.trim().toUpperCase() === code
+        );
+        if (backendVoucher) {
+          matchedVoucher = backendVoucher;
+          onAddVoucher(backendVoucher);
+        }
+      }
+
+      if (!matchedVoucher) {
+        setInputError("Voucher code not found or expired.");
+        return;
+      }
+
+      // Check eligibility
+      if (!isEligible(matchedVoucher)) {
+        if (matchedVoucher.minOrderAmount && subtotal < matchedVoucher.minOrderAmount) {
+          setInputError(`This voucher requires a minimum spend of ${formatCurrency(matchedVoucher.minOrderAmount)}.`);
+        } else {
+          setInputError("This voucher is not eligible for your order.");
+        }
+        return;
+      }
+
+      // Check if trying to apply a regular voucher when compensation voucher is selected
+      if (isCompensationSelected && matchedVoucher.discountTarget !== "FINAL_PRICE") {
+        setInputError("Remove the compensation voucher to apply a regular voucher.");
+        return;
+      }
+
+      // Select it
+      if (matchedVoucher.discountTarget === "ORDER_TOTAL" || matchedVoucher.discountTarget === "FINAL_PRICE") {
+        if (matchedVoucher.discountTarget === "FINAL_PRICE") {
+          setSelectedShippingCode(undefined);
+          toast.success(`Applied Compensation Voucher: ${matchedVoucher.voucherCode}. Shipping discount cleared.`);
+        } else {
+          toast.success(`Applied Discount Voucher: ${matchedVoucher.voucherCode}`);
+        }
+        setSelectedOrderCode(matchedVoucher.voucherCode);
+      } else {
+        setSelectedShippingCode(matchedVoucher.voucherCode);
+        toast.success(`Applied Free Shipping Voucher: ${matchedVoucher.voucherCode}`);
+      }
+      setTypedCode("");
+      setInputError(null);
+    } catch (err) {
+      setInputError("Unable to verify voucher. Please try again.");
+    } finally {
+      setIsSearchingCode(false);
+    }
   };
 
   const renderVoucherCard = (voucher: IVoucher) => {
@@ -973,11 +1032,31 @@ function UnifiedVoucherModal({
       ? Math.max(0, voucher.maxUsagePerUser - (voucher.currentUserUsageCount ?? 0))
       : null;
 
+    const isLocked = isCompensationSelected && !isSelected;
+
     const toggleSelect = () => {
       if (!eligible) return;
       if (isOrderTarget) {
-        setSelectedOrderCode(isSelected ? undefined : voucher.voucherCode);
+        if (voucher.discountTarget === "FINAL_PRICE") {
+          if (!isSelected) {
+            setSelectedShippingCode(undefined);
+            setSelectedOrderCode(voucher.voucherCode);
+            toast.success(`Applied Compensation Voucher: ${voucher.voucherCode}. Shipping discount cleared.`);
+          } else {
+            setSelectedOrderCode(undefined);
+          }
+        } else {
+          if (isCompensationSelected) {
+            toast.error("Remove the compensation voucher to select a regular voucher.");
+            return;
+          }
+          setSelectedOrderCode(isSelected ? undefined : voucher.voucherCode);
+        }
       } else {
+        if (isCompensationSelected) {
+          toast.error("Remove the compensation voucher to apply a shipping voucher.");
+          return;
+        }
         setSelectedShippingCode(isSelected ? undefined : voucher.voucherCode);
       }
     };
@@ -986,7 +1065,7 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${!eligible
+        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${(!eligible || isLocked)
             ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
             : isSelected
               ? isOrderTarget
@@ -1127,23 +1206,25 @@ function UnifiedVoucherModal({
           <div className="flex gap-3">
             <input
               type="text"
-              placeholder="Enter voucher code (e.g. TOY100K)"
+              placeholder={isSearchingCode ? "Verifying..." : "Enter voucher code (e.g. TOY100K)"}
               value={typedCode}
+              disabled={isSearchingCode}
               onChange={(e) => {
                 setTypedCode(e.target.value);
                 setInputError(null);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleApplyTypedCode();
+                if (e.key === "Enter" && !isSearchingCode) void handleApplyTypedCode();
               }}
-              className="flex-1 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-semibold placeholder:text-gray-400 focus:outline-none focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] uppercase text-gray-900"
+              className="flex-1 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-semibold placeholder:text-gray-400 focus:outline-none focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] uppercase text-gray-900 disabled:opacity-60"
             />
             <button
               type="button"
-              onClick={handleApplyTypedCode}
-              className="px-5 py-2.5 bg-gray-900 hover:bg-gray-855 text-white rounded-xl text-xs font-black shadow transition-colors shrink-0 uppercase tracking-wider"
+              disabled={isSearchingCode}
+              onClick={() => void handleApplyTypedCode()}
+              className="px-5 py-2.5 bg-gray-900 hover:bg-gray-855 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow transition-colors shrink-0 uppercase tracking-wider"
             >
-              Apply
+              {isSearchingCode ? "Verifying..." : "Apply"}
             </button>
           </div>
           {inputError && (

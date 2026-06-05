@@ -7,6 +7,7 @@ interface GetVouchersParams {
   status?: string;
   sortBy?: string;
   sortDesc?: boolean;
+  searchTerm?: string;
 }
 
 export const voucherApi = {
