@@ -8,6 +8,7 @@ import { addressApi } from "@/features/address/services/address-api";
 import type { AddressItem } from "@/features/address/types/address";
 import { useAuthContext } from "@/context/AuthContext";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import type { CheckoutPaymentOptions } from "@/features/checkout/types/checkout";
 
 const DEFAULT_FORM: CheckoutFormData = {
   addressId: 0,
@@ -29,6 +30,7 @@ export default function CheckoutClient() {
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [orderTotal, setOrderTotal] = useState<number | null>(null);
   const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
+  const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
@@ -36,12 +38,14 @@ export default function CheckoutClient() {
     const load = async () => {
       setIsLoadingAddresses(true);
       try {
-        const [addressData, pending] = await Promise.all([
+        const [addressData, pending, options] = await Promise.all([
           addressApi.getMyAddresses(),
           checkoutApi.getPendingSepayOrder(),
+          checkoutApi.getPaymentOptions(),
         ]);
         setAddresses(addressData ?? []);
         setPendingSepay(pending);
+        setPaymentOptions(options);
       } catch (err) {
         console.error("Failed to load checkout data", err);
       } finally {
@@ -77,6 +81,7 @@ export default function CheckoutClient() {
           externalAddresses={addresses}
           externalLoading={isLoadingAddresses}
           orderTotal={orderTotal}
+          paymentOptions={paymentOptions}
         />
       </div>
 

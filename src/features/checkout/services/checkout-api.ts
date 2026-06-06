@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   CheckoutConfirmRequest,
   CheckoutConfirmResponse,
+  CheckoutPaymentOptions,
   CheckoutPreviewRequest,
   CheckoutPreviewResponse,
   OrderPaymentInfo,
@@ -148,6 +149,21 @@ export const checkoutApi = {
       throw new Error(
         extractCheckoutErrorMessage(error, "Unable to cancel order. Please contact support."),
       );
+    }
+  },
+
+  getPaymentOptions: async (): Promise<CheckoutPaymentOptions> => {
+    try {
+      const response = await axiosClient.get<
+        CheckoutPaymentOptions | ApiResponse<CheckoutPaymentOptions>
+      >("/checkout/payment-options");
+      return unwrap(response);
+    } catch {
+      return {
+        isCodRestricted: false,
+        suspiciousDeliveryFailOrderCount: 0,
+        codRestrictionReason: null,
+      };
     }
   },
 
