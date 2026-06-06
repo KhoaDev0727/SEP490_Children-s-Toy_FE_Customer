@@ -89,6 +89,7 @@ export default function EditReviewModal({
       const totalImages = selectedImages.length + filesArray.length;
       if (totalImages > 3) {
         toast.error("Maximum 3 images");
+        e.target.value = "";
         return;
       }
 
@@ -98,6 +99,7 @@ export default function EditReviewModal({
       }));
 
       setSelectedImages((prev) => [...prev, ...newImages]);
+      e.target.value = "";
     }
   };
 
