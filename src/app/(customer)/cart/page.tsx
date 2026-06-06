@@ -8,6 +8,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
 import { useTracking } from "@/hooks/useTracking";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import {
   CART_MAX_SUBTOTAL,
   CART_MAX_SUBTOTAL_ERROR_MESSAGE,
@@ -29,15 +30,54 @@ const isReadOnlyItemStatus = (status: string): boolean => {
 export default function CartPage() {
   const router = useRouter();
   const { isAuthenticated, isHydrated } = useAuthContext();
-  const { cart, isLoading, updateQuantity, removeItem } = useCart();
+  const { cart, isLoading, updateQuantity, removeItem, refreshCart } = useCart();
   const { trackRemoveFromCart } = useTracking();
   const [pendingItemId, setPendingItemId] = useState<number | null>(null);
   const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
+  const [isCancelQRModalOpen, setIsCancelQRModalOpen] = useState(false);
+  const [isCancellingQR, setIsCancellingQR] = useState(false);
 
+  // Fetch once on mount to detect any pending QR order.
+  // Optimisation: if the user just came from an expired QR page, sessionStorage holds the
+  // orderId that just expired.  We skip showing that order in the banner immediately and
+  // let the background API call confirm the state — zero visible delay.
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
-    checkoutApi.getPendingSepayOrder().then(setPendingSepay).catch(() => null);
+
+    // Read & consume the "just expired" signal written by QRPaymentContent
+    let justExpiredId: number | null = null;
+    try {
+      const raw = sessionStorage.getItem("sepay_just_expired");
+      if (raw) {
+        justExpiredId = Number(raw);
+        sessionStorage.removeItem("sepay_just_expired");
+      }
+    } catch { /* sessionStorage unavailable (SSR/private mode) — ignore */ }
+
+    checkoutApi.getPendingSepayOrder()
+      .then((result) => {
+        // If the order that just expired is the one still returned as PENDING
+        // (backend worker hasn't run yet), optimistically suppress the banner.
+        if (result && justExpiredId && result.orderId === justExpiredId) {
+          setPendingSepay(null);
+        } else {
+          setPendingSepay(result);
+        }
+      })
+      .catch(() => null);
   }, [isAuthenticated, isHydrated]);
+
+  // Poll every 20s ONLY while there is an active pending QR order,
+  // so we detect expiry/cancellation from the server side promptly.
+  useEffect(() => {
+    if (!isHydrated || !isAuthenticated || !pendingSepay) return;
+    const interval = setInterval(() => {
+      checkoutApi.getPendingSepayOrder()
+        .then(setPendingSepay)   // resolves to null → clears banner
+        .catch(() => null);
+    }, 20_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isHydrated, pendingSepay]);
 
   const items = useMemo(() => cart?.items ?? [], [cart]);
 
@@ -102,7 +142,28 @@ export default function CartPage() {
     }
   };
 
+  const handleCancelQROrder = async () => {
+    if (!pendingSepay) return;
+    setIsCancellingQR(true);
+    try {
+      await checkoutApi.cancelOrder(pendingSepay.orderId, "Customer cancelled pending QR from cart", true);
+      toast.success("QR order cancelled. Products restored to cart.");
+      await refreshCart();
+      setPendingSepay(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unable to cancel QR order.";
+      toast.error(msg);
+    } finally {
+      setIsCancellingQR(false);
+      setIsCancelQRModalOpen(false);
+    }
+  };
+
   const handleProceedToCheckout = () => {
+    if (pendingSepay) {
+      toast.error("You have a pending QR payment. Please complete or cancel it before placing a new order.");
+      return;
+    }
     if (!canCheckout) {
       toast.error("Please remove unavailable items before checkout.");
       return;
@@ -145,21 +206,46 @@ export default function CartPage() {
       </div>
 
       {pendingSepay && (
-        <div className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 px-5 py-3.5">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-xl text-orange-500">pending</span>
-            <p className="text-sm font-semibold text-orange-800">
-              You have a pending QR payment for order <span className="font-black">#{pendingSepay.orderCode}</span>. Complete it before placing a new order.
-            </p>
+        <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="material-symbols-outlined text-xl text-orange-500 shrink-0">pending</span>
+              <p className="text-sm font-semibold text-orange-800">
+                You have a pending QR payment for order{" "}
+                <span className="font-black">#{pendingSepay.orderCode}</span>.{" "}
+                Complete or cancel it before placing a new order.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCancelQRModalOpen(true)}
+                disabled={isCancellingQR}
+                className="rounded-lg border border-orange-300 bg-white px-4 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 disabled:opacity-60"
+              >
+                {isCancellingQR ? "Cancelling..." : "Cancel QR"}
+              </button>
+              <Link
+                href={`/checkout/payment?orderId=${pendingSepay.orderId}`}
+                className="rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-orange-600"
+              >
+                Continue payment
+              </Link>
+            </div>
           </div>
-          <Link
-            href={`/checkout/payment?orderId=${pendingSepay.orderId}`}
-            className="shrink-0 rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-orange-600"
-          >
-            Continue payment
-          </Link>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isCancelQRModalOpen}
+        title="Cancel QR Order"
+        message={`Are you sure you want to cancel the QR payment for order #${pendingSepay?.orderCode ?? ""}? Your items will be restored to your cart.`}
+        onConfirm={handleCancelQROrder}
+        onCancel={() => setIsCancelQRModalOpen(false)}
+        confirmText={isCancellingQR ? "Cancelling..." : "Yes, Cancel"}
+        cancelText="Keep Paying"
+        type="danger"
+      />
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center">
@@ -323,10 +409,11 @@ export default function CartPage() {
             <button
               type="button"
               onClick={handleProceedToCheckout}
-              disabled={!canCheckout}
+              disabled={!canCheckout || !!pendingSepay}
+              title={pendingSepay ? "Cancel your pending QR payment first" : undefined}
               className="mt-6 block w-full rounded-xl bg-[#ff6a00] py-3 text-center text-sm font-bold text-white hover:bg-[#e05e00] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Proceed to Checkout
+              {pendingSepay ? "Pending QR payment…" : "Proceed to Checkout"}
             </button>
           </div>
         </div>

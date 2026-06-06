@@ -8,7 +8,6 @@ export interface IVoucher {
   startDate: string;
   endDate: string;
   status: string;
-  imageUrl: string | null;
   totalQuantity: number | null;
   usedQuantity: number;
   minOrderAmount: number | null;

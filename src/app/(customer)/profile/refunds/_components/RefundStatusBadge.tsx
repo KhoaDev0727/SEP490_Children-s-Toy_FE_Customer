@@ -47,7 +47,7 @@ const STATUS_CONFIG: Partial<Record<
     border: "#fde68a",
   },
   RefundCompleted: {
-    label: "Refunded ✓",
+    label: "Refunded",
     bg: "#f0fdf4",
     text: "#15803d",
     border: "#bbf7d0",
@@ -85,7 +85,7 @@ const STATUS_CONFIG: Partial<Record<
     border: "#fecaca",
   },
   Completed: {
-    label: "Refunded ✓",
+    label: "Refunded",
     bg: "#f0fdf4",
     text: "#15803d",
     border: "#bbf7d0",
@@ -95,6 +95,12 @@ const STATUS_CONFIG: Partial<Record<
     bg: "#f8fafc",
     text: "#64748b",
     border: "#e2e8f0",
+  },
+  Processing: {
+    label: "Processing",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    border: "#bfdbfe",
   },
 };
 
