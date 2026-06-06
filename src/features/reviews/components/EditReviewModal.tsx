@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-hot-toast";
@@ -59,6 +60,18 @@ export default function EditReviewModal({
       selectedImages.forEach((img) => URL.revokeObjectURL(img.preview));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -129,8 +142,10 @@ export default function EditReviewModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
+  if (!isOpen) return null;
+
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
@@ -336,4 +351,8 @@ export default function EditReviewModal({
       </form>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

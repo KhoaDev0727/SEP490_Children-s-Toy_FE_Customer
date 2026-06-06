@@ -315,14 +315,21 @@ function OrderSuccessContent() {
                 >
                   Continue shopping
                 </Link>
-                <Link
-                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (orderId) {
+                      router.replace(`/profile/orders/${orderId}?from=checkout-success`);
+                    } else {
+                      router.replace("/profile/orders");
+                    }
+                  }}
                   className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#ff4f00] hover:bg-[#ff5f1a] text-white
                     font-black text-xs uppercase tracking-wider shadow-sm
                     active:scale-95 transition-all duration-200 text-center"
                 >
                   View orders →
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -331,7 +338,7 @@ function OrderSuccessContent() {
             <div className="mt-12 slide-up" style={{ animationDelay: "0.55s" }}>
               <RecommendationWidget
                 widgetCode={WIDGET_CODES.AFTER_PURCHASE}
-                productId={order.items[0]?.productId}
+                orderId={order.orderId}
                 title="Next purchase"
                 subtitle="Customers who bought this product often purchase the following products as well"
                 source={`after_purchase:${order.orderId}`}

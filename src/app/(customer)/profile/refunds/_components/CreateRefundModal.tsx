@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import { refundsApi } from "@/features/refunds/services/refunds-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
@@ -52,7 +54,7 @@ export default function CreateRefundModal({
     try {
       const res = await axiosClient.get<{ status?: string } | null>("/wallets/me");
       const status = res?.status ?? "";
-      
+
       setWalletStatus(
         status.toLowerCase() === "active" ? "active" : "none",
       );
@@ -78,7 +80,7 @@ export default function CreateRefundModal({
     try {
       const data = await ordersApi.getOrderDetail(orderId);
       setOrderDetail(data);
-      
+
       // Initialize selected items state
       const initial: { [productId: number]: ItemSelection } = {};
       if (data && data.items) {
@@ -115,16 +117,56 @@ export default function CreateRefundModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   // Calculate dynamic refund amount estimation based on checked items
   const estimatedRefundAmount = useMemo(() => {
     if (!orderDetail || !orderDetail.items) return 0;
+    
+    const subTotal = orderDetail.subTotal || 0;
+    const voucherDiscountAmount = orderDetail.voucherDiscountAmount || 0;
+    const discountRatio = subTotal > 0 ? voucherDiscountAmount / subTotal : 0;
+    
     let sum = 0;
+    let checkedCount = 0;
+    let isFullReturn = true;
+
     orderDetail.items.forEach((item) => {
       const state = selectedItems[item.productId];
       if (state && state.checked) {
-        sum += item.unitPrice * state.quantity;
+        checkedCount++;
+        // Apply voucher discount ratio (same as backend)
+        const itemRefundAmount = Math.round(state.quantity * item.unitPrice * (1 - discountRatio));
+        sum += itemRefundAmount;
+        
+        if (state.quantity < item.quantity) {
+          isFullReturn = false;
+        }
+      } else {
+        isFullReturn = false;
       }
     });
+
+    if (checkedCount === 0) return 0;
+
+    // If all items are returned with full quantities, add shipping fee
+    if (isFullReturn) {
+      const shippingFee = orderDetail.actualShippingFee !== undefined && orderDetail.actualShippingFee !== null
+        ? orderDetail.actualShippingFee
+        : orderDetail.estimatedShippingFee || 0;
+      sum += shippingFee;
+    }
+
     return sum;
   }, [orderDetail, selectedItems]);
 
@@ -172,21 +214,21 @@ export default function CreateRefundModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden"
-        style={{ maxHeight: "90vh", overflowY: "auto" }}
+        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "90vh" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100"
+          className="px-6 py-5 border-b border-slate-100 flex-shrink-0"
           style={{ background: "linear-gradient(135deg, #fff7f3 0%, #fff 100%)" }}
         >
           <div className="flex items-center justify-between">
@@ -200,204 +242,205 @@ export default function CreateRefundModal({
                 </span>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#261812]">
-                  Refund Request
-                </h2>
-                <p className="text-xs text-[#5a4136]">Order #{orderCode}</p>
+                <h3 className="text-lg font-bold text-[#261812]">
+                  Create Return/Refund Request
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Order Code: <span className="font-semibold text-slate-700">#{orderCode}</span>
+                </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              disabled={isSubmitting}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
         </div>
 
-        {/* Wallet Status Banner */}
-        {walletStatus === "checking" && (
-          <div className="mx-6 mt-5 h-14 rounded-xl bg-slate-100 animate-pulse" />
-        )}
-
-        {walletStatus === "none" && (
-          <div className="mx-6 mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 flex gap-3">
-            <span className="material-symbols-outlined text-amber-500 text-[22px] flex-shrink-0 mt-0.5">
-              warning
-            </span>
-            <div>
-              <p className="text-sm font-bold text-amber-800 mb-1">
-                Wallet Activation Required
-              </p>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                You need to activate your wallet to receive refunds. The refunded amount will be credited directly to your wallet once the request is approved.
-              </p>
-              <a
-                href="/profile/wallet"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-700 underline underline-offset-2 hover:text-amber-900 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[14px]">
-                  account_balance_wallet
-                </span>
-                Set Up My Wallet
-              </a>
+        <form onSubmit={handleSubmit} className="flex-grow flex flex-col overflow-hidden">
+          {/* Scrollable Body */}
+          <div className="p-6 space-y-6 overflow-y-auto flex-grow">
+          {/* Wallet Status Warning */}
+          {walletStatus === "none" && (
+            <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 flex gap-3">
+              <span className="material-symbols-outlined text-red-500 text-[20px] flex-shrink-0 mt-0.5">
+                warning
+              </span>
+              <div>
+                <h4 className="text-xs font-bold text-red-800 uppercase tracking-wider mb-1">
+                  Active Wallet Required
+                </h4>
+                <p className="text-xs text-red-700 leading-relaxed">
+                  You must set up and activate your wallet inside profile management first to receive refunds.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {walletStatus === "active" && (
-          <div className="mx-6 mt-5 rounded-xl border border-green-200 bg-green-50 p-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-green-500 text-[18px]">
-              check_circle
-            </span>
-            <p className="text-xs font-semibold text-green-700">
-              Wallet is active — refunds will be automatically credited upon approval.
-            </p>
-          </div>
-        )}
+          {walletStatus === "active" && (
+            <div className="rounded-xl border border-green-100 bg-green-50/50 p-4 flex gap-3">
+              <span className="material-symbols-outlined text-green-500 text-[20px] flex-shrink-0 mt-0.5">
+                check_circle
+              </span>
+              <div>
+                <h4 className="text-xs font-bold text-green-800 uppercase tracking-wider mb-1">
+                  Refund Method: E-Wallet
+                </h4>
+                <p className="text-xs text-green-700 leading-relaxed">
+                  Refunds are credited directly to your connected, secure store e-wallet.
+                </p>
+              </div>
+            </div>
+          )}
 
-        {/* Caution Single Request Banner */}
-        <div className="mx-6 mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4 flex gap-3">
-          <span className="material-symbols-outlined text-orange-500 text-[22px] flex-shrink-0 mt-0.5">
-            warning
-          </span>
+          {/* Refund Items List */}
           <div>
-            <p className="text-sm font-bold text-orange-800 mb-1">
-              Important Notice
-            </p>
-            <p className="text-xs text-orange-700 leading-relaxed">
-              Each order is only allowed to have <strong>exactly 1 refund request</strong> in its entire lifecycle. Please ensure you select <strong>all products</strong> you wish to return in this single submission.
-            </p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-5">
-          {/* Product Checklist */}
-          <div>
-            <label className="block text-sm font-bold text-[#261812] mb-2">
-              Products to Return <span className="text-red-500">*</span>
+            <label className="block text-sm font-bold text-[#261812] mb-3">
+              Select Products to Return <span className="text-red-500">*</span>
             </label>
+
             {isLoadingOrder ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-14 bg-slate-100 rounded-xl" />
-                <div className="h-14 bg-slate-100 rounded-xl" />
+              <div className="py-8 flex flex-col items-center justify-center gap-2">
+                <div className="w-6 h-6 border-2 border-[#ff6a00]/30 border-t-[#ff6a00] rounded-full animate-spin" />
+                <span className="text-xs text-slate-500">Loading order items...</span>
               </div>
             ) : orderDetail && orderDetail.items && orderDetail.items.length > 0 ? (
-              <div className="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                 {orderDetail.items.map((item) => {
                   const state = selectedItems[item.productId] || { checked: false, quantity: 1 };
                   return (
                     <div
                       key={item.productId}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      className={`flex items-start gap-4 p-3.5 rounded-xl border transition-all ${
                         state.checked
-                          ? "border-[#ff6a00] bg-orange-50/10"
-                          : "border-slate-100 bg-white hover:border-slate-200"
+                          ? "border-[#ff6a00]/30 bg-[#ff6a00]/5"
+                          : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={state.checked}
-                        onChange={(e) => {
-                          setSelectedItems((prev) => ({
-                            ...prev,
-                            [item.productId]: {
-                              ...prev[item.productId],
-                              checked: e.target.checked,
-                            },
-                          }));
-                        }}
-                        className="w-4 h-4 rounded text-[#ff6a00] focus:ring-[#ff6a00] border-slate-300 cursor-pointer"
-                      />
-                      {item.productImage && (
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-100 flex-shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                      {/* Checkbox */}
+                      <div className="pt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={state.checked}
+                          onChange={(e) => {
+                            setSelectedItems((prev) => ({
+                              ...prev,
+                              [item.productId]: {
+                                ...state,
+                                checked: e.target.checked,
+                              },
+                            }));
+                          }}
+                          className="w-4 h-4 rounded text-[#ff6a00] border-slate-300 focus:ring-[#ff6a00] cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Product Image */}
+                      <div className="relative w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0 overflow-hidden">
+                        {item.productImage ? (
+                          <Image
                             src={item.productImage}
                             alt={item.productName}
-                            className="object-cover w-full h-full"
+                            fill
+                            className="object-cover"
                           />
-                        </div>
-                      )}
-                      <div className="flex-grow min-w-0">
-                        <p className="text-xs font-bold text-[#261812] truncate">
-                          {item.productName}
-                        </p>
-                        <p className="text-[11px] text-slate-400">
-                          {formatPrice(item.unitPrice)} · max {item.quantity} items
-                        </p>
-                      </div>
-                      {state.checked && (
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            type="button"
-                            disabled={state.quantity <= 1}
-                            onClick={() => {
-                              setSelectedItems((prev) => ({
-                                ...prev,
-                                [item.productId]: {
-                                  ...prev[item.productId],
-                                  quantity: Math.max(1, prev[item.productId].quantity - 1),
-                                },
-                              }));
-                            }}
-                            className="w-6 h-6 rounded bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs hover:bg-slate-200 disabled:opacity-40 transition-colors"
-                          >
-                            -
-                          </button>
-                          <span className="text-xs font-bold w-4 text-center text-[#261812]">
-                            {state.quantity}
+                        ) : (
+                          <span className="material-symbols-outlined text-[20px]">
+                            toys
                           </span>
-                          <button
-                            type="button"
-                            disabled={state.quantity >= item.quantity}
-                            onClick={() => {
-                              setSelectedItems((prev) => ({
-                                ...prev,
-                                [item.productId]: {
-                                  ...prev[item.productId],
-                                  quantity: Math.min(item.quantity, prev[item.productId].quantity + 1),
-                                },
-                              }));
-                            }}
-                            className="w-6 h-6 rounded bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs hover:bg-slate-200 disabled:opacity-40 transition-colors"
-                          >
-                            +
-                          </button>
+                        )}
+                      </div>
+
+                      {/* Info & Quantity controls */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-slate-800 truncate">
+                          {item.productName}
+                        </h4>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs font-semibold text-[#ff6a00]">
+                            {formatPrice(item.unitPrice)}
+                          </p>
+
+                          {state.checked && (
+                            <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden">
+                              <button
+                                type="button"
+                                disabled={state.quantity <= 1}
+                                onClick={() => {
+                                  setSelectedItems((prev) => ({
+                                    ...prev,
+                                    [item.productId]: {
+                                      ...state,
+                                      quantity: state.quantity - 1,
+                                    },
+                                  }));
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">
+                                  remove
+                                </span>
+                              </button>
+                              <span className="w-8 text-center text-xs font-bold text-slate-700">
+                                {state.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={state.quantity >= item.quantity}
+                                onClick={() => {
+                                  setSelectedItems((prev) => ({
+                                    ...prev,
+                                    [item.productId]: {
+                                      ...state,
+                                      quantity: state.quantity + 1,
+                                    },
+                                  }));
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">
+                                  add
+                                </span>
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No eligible products found.</p>
+              <p className="text-xs text-slate-500 text-center py-4">
+                No items available to return in this order.
+              </p>
             )}
           </div>
 
-          {/* Order Summary */}
-          <div
-            className="rounded-xl p-4 border border-slate-100"
-            style={{ backgroundColor: "#f8fafc" }}
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-[#5a4136] font-medium">Estimated Refund Amount</span>
-              <span className="text-lg font-black text-[#ff6a00]">
+          {/* Dynamic Refund Estimate Display */}
+          {estimatedRefundAmount > 0 && (
+            <div className="p-3.5 rounded-xl bg-orange-50/50 border border-orange-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">
+                Estimated Refund Amount:
+              </span>
+              <span className="text-sm font-black text-[#ff6a00]">
                 {formatPrice(estimatedRefundAmount)}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">
-              The final refund amount will be reconciled based on the order's discount terms.
-            </p>
-          </div>
+          )}
 
-          {/* Reason Select */}
+          {/* Refund Reason Selection */}
           <div>
             <label className="block text-sm font-bold text-[#261812] mb-2">
-              Refund Reason <span className="text-red-500">*</span>
+              Reason for Return/Refund <span className="text-red-500">*</span>
             </label>
             {isLoadingReasons ? (
-              <div className="h-11 rounded-xl bg-slate-100 animate-pulse" />
+              <div className="h-11 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-slate-300 border-t-[#ff6a00] rounded-full animate-spin" />
+              </div>
             ) : (
               <select
                 value={reasonId}
@@ -436,30 +479,22 @@ export default function CreateRefundModal({
             </p>
           </div>
 
-          {/* Policy Note */}
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 flex gap-2">
-            <span className="material-symbols-outlined text-blue-400 text-[18px] flex-shrink-0 mt-0.5">
-              info
-            </span>
-            <p className="text-[11px] text-blue-700 leading-relaxed">
-              Refund requests must be submitted within <strong>3 days</strong> of successful order delivery.
-            </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          {/* Fixed Footer */}
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0 w-full">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="flex-grow h-11 rounded-xl border border-slate-200 text-[#261812] text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50 bg-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !hasActiveWallet || !reasonId || estimatedRefundAmount === 0}
-              className="flex-1 h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting || walletStatus !== "active" || !reasonId || estimatedRefundAmount === 0}
+              className="flex-grow h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",
                 boxShadow: "0 8px 20px rgba(249,115,22,0.25)",
@@ -479,4 +514,8 @@ export default function CreateRefundModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { voucherApi } from "../services/voucher-api";
 import type { IVoucher } from "../types/voucher";
 import VoucherCard from "./VoucherCard";
@@ -11,6 +13,9 @@ export default function VoucherList() {
   const [vouchers, setVouchers] = useState<IVoucher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabValue>("ALL");
+  const [highlightedCode, setHighlightedCode] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const highlightRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,7 +33,6 @@ export default function VoucherList() {
           const activeVouchers = res.items.filter((v) => {
             const endDate = new Date(v.endDate).getTime();
             if (endDate <= now) return false;
-            if (v.discountTarget === "FINAL_PRICE") return false;
             if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
             return true;
           });
@@ -50,15 +54,51 @@ export default function VoucherList() {
     };
   }, []);
 
+  // Highlight voucher from notification deep-link (?code=XYZ)
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code) return;
+    setHighlightedCode(code.toUpperCase());
+  }, [searchParams]);
+
+  // After vouchers load + highlight set, scroll to highlighted card
+  useEffect(() => {
+    if (!highlightedCode || isLoading) return;
+    const matched = vouchers.find(
+      (v) => v.voucherCode.toUpperCase() === highlightedCode,
+    );
+    if (!matched) {
+      toast("Mã voucher từ thông báo không còn khả dụng.", { icon: "ℹ️" });
+      return;
+    }
+    // Switch to the right tab so the voucher is visible
+    if (matched.discountTarget !== "ALL") {
+      setActiveTab(matched.discountTarget as TabValue);
+    } else {
+      setActiveTab("ALL");
+    }
+    toast.success("Đây là mã voucher từ thông báo của bạn.");
+    // Scroll after render
+    const timer = setTimeout(() => {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [highlightedCode, vouchers, isLoading]);
+
   const filteredVouchers = useMemo(() => {
     if (activeTab === "ALL") return vouchers;
+    if (activeTab === "ORDER_TOTAL") {
+      return vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE");
+    }
     return vouchers.filter((v) => v.discountTarget === activeTab);
   }, [vouchers, activeTab]);
 
   const counts = useMemo(() => {
     return {
       ALL: vouchers.length,
-      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL")
+      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE")
         .length,
       SHIPPING_FEE: vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE")
         .length,
@@ -118,9 +158,24 @@ export default function VoucherList() {
             </div>
           ) : filteredVouchers.length > 0 ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-              {filteredVouchers.map((voucher) => (
-                <VoucherCard key={voucher.voucherId} voucher={voucher} />
-              ))}
+              {filteredVouchers.map((voucher) => {
+                const isHighlighted =
+                  highlightedCode !== null &&
+                  voucher.voucherCode.toUpperCase() === highlightedCode;
+                return (
+                  <div
+                    key={voucher.voucherId}
+                    ref={isHighlighted ? highlightRef : null}
+                    className={
+                      isHighlighted
+                        ? "ring-2 ring-orange-400 rounded-2xl transition-shadow"
+                        : undefined
+                    }
+                  >
+                    <VoucherCard voucher={voucher} />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full py-12 text-center">

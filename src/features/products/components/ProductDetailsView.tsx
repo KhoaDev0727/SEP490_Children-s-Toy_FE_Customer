@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCart } from "@/features/cart/context/CartContext";
@@ -145,6 +146,7 @@ export default function ProductDetailsView({
 }: {
   productId: number;
 }) {
+  const router = useRouter();
   const { addItem, cart } = useCart();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { trackAddToCart, trackAddToWishlist } = useTracking();
@@ -465,6 +467,34 @@ export default function ProductDetailsView({
       toast.error(message);
     } finally {
       setIsFollowUpdating(false);
+    }
+  };
+
+  const handleLikeReview = async (reviewId: number) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to like reviews.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await reviewApi.toggleLike(reviewId);
+      setReviews((prevReviews) =>
+        prevReviews.map((rev) =>
+          rev.reviewId === reviewId
+            ? { ...rev, isLiked: res.isLiked, likeCount: res.likeCount }
+            : rev
+        )
+      );
+      if (res.isLiked) {
+        toast.success("Review liked.");
+      } else {
+        toast.success("Review unliked.");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to like review.";
+      toast.error(message);
     }
   };
 
@@ -1030,11 +1060,29 @@ export default function ProductDetailsView({
                           </div>
                         )}
 
-                        <div className="text-xs text-slate-400 mb-4">
-                          {new Date(review.createdAt).toLocaleDateString(
-                            "vi-VN",
-                          )}{" "}
-                          {review.isEdited && "(Edited)"}
+                        <div className="flex items-center gap-4 text-xs mb-4">
+                          <span className="text-slate-400">
+                            {new Date(review.createdAt).toLocaleDateString(
+                              "vi-VN",
+                            )}{" "}
+                            {review.isEdited && "(Edited)"}
+                          </span>
+                          <button
+                            onClick={() => handleLikeReview(review.reviewId)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 font-semibold cursor-pointer ${
+                              review.isLiked
+                                ? "bg-orange-50 text-[#ff6a00] border-[#ff6a00]/30 shadow-xs"
+                                : "bg-white text-slate-500 border-slate-200 hover:border-[#ff6a00]/30 hover:text-[#ff6a00]"
+                            }`}
+                          >
+                            <span
+                              className="material-symbols-outlined text-sm transition-transform active:scale-125"
+                              style={{ fontVariationSettings: review.isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                            >
+                              thumb_up
+                            </span>
+                            <span>{review.likeCount || 0}</span>
+                          </button>
                         </div>
 
                         {review.replies && review.replies.length > 0 && (
@@ -1099,8 +1147,8 @@ export default function ProductDetailsView({
       <RecommendationWidget
         widgetCode={WIDGET_CODES.PDP_SIMILAR}
         productId={product.productId}
-        title="Sản phẩm tương tự"
-        subtitle="Các sản phẩm có đặc điểm gần với sản phẩm bạn đang xem"
+        title="Similar Products"
+        subtitle="Products with features similar to the one you're viewing"
         source={`pdp:${product.productId}`}
         className="relative mt-24 mb-12 flow-root lg:mt-28"
       />
@@ -1108,8 +1156,8 @@ export default function ProductDetailsView({
       <RecommendationWidget
         widgetCode={WIDGET_CODES.PDP_ALSO_BOUGHT}
         productId={product.productId}
-        title="Khách hàng cũng mua"
-        subtitle="Những sản phẩm thường được mua kèm"
+        title="Customers Also Bought"
+        subtitle="Products frequently purchased together"
         source={`pdp_also_bought:${product.productId}`}
         className="relative mb-16 flow-root"
       />

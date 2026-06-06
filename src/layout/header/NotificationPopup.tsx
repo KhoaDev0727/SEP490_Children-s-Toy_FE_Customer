@@ -7,6 +7,7 @@ import { useNotificationRealtime } from "@/features/notifications/context/Notifi
 import { notificationApi, Delivery } from "@/features/notifications/services/notification-api";
 import { formatTimeAgo } from "@/utils/date-utils";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { resolveNotificationTarget } from "@/features/notifications/utils/resolve-notification-target";
 
 const getIconMeta = (type: string) => {
   switch (type) {
@@ -91,25 +92,11 @@ export default function NotificationPopup() {
     await notificationApi.recordClick(id);
 
     if (notif?.actionTarget) {
-      const target = notif.actionTarget;
-      if (target.startsWith("http")) {
-        window.open(target, "_blank");
-      } else if (target.startsWith("/")) {
-        router.push(target);
+      if (notif.actionTarget.startsWith("http")) {
+        window.open(notif.actionTarget, "_blank");
       } else {
-        const actionType = notif.actionType?.toUpperCase();
-        // If it's just an ID
-        if (actionType === "PRODUCT") {
-          router.push(`/products/${target}`);
-        } else if (actionType === "BLOG") {
-          router.push(`/blog/${target}`);
-        } else if (actionType === "VOUCHER") {
-          router.push(`/profile/vouchers`);
-        } else if (actionType === "SALE") {
-          router.push(`/`); // Flash sales are on the home page
-        } else {
-          router.push(target);
-        }
+        const path = resolveNotificationTarget(notif.actionType, notif.actionTarget);
+        if (path) router.push(path);
       }
       setOpen(false);
     }

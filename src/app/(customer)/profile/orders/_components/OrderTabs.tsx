@@ -7,6 +7,7 @@ const TABS = [
   { label: "Delivering", value: "delivering" },
   { label: "Completed", value: "completed" },
   { label: "Cancelled", value: "cancelled" },
+  { label: "Refunded", value: "refunded" },
 ];
 
 interface OrderTabsProps {

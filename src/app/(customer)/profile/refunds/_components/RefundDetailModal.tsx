@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import RefundStatusBadge from "./RefundStatusBadge";
@@ -40,6 +41,15 @@ export default function RefundDetailModal({
   const [isCancelling, setIsCancelling] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const rejectReason = useMemo(() => {
+    if (!refund || !refund.reasonDetails) return null;
+    const parts = refund.reasonDetails.split("Reject Reason:");
+    if (parts.length > 1) {
+      return parts[parts.length - 1].trim();
+    }
+    return null;
+  }, [refund]);
+
   useEffect(() => {
     if (!isOpen || !refundId) return;
     setIsLoading(true);
@@ -60,6 +70,18 @@ export default function RefundDetailModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const handleCancel = async () => {
     if (!refundId) return;
     setIsCancelling(true);
@@ -79,21 +101,21 @@ export default function RefundDetailModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden"
-        style={{ maxHeight: "92vh", overflowY: "auto" }}
+        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "92vh" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-slate-100 bg-slate-50"
+          className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex-shrink-0"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -125,8 +147,8 @@ export default function RefundDetailModal({
           </div>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Scrollable Body */}
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
               {[...Array(5)].map((_, i) => (
@@ -198,14 +220,30 @@ export default function RefundDetailModal({
                     <span className="material-symbols-outlined text-[16px] text-[#ff4f00]">
                       inventory_2
                     </span>
-                    Sản phẩm trả lại
+                    Returned Products
                   </p>
                   <div className="space-y-2">
                     {refund.details.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-100 last:border-0">
-                        <span className="font-medium text-slate-700 max-w-[280px] truncate">{item.productName}</span>
-                        <span className="text-slate-400">SL: <strong className="text-slate-700">{item.quantity}</strong></span>
-                        <span className="font-bold text-[#ff4f00]">{formatPrice(item.refundAmount)}</span>
+                      <div key={idx} className="flex items-center gap-3 text-xs py-2 border-b border-dashed border-slate-100 last:border-0">
+                        <div className="relative w-10 h-10 shrink-0 bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+                          {item.productImage ? (
+                            <Image
+                              src={item.productImage}
+                              alt={item.productName}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                              <span className="material-symbols-outlined text-lg">image</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-700 truncate">{item.productName}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Qty: <strong className="text-slate-600">{item.quantity}</strong></p>
+                        </div>
+                        <span className="font-bold text-[#ff4f00] shrink-0 ml-4">{formatPrice(item.refundAmount)}</span>
                       </div>
                     ))}
                   </div>
@@ -219,8 +257,8 @@ export default function RefundDetailModal({
                     local_shipping
                   </span>
                   <div className="flex-grow">
-                    <p className="text-xs font-bold text-slate-700 mb-0.5">Mã vận đơn thu hồi (Courier Tracking)</p>
-                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">Đơn hàng thu hồi đã được nhân viên khởi tạo thủ công. Bạn có thể theo dõi hành trình giao nhận bằng mã vận đơn sau:</p>
+                    <p className="text-xs font-bold text-slate-700 mb-0.5">Return Waybill (Courier Tracking)</p>
+                    <p className="text-xs text-slate-500 mb-2 leading-relaxed">A return shipment has been manually initiated by staff. You can track the return journey using this waybill code:</p>
                     <div className="flex items-center gap-2">
                       <span className="bg-slate-100 px-3 py-1 rounded font-mono text-xs font-bold text-slate-800 tracking-wider">
                         {refund.shippingOrderCode}
@@ -228,11 +266,11 @@ export default function RefundDetailModal({
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(refund.shippingOrderCode || "");
-                          toast.success("Đã sao chép mã vận đơn!");
+                          toast.success("Waybill code copied!");
                         }}
                         className="text-[11px] font-bold text-[#ff4f00] hover:underline"
                       >
-                        Sao chép
+                        Copy
                       </button>
                     </div>
                   </div>
@@ -246,7 +284,7 @@ export default function RefundDetailModal({
                     <span className="material-symbols-outlined text-[16px] text-blue-500">
                       fact_check
                     </span>
-                    Kết quả kiểm kho / chất lượng
+                    Warehouse Receipt / Quality Inspection Result
                   </p>
                   <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
                     {refund.adminNote}
@@ -301,32 +339,7 @@ export default function RefundDetailModal({
                   </div>
                 </div>
               )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={onClose}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-                {refund.refundStatus === "Requested" && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                    className="flex-1 h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isCancelling ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                        Cancelling...
-                      </span>
-                    ) : (
-                      "Cancel Request"
-                    )}
-                  </button>
-                )}
-              </div>
+              {/* Actions removed from scrollable body to prevent duplicates. Kept only in the fixed footer. */}
             </>
           ) : (
             <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
@@ -337,9 +350,42 @@ export default function RefundDetailModal({
             </div>
           )}
         </div>
+
+        {/* Fixed Footer */}
+        {!isLoading && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0">
+            <button
+              onClick={onClose}
+              disabled={isCancelling}
+              className="flex-grow h-11 rounded-xl border border-slate-200 text-[#0f172a] text-sm font-bold hover:bg-slate-50 transition-colors bg-white"
+            >
+              Close
+            </button>
+            {refund && (refund.refundStatus === "RefundRequested" || refund.refundStatus === "Requested") && (
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className="flex-grow h-11 rounded-xl border-2 border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+              >
+                {isCancelling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    Cancelling...
+                  </span>
+                ) : (
+                  "Cancel Request"
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
 
 function InfoRow({

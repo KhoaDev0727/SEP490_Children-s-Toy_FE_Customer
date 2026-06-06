@@ -27,6 +27,8 @@ export interface CheckoutConfirmResponse {
   paymentAttemptCode?: string;
   /** SE_PAY: URL ảnh QR */
   qrImageUrl?: string;
+  /** SE_PAY: true khi đã có đơn pending — FE nên redirect về QR hiện tại và hiện toast */
+  hasExistingPendingOrder?: boolean;
 }
 
 export interface CheckoutPreviewRequest {
@@ -55,6 +57,12 @@ export interface CheckoutPreviewResponse {
   totalWeightGrams: number;
   estimatedDeliveryTime?: string;
   itemErrors: CheckoutPreviewItemError[];
+}
+
+export interface CheckoutPaymentOptions {
+  isCodRestricted: boolean;
+  suspiciousDeliveryFailOrderCount: number;
+  codRestrictionReason: string | null;
 }
 
 export interface RetryPaymentResponse {
@@ -101,6 +109,8 @@ export interface OrderPaymentInfo {
   orderCode: string;
   amount: number;
   paymentAttemptCode: string;
-  qrImageUrl: string;
+  qrImageUrl?: string | null;
   expiresAt?: string | null;
+  /** Effective payment status — used by FE to redirect cancelled/expired/paid orders */
+  paymentStatus?: string | null;
 }

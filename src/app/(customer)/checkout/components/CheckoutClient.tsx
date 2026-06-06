@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import CheckoutForm, { CheckoutFormData } from "@/app/(customer)/checkout/components/CheckoutForm";
 import OrderSummary from "@/app/(customer)/checkout/components/OrderSummary";
 import { addressApi } from "@/features/address/services/address-api";
 import type { AddressItem } from "@/features/address/types/address";
 import { useAuthContext } from "@/context/AuthContext";
+import { checkoutApi } from "@/features/checkout/services/checkout-api";
+import type { CheckoutPaymentOptions } from "@/features/checkout/types/checkout";
 
 const DEFAULT_FORM: CheckoutFormData = {
   addressId: 0,
@@ -26,6 +29,8 @@ export default function CheckoutClient() {
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [orderTotal, setOrderTotal] = useState<number | null>(null);
+  const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
+  const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
@@ -33,10 +38,16 @@ export default function CheckoutClient() {
     const load = async () => {
       setIsLoadingAddresses(true);
       try {
-        const data = await addressApi.getMyAddresses();
-        setAddresses(data ?? []);
+        const [addressData, pending, options] = await Promise.all([
+          addressApi.getMyAddresses(),
+          checkoutApi.getPendingSepayOrder(),
+          checkoutApi.getPaymentOptions(),
+        ]);
+        setAddresses(addressData ?? []);
+        setPendingSepay(pending);
+        setPaymentOptions(options);
       } catch (err) {
-        console.error("Failed to load addresses", err);
+        console.error("Failed to load checkout data", err);
       } finally {
         setIsLoadingAddresses(false);
       }
@@ -46,12 +57,31 @@ export default function CheckoutClient() {
 
   return (
     <>
+      {pendingSepay && (
+        <div className="lg:col-span-12 mb-2">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-orange-500">pending</span>
+              <p className="text-sm font-semibold text-orange-800">
+                You have a pending QR payment for order <span className="font-black">#{pendingSepay.orderCode}</span>. Placing a new SE_PAY order will redirect you to it.
+              </p>
+            </div>
+            <Link
+              href={`/checkout/payment?orderId=${pendingSepay.orderId}`}
+              className="shrink-0 rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-orange-600"
+            >
+              Continue payment
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6 xl:gap-8">
         <CheckoutForm 
           onFormChange={setFormData} 
           externalAddresses={addresses}
           externalLoading={isLoadingAddresses}
           orderTotal={orderTotal}
+          paymentOptions={paymentOptions}
         />
       </div>
 

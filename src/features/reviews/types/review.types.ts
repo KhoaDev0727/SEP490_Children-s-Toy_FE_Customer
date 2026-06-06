@@ -57,6 +57,8 @@ export interface ReviewProductListDto {
   createdAt: string;
   images: ReviewImageDto[];
   replies: StaffReplyDto[];
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 export interface ReviewQueryDto {

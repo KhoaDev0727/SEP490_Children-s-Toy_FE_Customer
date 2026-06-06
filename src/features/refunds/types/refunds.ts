@@ -40,6 +40,7 @@ export interface RefundListItem {
 export interface RefundDetailItem {
   productId: number;
   productName: string;
+  productImage?: string | null;
   quantity: number;
   unitPrice: number;
   refundAmount: number;
@@ -101,4 +102,10 @@ export type RefundStatus =
   | "RefundReceived"
   | "RefundInspectionPending"
   | "RefundCompleted"
-  | "RefundCancelled";
+  | "RefundCancelled"
+  | "Requested"
+  | "Approved"
+  | "Rejected"
+  | "Completed"
+  | "Cancelled"
+  | "Processing";

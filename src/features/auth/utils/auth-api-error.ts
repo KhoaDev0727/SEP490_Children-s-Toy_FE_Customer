@@ -3,10 +3,11 @@ import { isAxiosError } from "axios";
 import type { AuthApiErrorBody } from "../types/auth";
 
 export const AUTH_ERROR_ACCOUNT_INACTIVE = "ACCOUNT_INACTIVE";
+export const AUTH_ERROR_ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND";
 
 /** English message when account is deactivated (sync with login behavior). */
 export const ACCOUNT_INACTIVE_VI_MESSAGE =
-  "Your account has been deactivated. You cannot reset the password. Please contact support.";
+  "Your account has been locked for violating our system policy. Please contact support.";
 
 export function getAuthApiErrorPayload(error: unknown): AuthApiErrorBody | undefined {
   if (!isAxiosError(error)) {
@@ -38,6 +39,10 @@ export function resolveAuthOperationErrorMessage(
 
   if (status === 403 && code === AUTH_ERROR_ACCOUNT_INACTIVE) {
     return { message: ACCOUNT_INACTIVE_VI_MESSAGE, code };
+  }
+
+  if (code === AUTH_ERROR_ACCOUNT_NOT_FOUND) {
+    return { message: payload?.message ?? "No account was found with this email address.", code };
   }
 
   return { message: payload?.message ?? fallbackMessage, code };

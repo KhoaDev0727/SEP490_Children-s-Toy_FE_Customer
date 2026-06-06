@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  getCustomerOrderDisplay,
+  isCustomerOrderDelivered,
+} from "@/features/orders/utils/map-customer-order-status";
 
 export type OrderStatus =
   | "delivering"
@@ -10,7 +14,8 @@ export type OrderStatus =
   | "pending"
   | "shipping"
   | "cancelled"
-  | "refunded";
+  | "refunded"
+  | "returning"; // Thêm trạng thái hoàn hàng
 
 export interface OrderItem {
   name: string;
@@ -29,38 +34,10 @@ export interface Order {
   total: number;
   paymentMethod?: string;
   rawStatusName?: string;
+  displayLabel?: string;
   hasActiveRefund?: boolean;
+  canCancel?: boolean;
 }
-
-const STATUS_CONFIG: Record<
-  OrderStatus,
-  { label: string; className: string }
-> = {
-  delivering: {
-    label: "DELIVERING",
-    className: "text-orange-600",
-  },
-  completed: {
-    label: "COMPLETED",
-    className: "text-emerald-600",
-  },
-  pending: {
-    label: "PENDING",
-    className: "text-amber-600",
-  },
-  shipping: {
-    label: "SHIPPING",
-    className: "text-indigo-600",
-  },
-  cancelled: {
-    label: "CANCELLED",
-    className: "text-red-600",
-  },
-  refunded: {
-    label: "REFUNDED",
-    className: "text-sky-600",
-  },
-};
 
 const ACTION_BUTTONS: Record<
   OrderStatus,
@@ -72,6 +49,7 @@ const ACTION_BUTTONS: Record<
   shipping: { primary: "View Details" },
   cancelled: { primary: "View Details" },
   refunded: { primary: "View Details" },
+  returning: { primary: "View Details" }, // Khai báo action button cho returning
 };
 
 function formatPrice(price: number): string {
@@ -89,48 +67,38 @@ interface OrderCardProps {
 
 export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, onRequestRefund, onCompleteAction }: OrderCardProps) {
   const { label, className, primaryLabel } = useMemo(() => {
-    const config = STATUS_CONFIG[order.status];
+    const display = getCustomerOrderDisplay({
+      statusName: order.rawStatusName,
+      paymentMethod: order.paymentMethod,
+      hasActiveRefund: order.hasActiveRefund,
+      apiDisplayLabel: order.displayLabel,
+      statusBucket: order.status,
+    });
+    const label = order.displayLabel?.toUpperCase() ?? display.label;
     const actions = ACTION_BUTTONS[order.status];
-    let finalLabel = config.label;
-    let finalClassName = config.className;
     let finalPrimaryLabel = actions.primary;
-
-    if (order.status === "pending") {
-      if (order.paymentMethod === "SHIP_COD") {
-        finalLabel = "AWAITING CONFIRMATION";
-        finalPrimaryLabel = "View Details";
-      } else {
-        finalLabel = "PENDING PAYMENT";
-      }
-    } else if (order.status === "shipping") {
-      const raw = order.rawStatusName?.toLowerCase();
-      if (raw === "confirmed") {
-        finalLabel = "CONFIRMED";
-      } else if (raw === "processing") {
-        finalLabel = "PROCESSING";
-      } else if (raw === "shipped") {
-        finalLabel = "SHIPPED";
-      }
-    } else if (order.status === "completed") {
-      if (order.rawStatusName?.toLowerCase() === "delivered") {
-        finalLabel = "DELIVERED";
-        finalClassName = "text-emerald-600";
-      }
+    if (order.status === "pending" && order.paymentMethod === "SE_PAY") {
+      finalPrimaryLabel = "Continue payment";
+    } else if (order.status === "pending" && order.paymentMethod === "SHIP_COD") {
+      finalPrimaryLabel = "View Details";
     }
-
-    if (order.hasActiveRefund) {
-      finalLabel = "REFUND REQUESTED";
-      finalClassName = "text-sky-600";
-    }
-
-    return { label: finalLabel, className: finalClassName, primaryLabel: finalPrimaryLabel };
+    return {
+      label,
+      className: display.className,
+      primaryLabel: finalPrimaryLabel,
+    };
   }, [order]);
 
   const actions = ACTION_BUTTONS[order.status];
 
-  // SHIP_COD rule: Chỉ được hủy khi chưa confirmed
+  // SHIP_COD: cancel only before confirmed
   const canCancel = order.status === "pending" &&
     !(order.paymentMethod === "SHIP_COD" && order.rawStatusName?.toLowerCase() === "confirmed");
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const items = order.items || [];
+  const displayedItems = isExpanded ? items : items.slice(0, 2);
+  const hasMore = items.length > 2;
 
   return (
     <div className="border border-gray-200/80 rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -155,14 +123,17 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           </div>
         </div>
 
-        {/* Product Info - Render all items */}
-        {(order.items || []).map((item, idx) => {
+        {/* Product Info - Render items */}
+        {displayedItems.map((item, idx) => {
           const classification = item.categoryName || item.variant || "N/A";
+          const isLastDisplayed = idx === displayedItems.length - 1;
+          const showBorder = !isLastDisplayed;
           return (
             <div
               key={idx}
-              className={`p-6 flex flex-col md:flex-row gap-6 ${idx < order.items.length - 1 ? "border-b border-gray-100" : ""
-                } group-hover:bg-gray-50/30 transition-colors`}
+              className={`p-6 flex flex-col md:flex-row gap-6 ${
+                showBorder ? "border-b border-gray-100" : ""
+              } group-hover:bg-gray-50/30 transition-colors`}
             >
               <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
                 <Image
@@ -194,6 +165,36 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           );
         })}
       </Link>
+
+      {/* Toggle button */}
+      {hasMore && (
+        <div className="px-6 py-4 border-t border-gray-100 bg-white">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-center gap-1.5 mx-auto px-6 py-2 rounded-full border border-orange-100 text-[#ff4f00] font-bold text-sm hover:bg-orange-50 transition-all duration-300 shadow-sm"
+          >
+            {isExpanded ? (
+              <>
+                Show less
+                <span className="material-symbols-outlined text-[18px]">expand_less</span>
+              </>
+            ) : (
+              <>
+                See {items.length - 2} more products
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Banner Refund/Return Processing Info */}
+      {order.status === "delivering" && order.hasActiveRefund && (
+        <div className="px-6 py-3 bg-sky-50 border-t border-gray-100 text-sky-700 text-xs font-semibold flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px] text-sky-600">info</span>
+          <span>The order has been or is being returned to the warehouse. The system is automatically processing your refund request. Please track the details in the Refunds section.</span>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
@@ -236,7 +237,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           >
             {primaryLabel}
           </button>
-          {order.rawStatusName?.toLowerCase() === "delivered" && onCompleteAction && (
+          {isCustomerOrderDelivered(order.rawStatusName) && onCompleteAction && (
             <button
               onClick={(e) => {
                 e.preventDefault();

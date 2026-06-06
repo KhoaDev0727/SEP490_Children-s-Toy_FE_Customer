@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_EXPIRE_SECONDS = 5 * 60; // 5 phút
 
@@ -19,23 +19,26 @@ const getSecondsLeftFromExpiry = (expiresAt?: string | null): number | null => {
 
 interface QRCodeCardProps {
   qrUrl: string;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
   expiresAt?: string | null;
   isExpired?: boolean;
+  onExpired?: () => void;
 }
 
 export default function QRCodeCard({
   qrUrl,
-  onRefresh,
-  isRefreshing,
   expiresAt,
   isExpired,
+  onExpired,
 }: QRCodeCardProps) {
   const [secondsLeft, setSecondsLeft] = useState(
     () => getSecondsLeftFromExpiry(expiresAt) ?? DEFAULT_EXPIRE_SECONDS,
   );
   const [expired, setExpired] = useState(false);
+  const onExpiredRef = useRef(onExpired);
+
+  useEffect(() => {
+    onExpiredRef.current = onExpired;
+  });
 
   useEffect(() => {
     const next = getSecondsLeftFromExpiry(expiresAt);
@@ -47,6 +50,7 @@ export default function QRCodeCard({
   useEffect(() => {
     if (secondsLeft <= 0) {
       setExpired(true);
+      onExpiredRef.current?.();
       return;
     }
     const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
@@ -64,14 +68,6 @@ export default function QRCodeCard({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
   const isUrgent = secondsLeft < 60;
-
-  const handleRefresh = () => {
-    onRefresh?.();
-    if (!expiresAt) {
-      setSecondsLeft(DEFAULT_EXPIRE_SECONDS);
-      setExpired(false);
-    }
-  };
 
   return (
     <div className="flex flex-col items-center bg-white border border-gray-200/80 rounded-xl p-8 gap-6 w-full shadow-sm">
@@ -121,6 +117,9 @@ export default function QRCodeCard({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-xs font-black text-red-600 uppercase tracking-wider">Code expired</p>
+            <p className="text-xs text-gray-600 mt-2 px-4 text-center max-w-[220px]">
+              Please go back to your cart and checkout again.
+            </p>
           </div>
         )}
       </div>
@@ -168,25 +167,6 @@ export default function QRCodeCard({
         </p>
       </div>
 
-      {effectiveExpired && (
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="w-full py-3.5 rounded-xl text-xs uppercase tracking-wider font-black bg-[#ff4f00] hover:bg-[#ff5f1a] disabled:bg-gray-300 text-white shadow-sm transition-all flex items-center justify-center gap-2"
-        >
-          {isRefreshing ? (
-            <>
-              <svg className="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              Generating...
-            </>
-          ) : (
-            "Generate new QR code"
-          )}
-        </button>
-      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   getPinModalDescription,
   getPinModalTitle,
@@ -8,6 +10,7 @@ import {
 type WalletPinModalProps = {
   isOpen: boolean;
   pinModalMode: PinModalMode;
+  hasPendingWallet?: boolean;
   isForgotPinFlow: boolean;
   pin: string;
   confirmPin: string;
@@ -83,6 +86,7 @@ function PinInput({
 export default function WalletPinModal({
   isOpen,
   pinModalMode,
+  hasPendingWallet = false,
   isForgotPinFlow,
   pin,
   confirmPin,
@@ -110,12 +114,24 @@ export default function WalletPinModal({
   onNewPinChange,
   onConfirmNewPinChange,
 }: WalletPinModalProps) {
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isActionLocked = isSubmittingPin || isSendingForgotOtp || isResettingPin;
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-[#0f172a]/50" 
@@ -131,12 +147,12 @@ export default function WalletPinModal({
             {isForgotPinFlow ? (
               <h3 className="text-lg font-bold text-slate-900">Reset Wallet PIN</h3>
             ) : (
-              <h3 className="text-lg font-bold text-slate-900">{getPinModalTitle(pinModalMode)}</h3>
+              <h3 className="text-lg font-bold text-slate-900">{getPinModalTitle(pinModalMode, hasPendingWallet)}</h3>
             )}
             <p className="text-sm text-slate-500 mt-1">
               {isForgotPinFlow
                 ? "Enter the 6-digit OTP from email and set a new wallet PIN."
-                : getPinModalDescription(pinModalMode)}
+                : getPinModalDescription(pinModalMode, hasPendingWallet)}
             </p>
           </div>
           <button
@@ -277,4 +293,8 @@ export default function WalletPinModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-hot-toast";
@@ -10,6 +11,7 @@ import {
   createReviewSchema,
 } from "../types/review.schema";
 import { reviewApi } from "../services/review-api";
+import { useTracking } from "@/hooks/useTracking";
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -37,6 +39,7 @@ export default function ReviewModal({
   onSuccess,
 }: ReviewModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { trackReviewSubmit } = useTracking();
 
   // Tối ưu: Thay đổi từ File[] thành SelectedImage[] để lưu trữ URL cố định
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
@@ -70,6 +73,18 @@ export default function ReviewModal({
       selectedImages.forEach((img) => URL.revokeObjectURL(img.preview));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -119,6 +134,7 @@ export default function ReviewModal({
       });
 
       await reviewApi.createReview(formData);
+      trackReviewSubmit(productId, data.rating);
       toast.success("Thank you for your review!");
 
       // Tối ưu: Giải phóng bộ nhớ toàn bộ ảnh sau khi submit thành công
@@ -138,8 +154,8 @@ export default function ReviewModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0f172a]/50 transition-all">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-auto overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300"
@@ -339,4 +355,8 @@ export default function ReviewModal({
       </form>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }

@@ -460,6 +460,7 @@ import {
 import { formatCurrency, formatMysteryPrice } from "@/features/products/utils/format";
 import { wishlistApi } from "@/features/wishlist/services/wishlist-api";
 import { followApi } from "@/features/products/services/follow-api";
+import { useTracking } from "@/hooks/useTracking";
 
 const PAGE_SIZE = 20;
 
@@ -588,7 +589,7 @@ function ProductCard({
         </Link>
         <div className="mt-auto pt-3">
           {product.productStatus === "ComingSoon" ? (
-            <div className="flex items-baseline justify-between mb-4">
+            <div className="flex flex-col gap-0.5 mb-4">
               <span className="text-lg font-bold text-[#ff6a00]">
                 {formatMysteryPrice(product.price)}
               </span>
@@ -599,8 +600,8 @@ function ProductCard({
               )}
             </div>
           ) : product.discountedPrice != null ? (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="mb-4 flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
                 <span className="text-lg font-bold text-[#ff6a00]">
                   {formatCurrency(product.discountedPrice)}
                 </span>
@@ -611,19 +612,17 @@ function ProductCard({
                     </span>
                   )}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400 line-through">
-                  {formatCurrency(product.price)}
+              <span className="text-sm text-slate-400 line-through">
+                {formatCurrency(product.price)}
+              </span>
+              {product.brandName && (
+                <span className="text-xs text-slate-400">
+                  {product.brandName}
                 </span>
-                {product.brandName && (
-                  <span className="text-xs text-slate-400">
-                    {product.brandName}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           ) : (
-            <div className="flex items-baseline justify-between mb-4">
+            <div className="flex flex-col gap-0.5 mb-4">
               <span className="text-lg font-bold text-[#ff6a00]">
                 {formatCurrency(product.price)}
               </span>
@@ -638,8 +637,8 @@ function ProductCard({
           {isComingSoon || !inStock ? (
             <button
               className={`w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${isFollowed
-                  ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
-                  : "bg-white text-[#ff6a00] border border-[#ff6a00] hover:bg-[#ff6a00] hover:text-white"
+                ? "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
+                : "bg-white text-[#ff6a00] border border-[#ff6a00] hover:bg-[#ff6a00] hover:text-white"
                 }`}
               type="button"
               onClick={() => onToggleFollow(product.productId)}
@@ -707,8 +706,8 @@ function Pagination({
           <button
             onClick={() => onChange(p)}
             className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors border ${current === p
-                ? "bg-[#ff6a00] text-white border-[#ff6a00]"
-                : "border-slate-200 text-slate-700 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+              ? "bg-[#ff6a00] text-white border-[#ff6a00]"
+              : "border-slate-200 text-slate-700 hover:border-[#ff6a00] hover:text-[#ff6a00]"
               }`}
           >
             {p}
@@ -731,6 +730,7 @@ function Pagination({
 
 export default function ProductGrid({ filters }: { filters: ProductFilters }) {
   const { addItem, cart } = useCart();
+  const { trackAddToCart, trackAddToWishlist } = useTracking();
   const { isAuthenticated, isHydrated } = useAuthContext();
   const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [page, setPage] = useState(1);
@@ -876,6 +876,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     try {
       setAddingProductId(product.productId);
       await addItem(product.productId, 1);
+      trackAddToCart(product.productId, { quantity: 1, source: "plp" });
       toast.success("Item added to cart.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to add item to cart.";
@@ -905,6 +906,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         toast.success("Removed from wishlist.");
       } else {
         await wishlistApi.addItem(productId);
+        trackAddToWishlist(productId);
         setWishlistProductIds((previous) => {
           const next = new Set(previous);
           next.add(productId);

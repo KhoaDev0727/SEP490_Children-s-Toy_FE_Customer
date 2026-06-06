@@ -22,6 +22,7 @@ export interface CartItem {
   isSelected: boolean;
   addedAt: string;
   updatedAt?: string | null;
+  warningMessage?: string | null;
 }
 
 export interface CartData {

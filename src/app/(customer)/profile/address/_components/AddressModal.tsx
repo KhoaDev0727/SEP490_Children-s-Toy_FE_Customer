@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Address } from "./AddressCard";
 import type { DistrictOption, ProvinceOption, WardOption } from "@/features/address/types/address";
 
@@ -83,6 +84,18 @@ export default function AddressModal({
     setErrors({});
   }, [isOpen, editingAddress, onProvinceChange, onDistrictChange]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = () => {
@@ -122,8 +135,8 @@ export default function AddressModal({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-[#0f172a]/50" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -260,4 +273,8 @@ export default function AddressModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modal, document.body)
+    : null;
 }
