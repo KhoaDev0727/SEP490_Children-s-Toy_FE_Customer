@@ -19,6 +19,14 @@ const axiosInstance = axios.create({
   },
 });
 
+type UnauthorizedResponse = {
+  code?: string;
+  errorCode?: string;
+  message?: string;
+};
+
+let isHandlingUnauthorized = false;
+
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window === "undefined") return config;
 
@@ -34,12 +42,30 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && !error.config?.url?.includes("/auth/login")) {
+      if (isHandlingUnauthorized) {
+        return Promise.reject(error);
+      }
+
+      isHandlingUnauthorized = true;
+
+      const responseData = error.response.data as UnauthorizedResponse | undefined;
+      const isAccountLocked =
+        responseData?.code === "ACCOUNT_LOCKED" || responseData?.errorCode === "ACCOUNT_LOCKED";
+
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("access_token");
         window.localStorage.removeItem("account_info");
         window.dispatchEvent(new Event("auth:logout"));
+
+        if (window.location.pathname !== "/login") {
+          window.location.assign("/login");
+        }
       }
-      toast.error("Session expired. Please login again.");
+      toast.error(
+        isAccountLocked
+          ? "Your account has been locked. Please contact support for assistance."
+          : "Session expired. Please login again.",
+      );
     }
     return Promise.reject(error);
   },
