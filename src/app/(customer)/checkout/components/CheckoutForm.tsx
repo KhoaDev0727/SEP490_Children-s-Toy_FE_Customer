@@ -5,6 +5,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { addressApi } from "@/features/address/services/address-api";
 import type { AddressItem, DistrictOption, ProvinceOption, WardOption } from "@/features/address/types/address";
 import { useCart } from "@/features/cart/context/CartContext";
+import type { CheckoutPaymentOptions } from "@/features/checkout/types/checkout";
 
 const paymentOptions = [
   {
@@ -50,13 +51,15 @@ interface CheckoutFormProps {
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
   orderTotal?: number | null;
+  paymentOptions?: CheckoutPaymentOptions | null;
 }
 
 export default function CheckoutForm({
   onFormChange,
   externalAddresses,
   externalLoading,
-  orderTotal
+  orderTotal,
+  paymentOptions: checkoutPaymentOptions
 }: CheckoutFormProps) {
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { cart } = useCart();
@@ -67,7 +70,12 @@ export default function CheckoutForm({
   );
   
   const currentTotal = orderTotal !== null && orderTotal !== undefined ? orderTotal : selectedSubtotal;
-  const isCodDisabled = currentTotal > 50000000;
+  const isCodDisabledByTotal = currentTotal > 50000000;
+  const isCodRestrictedByAccount = checkoutPaymentOptions?.isCodRestricted ?? false;
+  const isCodDisabled = isCodDisabledByTotal || isCodRestrictedByAccount;
+  const codDisabledMessage = isCodRestrictedByAccount
+    ? checkoutPaymentOptions?.codRestrictionReason ?? "COD is temporarily unavailable for your account."
+    : "COD is not available for orders over 50,000,000 VND";
 
   const [form, setForm] = useState<CheckoutFormData>({
     addressId: 0,
@@ -460,7 +468,7 @@ export default function CheckoutForm({
                   <p className={`text-base font-extrabold transition-colors ${checked ? 'text-[#ff4f00]' : 'text-gray-900'}`}>{opt.label}</p>
                   <p className="text-xs text-gray-500 mt-1 font-semibold">
                     {disabled ? (
-                      <span className="text-red-500">COD is not available for orders over 50,000,000 ₫</span>
+                      <span className="text-red-500">{codDisabledMessage}</span>
                     ) : (
                       opt.desc
                     )}
