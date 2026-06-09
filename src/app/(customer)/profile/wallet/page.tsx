@@ -89,6 +89,11 @@ export default function WalletPage() {
   const [isCreatingTopUpQr, setIsCreatingTopUpQr] = useState(false);
   const [isCheckingTopUpStatus, setIsCheckingTopUpStatus] = useState(false);
 
+  const [bankName, setBankName] = useState(SEP_BANK_NAME);
+  const [bankCode, setBankCode] = useState(SEP_BANK_CODE);
+  const [accountNumber, setAccountNumber] = useState(SEP_ACCOUNT_NUMBER);
+  const [accountName, setAccountName] = useState(SEP_ACCOUNT_NAME);
+
   const isWalletActivated = wallet !== null && wallet.hasPin;
   const hasPendingWallet = wallet !== null && !wallet.hasPin;
   const currentBalance = wallet?.balance ?? 0;
@@ -229,6 +234,10 @@ export default function WalletPage() {
         setTopUpAttemptCode(response.attemptCode);
         setTopUpQrImageUrl(response.qrImageUrl);
         setTopUpStatus("PENDING");
+        if (response.bankName) setBankName(response.bankName);
+        if (response.bankCode) setBankCode(response.bankCode);
+        if (response.accountNumber) setAccountNumber(response.accountNumber);
+        if (response.accountName) setAccountName(response.accountName);
       } catch (error: unknown) {
         const apiError = getApiError(error);
         toast.error(apiError.message ?? "Unable to create SePay top-up QR.");
@@ -476,10 +485,10 @@ export default function WalletPage() {
             status={topUpStatus}
             isCreatingQr={isCreatingTopUpQr}
             isCheckingStatus={isCheckingTopUpStatus}
-            bankName={SEP_BANK_NAME}
-            bankCode={SEP_BANK_CODE}
-            accountNumber={SEP_ACCOUNT_NUMBER}
-            accountName={SEP_ACCOUNT_NAME}
+            bankName={bankName}
+            bankCode={bankCode}
+            accountNumber={accountNumber}
+            accountName={accountName}
             onSelectAmount={(amount) => {
               void createTopUpQrForAmount(amount);
             }}
