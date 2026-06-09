@@ -96,6 +96,7 @@ export default function ReviewModal({
 
       if (totalImages > 3) {
         toast.error("Maximum 3 images");
+        e.target.value = "";
         return;
       }
 
@@ -106,6 +107,7 @@ export default function ReviewModal({
       }));
 
       setSelectedImages((prev) => [...prev, ...newImages]);
+      e.target.value = "";
     }
   };
 

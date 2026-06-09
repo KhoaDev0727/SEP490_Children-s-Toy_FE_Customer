@@ -15,10 +15,17 @@ import toast from "react-hot-toast";
 // ============================================================
 
 export function useDragToScroll() {
-  const ref = useRef<HTMLDivElement | null>(null);
+  const elRef = useRef<HTMLDivElement | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    const el = ref.current;
+  const refCallback = useCallback((el: HTMLDivElement | null) => {
+    elRef.current = el;
+
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
     if (!el) return;
 
     let isDown = false;
@@ -35,22 +42,23 @@ export function useDragToScroll() {
       totalMoved = 0;
       el.style.cursor = "grabbing";
       el.style.userSelect = "none";
-    };
 
-    const handleMouseLeave = () => {
-      isDown = false;
-      el.style.cursor = "grab";
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     };
 
     const handleMouseUp = () => {
+      if (!isDown) return;
       isDown = false;
       el.style.cursor = "grab";
       el.style.removeProperty("user-select");
+
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDown) return;
-      e.preventDefault();
       const x = e.pageX - el.offsetLeft;
       const walk = (x - startX) * 1.5;
       el.scrollLeft = scrollLeft - walk;
@@ -64,23 +72,25 @@ export function useDragToScroll() {
       }
     };
 
+    const handleDragStart = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
     el.style.cursor = "grab";
     el.addEventListener("mousedown", handleMouseDown);
-    el.addEventListener("mouseleave", handleMouseLeave);
-    el.addEventListener("mouseup", handleMouseUp);
-    el.addEventListener("mousemove", handleMouseMove);
     el.addEventListener("click", handleClickCapture, true);
+    el.addEventListener("dragstart", handleDragStart);
 
-    return () => {
+    cleanupRef.current = () => {
       el.removeEventListener("mousedown", handleMouseDown);
-      el.removeEventListener("mouseleave", handleMouseLeave);
-      el.removeEventListener("mouseup", handleMouseUp);
-      el.removeEventListener("mousemove", handleMouseMove);
       el.removeEventListener("click", handleClickCapture, true);
+      el.removeEventListener("dragstart", handleDragStart);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
 
-  return ref;
+  return [elRef, refCallback] as const;
 }
 
 // ============================================================
@@ -354,9 +364,9 @@ export default function FlashSale() {
     selectedSlot,
   } = useFlashSale();
 
-  const promoRef = useDragToScroll();
-  const dateRef = useDragToScroll();
-  const slotRef = useDragToScroll();
+  const [promoRef, setPromoRef] = useDragToScroll();
+  const [dateRef, setDateRef] = useDragToScroll();
+  const [slotRef, setSlotRef] = useDragToScroll();
 
   // Centering active Promotion tab
   useEffect(() => {
@@ -462,7 +472,7 @@ export default function FlashSale() {
           <TabSkeleton />
         ) : promotions.length > 0 ? (
           <div
-            ref={promoRef}
+            ref={setPromoRef}
             className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-6 overflow-x-auto no-scrollbar"
           >
             {promotions.map((promo) => {
@@ -489,7 +499,7 @@ export default function FlashSale() {
           {/* Dates */}
           {!isLoading && availableDates.length > 0 && (
             <div
-              ref={dateRef}
+              ref={setDateRef}
               className="flex gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto"
             >
               {availableDates.map((dateKey) => {
@@ -522,7 +532,7 @@ export default function FlashSale() {
           {/* Time Slots */}
           {!isLoading && timeSlotsForDate.length > 0 && (
             <div
-              ref={slotRef}
+              ref={setSlotRef}
               className="flex gap-2 overflow-x-auto no-scrollbar py-2.5 w-full lg:w-auto pr-2"
             >
               {timeSlotsForDate.map((slot) => {

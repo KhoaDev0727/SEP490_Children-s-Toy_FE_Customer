@@ -46,6 +46,20 @@ export interface RefundDetailItem {
   refundAmount: number;
 }
 
+export interface RefundStatusHistory {
+  statusName: string;
+  changedByName?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface ShippingStatusHistory {
+  previousStatus: string;
+  newStatus: string;
+  source: string;
+  processedAt: string;
+}
+
 export interface RefundDetail {
   refundId: number;
   orderId: number;
@@ -74,6 +88,8 @@ export interface RefundDetail {
   totalAmount?: number;
   adminNote?: string | null;
   details?: RefundDetailItem[];
+  statusHistory?: RefundStatusHistory[];
+  shippingHistory?: ShippingStatusHistory[];
 }
 
 export interface CreateRefundRequest {
