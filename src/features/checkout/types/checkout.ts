@@ -113,4 +113,8 @@ export interface OrderPaymentInfo {
   expiresAt?: string | null;
   /** Effective payment status — used by FE to redirect cancelled/expired/paid orders */
   paymentStatus?: string | null;
+  bankName?: string | null;
+  bankCode?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
 }

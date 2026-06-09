@@ -30,6 +30,10 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const [amountValue, setAmountValue] = useState<number | null>(null);
   const [isFetchingInfo, setIsFetchingInfo] = useState(true);
 
+  const [bankName, setBankName] = useState(process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank");
+  const [accountNumber, setAccountNumber] = useState(process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "");
+  const [accountName, setAccountName] = useState(process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "");
+
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [expiredByServer, setExpiredByServer] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -134,6 +138,9 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
         setQrUrl(info.qrImageUrl ?? "");
         setAmountValue(Math.round(info.amount));
         if (info.expiresAt) setExpiresAt(info.expiresAt);
+        if (info.bankName) setBankName(info.bankName);
+        if (info.accountNumber) setAccountNumber(info.accountNumber);
+        if (info.accountName) setAccountName(info.accountName);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unable to load payment information.";
         toast.error(msg);
@@ -281,9 +288,9 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
         onExpired={handleQRExpired}
       />
       <PaymentPanel
-        bankName={BANK_NAME}
-        accountNumber={ACCOUNT_NUMBER}
-        accountName={ACCOUNT_NAME}
+        bankName={bankName}
+        accountNumber={accountNumber}
+        accountName={accountName}
         amount={normalizedAmount ?? 0}
         content={attemptCode || orderCode || ""}
         onConfirm={handleConfirmPayment}

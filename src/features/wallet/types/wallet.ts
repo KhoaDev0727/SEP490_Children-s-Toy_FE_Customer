@@ -80,6 +80,10 @@ export interface SePayTopUpQrResponse {
   qrImageUrl: string;
   amount: number;
   expiresAt: string;
+  bankName?: string;
+  bankCode?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 export interface SePayTopUpStatusResponse {

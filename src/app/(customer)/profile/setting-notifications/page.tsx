@@ -72,7 +72,6 @@ export default function NotificationSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleAuthError = useCallback(
@@ -118,13 +117,11 @@ export default function NotificationSettingsPage() {
 
   const handleChannelChange = (key: keyof ChannelState, value: boolean) => {
     setChannels((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
     setSaveError(null);
   };
 
   const handleContentChange = (key: keyof ContentState, value: boolean) => {
     setContent((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
     setSaveError(null);
   };
 
@@ -139,9 +136,7 @@ export default function NotificationSettingsPage() {
       const mapped = mapApiToForm(savedData);
       setChannels(mapped.channels);
       setContent(mapped.content);
-      setSaved(true);
       toast.success("Notification settings saved successfully");
-      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       if (handleAuthError(err)) return;
       toast.error("Could not save settings. Please try again.");
@@ -193,7 +188,6 @@ export default function NotificationSettingsPage() {
               <SaveButton
                 onSave={handleSave}
                 isSaving={isSaving}
-                saved={saved}
               />
             </>
           )}

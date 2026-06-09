@@ -81,6 +81,16 @@ export default function CartPage() {
 
   const items = useMemo(() => cart?.items ?? [], [cart]);
 
+  const { availableItems, unavailableItems } = useMemo(() => {
+    const available = items.filter(
+      (item) => !isReadOnlyItemStatus(item.productStatus) && item.stockQuantity > 0
+    );
+    const unavailable = items.filter(
+      (item) => isReadOnlyItemStatus(item.productStatus) || item.stockQuantity <= 0
+    );
+    return { availableItems: available, unavailableItems: unavailable };
+  }, [items]);
+
   const canCheckout = useMemo(() => {
     if (!cart || items.length === 0) return false;
     return items.every(
@@ -199,6 +209,122 @@ export default function CartPage() {
     );
   }
 
+  const renderCartItem = (item: typeof items[0], isReadOnlyItem: boolean) => {
+    const busy = pendingItemId === item.cartItemId;
+    return (
+      <div
+        key={item.cartItemId}
+        className={`rounded-2xl border bg-white p-4 shadow-sm ${isReadOnlyItem
+            ? "border-amber-300 bg-amber-50/50 opacity-55 saturate-50"
+            : "border-slate-200"
+          }`}
+      >
+        <div className="flex flex-col gap-4 md:flex-row">
+          <img
+            src={item.mainImageUrl || "https://placehold.co/140x140/png?text=Toy"}
+            alt={item.productName}
+            className="h-24 w-24 rounded-xl bg-slate-100 object-cover md:h-28 md:w-28"
+          />
+
+          <div className="flex flex-1 flex-col justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{item.productName}</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Stock: {item.stockQuantity} | Status: {
+                    item.productStatus === "OutOfStock" && pendingSepay
+                      ? "Reserved for QR Payment"
+                      : item.productStatus
+                  }
+                </p>
+                {!isReadOnlyItem && item.warningMessage && (
+                  <div className="mt-2 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/50 p-3 text-xs font-semibold text-red-600">
+                    <span className="material-symbols-outlined text-sm leading-none mt-0.5 flex-shrink-0">warning</span>
+                    <span>{item.warningMessage}</span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemoveItem(item.cartItemId)}
+                disabled={busy}
+                className="text-slate-400 hover:text-red-500 disabled:opacity-60"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs text-slate-400">Unit price</p>
+                {item.currentPrice !== item.priceAtThatTime ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold text-slate-400 line-through">
+                      {formatPrice(item.priceAtThatTime)}
+                    </span>
+                    <span className="text-2xl font-extrabold text-[#ff6a00]">
+                      {formatPrice(item.currentPrice)}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-extrabold text-[#ff6a00]">
+                    {formatPrice(item.priceAtThatTime)}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-32 items-center rounded-xl border border-slate-300 bg-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateQuantity(
+                        item.cartItemId,
+                        item.quantity - 1,
+                        item.stockQuantity,
+                        item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
+                        item.lineTotal,
+                      )
+                    }
+                    disabled={busy || isReadOnlyItem || item.quantity <= 0}
+                    className="flex h-full w-10 items-center justify-center rounded-l-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-sm">remove</span>
+                  </button>
+                  <input
+                    readOnly
+                    value={item.quantity}
+                    className="h-full w-12 border-none bg-transparent p-0 text-center text-xs font-bold text-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateQuantity(
+                        item.cartItemId,
+                        item.quantity + 1,
+                        item.stockQuantity,
+                        item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
+                        item.lineTotal,
+                      )
+                    }
+                    disabled={busy || isReadOnlyItem || item.quantity >= item.stockQuantity}
+                    className="flex h-full w-10 items-center justify-center rounded-r-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                  </button>
+                </div>
+                <div className="min-w-28 text-right">
+                  <p className="text-xs text-slate-400">Line total</p>
+                  <p className="text-lg font-extrabold text-slate-900">{formatPrice(item.lineTotal)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -261,124 +387,28 @@ export default function CartPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            {items.map((item) => {
-              const busy = pendingItemId === item.cartItemId;
-              const isReadOnlyItem = isReadOnlyItemStatus(item.productStatus);
-              return (
-                <div
-                  key={item.cartItemId}
-                  className={`rounded-2xl border bg-white p-4 shadow-sm ${
-                    isReadOnlyItem
-                      ? "border-amber-300 bg-amber-50/50 opacity-55 saturate-50"
-                      : "border-slate-200"
-                  }`}
-                >
-                  <div className="flex flex-col gap-4 md:flex-row">
-                    <img
-                      src={item.mainImageUrl || "https://placehold.co/140x140/png?text=Toy"}
-                      alt={item.productName}
-                      className="h-24 w-24 rounded-xl bg-slate-100 object-cover md:h-28 md:w-28"
-                    />
+            {availableItems.length > 0 && (
+              <div className="space-y-4">
+                {availableItems.map((item) => renderCartItem(item, false))}
+              </div>
+            )}
 
-                    <div className="flex flex-1 flex-col justify-between gap-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h2 className="text-lg font-bold text-slate-900">{item.productName}</h2>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Stock: {item.stockQuantity} | Status: {item.productStatus}
-                          </p>
-                          {item.warningMessage && (
-                            <div className="mt-2 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/50 p-3 text-xs font-semibold text-red-600">
-                              <span className="material-symbols-outlined text-sm leading-none mt-0.5">warning</span>
-                              <span>{item.warningMessage}</span>
-                            </div>
-                          )}
-                          {isReadOnlyItem ? (
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
-                              Read only: this item can only be removed from cart
-                            </p>
-                          ) : null}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(item.cartItemId)}
-                          disabled={busy}
-                          className="text-slate-400 hover:text-red-500 disabled:opacity-60"
-                        >
-                          <span className="material-symbols-outlined">close</span>
-                        </button>
-                      </div>
-
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <p className="text-xs text-slate-400">Unit price</p>
-                          {item.currentPrice !== item.priceAtThatTime ? (
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-sm font-semibold text-slate-400 line-through">
-                                {formatPrice(item.priceAtThatTime)}
-                              </span>
-                              <span className="text-2xl font-extrabold text-[#ff6a00]">
-                                {formatPrice(item.currentPrice)}
-                              </span>
-                            </div>
-                          ) : (
-                            <p className="text-2xl font-extrabold text-[#ff6a00]">
-                              {formatPrice(item.priceAtThatTime)}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-32 items-center rounded-xl border border-slate-300 bg-white">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.cartItemId,
-                                  item.quantity - 1,
-                                  item.stockQuantity,
-                                  item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
-                                  item.lineTotal,
-                                )
-                              }
-                              disabled={busy || isReadOnlyItem || item.quantity <= 0}
-                              className="flex h-full w-10 items-center justify-center rounded-l-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-sm">remove</span>
-                            </button>
-                            <input
-                              readOnly
-                              value={item.quantity}
-                              className="h-full w-12 border-none bg-transparent p-0 text-center text-xs font-bold text-slate-900"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.cartItemId,
-                                  item.quantity + 1,
-                                  item.stockQuantity,
-                                  item.currentPrice > 0 ? item.currentPrice : item.priceAtThatTime,
-                                  item.lineTotal,
-                                )
-                              }
-                              disabled={busy || isReadOnlyItem || item.quantity >= item.stockQuantity}
-                              className="flex h-full w-10 items-center justify-center rounded-r-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-sm">add</span>
-                            </button>
-                          </div>
-                          <div className="min-w-28 text-right">
-                            <p className="text-xs text-slate-400">Line total</p>
-                            <p className="text-lg font-extrabold text-slate-900">{formatPrice(item.lineTotal)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {unavailableItems.length > 0 && (
+              <div className="mt-8 border-t border-slate-200 pt-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400">report</span>
+                    Unavailable Items ({unavailableItems.length})
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    These items cannot be purchased due to out-of-stock or restricted status. Please remove them to proceed with checkout.
+                  </p>
                 </div>
-              );
-            })}
+                <div className="space-y-4">
+                  {unavailableItems.map((item) => renderCartItem(item, true))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:h-fit">
