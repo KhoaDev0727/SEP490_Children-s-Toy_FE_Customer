@@ -1,7 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "@/features/auth/services/auth-api";
-import { useAuthContext } from "@/context/AuthContext";
 import GoogleAuthButton from "./GoogleAuthButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,11 +20,6 @@ const registerSchema = z.object({
     .regex(/[0-9]/, "Must include at least one number")
     .regex(/[^a-zA-Z0-9]/, "Must include at least one special character"),
   confirmPassword: z.string().min(1, "Confirm password is required"),
-  otpCode: z
-    .string()
-    .min(1, "OTP code is required")
-    .length(6, "OTP code must be 6 digits")
-    .regex(/^\d{6}$/, "OTP code must contain only digits"),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -33,43 +27,17 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-const CUSTOMER_ROLE_ID = 1;
-
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const { setAuth } = useAuthContext();
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
-
-  const emailValue = watch("email");
-
-  const handleSendOtp = async () => {
-    if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-      toast.error("Please enter a valid email first.");
-      return;
-    }
-    setIsSendingOtp(true);
-    try {
-      await authApi.sendRegisterOtp({ email: emailValue });
-      setOtpSent(true);
-      toast.success("OTP has been sent to your email.");
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message ?? "Unable to send OTP. Please try again.");
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsRegistering(true);
@@ -79,31 +47,16 @@ export default function RegisterForm() {
         password: data.password.trim(),
         confirmPassword: data.confirmPassword.trim(),
       };
-      await authApi.register(payload);
-      const loginResponse = await authApi.login({
-        email: data.email,
-        password: data.password.trim(),
-      });
-      if (loginResponse.account.roleId === CUSTOMER_ROLE_ID) {
-        setAuth(loginResponse.account, loginResponse.accessToken);
-        toast.success(`Welcome, ${loginResponse.account.accountName}! Registration successful.`);
-        router.push("/");
-      } else {
-        toast.success("Registration successful! Please sign in.");
-        router.push("/login");
-      }
+      await authApi.requestRegisterOtp(payload);
+      toast.success("OTP has been sent to your email.");
+      router.push(`/register/verify-otp?email=${encodeURIComponent(payload.email)}`);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { code?: string; message?: string } } };
       const code = err?.response?.data?.code;
-      if (code === "OTP_EXPIRED") {
-        setOtpSent(false);
-        toast.error("OTP has expired. Please click 'Send OTP' to get a new code.");
-      } else if (code === "OTP_INVALID") {
-        toast.error("Invalid OTP. Please check your email.");
-      } else if (code === "CONFLICT") {
+      if (code === "CONFLICT") {
         toast.error("This email is already registered. Please use another email.");
       } else {
-        toast.error(err?.response?.data?.message ?? "Registration failed. Please try again.");
+        toast.error(err?.response?.data?.message ?? "Unable to send OTP. Please try again.");
       }
     } finally {
       setIsRegistering(false);
@@ -160,47 +113,15 @@ export default function RegisterForm() {
                 <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="reg-email">
                   Email <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    id="reg-email"
-                    type="email"
-                    placeholder="example@email.com"
-                    className="h-11 flex-1 min-w-0 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                    {...register("email")}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={isSendingOtp}
-                    className="h-11 shrink-0 rounded-lg border px-4 text-sm font-medium transition disabled:opacity-50"
-                    style={{
-                      borderColor: "#ff6a00",
-                      color: otpSent ? "#fff" : "#ff6a00",
-                      background: otpSent ? "#ff6a00" : "transparent",
-                    }}
-                  >
-                    {isSendingOtp ? "Sending..." : otpSent ? "Resend" : "Send OTP"}
-                  </button>
-                </div>
+                <input
+                  id="reg-email"
+                  type="email"
+                  placeholder="example@email.com"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  {...register("email")}
+                />
                 {errors.email && (
                   <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700" htmlFor="otpCode">
-                  OTP code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="otpCode"
-                  type="text"
-                  placeholder="Enter the 6-digit code from your email"
-                  maxLength={6}
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                  {...register("otpCode")}
-                />
-                {errors.otpCode && (
-                  <p className="mt-1.5 text-xs text-red-500">{errors.otpCode.message}</p>
                 )}
               </div>
 
@@ -280,7 +201,7 @@ export default function RegisterForm() {
                 className="flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #ff6a00, #ff9a3c)" }}
               >
-                {isRegistering ? "Creating account..." : "Sign up"}
+                {isRegistering ? "Sending OTP..." : "Sign up"}
               </button>
 
               <div className="relative flex items-center justify-center my-3">
