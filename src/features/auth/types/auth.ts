@@ -10,6 +10,18 @@ export interface RegisterRequest {
   otpCode: string;
 }
 
+export interface RequestRegisterOtpRequest {
+  accountName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface VerifyRegisterOtpRequest {
+  email: string;
+  otpCode: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

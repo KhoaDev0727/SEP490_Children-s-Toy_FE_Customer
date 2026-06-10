@@ -6,14 +6,28 @@ import type {
   GoogleLoginRequest,
   GoogleRegisterRequest,
   LoginRequest,
+  RequestRegisterOtpRequest,
   RegisterRequest,
   ResetPasswordRequest,
   SendRegisterOtpRequest,
+  VerifyRegisterOtpRequest,
 } from "../types/auth";
 
 export const authApi = {
   sendRegisterOtp: async (payload: SendRegisterOtpRequest): Promise<void> => {
     return axiosClient.post<void, SendRegisterOtpRequest>("/auth/send-register-otp", payload);
+  },
+
+  requestRegisterOtp: async (payload: RequestRegisterOtpRequest): Promise<void> => {
+    return axiosClient.post<void, RequestRegisterOtpRequest>("/auth/register/request-otp", payload);
+  },
+
+  resendRegisterOtp: async (payload: SendRegisterOtpRequest): Promise<void> => {
+    return axiosClient.post<void, SendRegisterOtpRequest>("/auth/register/resend-otp", payload);
+  },
+
+  verifyRegisterOtp: async (payload: VerifyRegisterOtpRequest): Promise<AuthResponse> => {
+    return axiosClient.post<AuthResponse, VerifyRegisterOtpRequest>("/auth/register/verify-otp", payload);
   },
 
   register: async (payload: RegisterRequest): Promise<AccountInfo> => {
