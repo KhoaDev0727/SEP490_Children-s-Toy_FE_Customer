@@ -33,7 +33,6 @@ export default function VoucherList() {
           const activeVouchers = res.items.filter((v) => {
             const endDate = new Date(v.endDate).getTime();
             if (endDate <= now) return false;
-            if (v.discountTarget === "FINAL_PRICE") return false;
             if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
             return true;
           });
@@ -90,13 +89,16 @@ export default function VoucherList() {
 
   const filteredVouchers = useMemo(() => {
     if (activeTab === "ALL") return vouchers;
+    if (activeTab === "ORDER_TOTAL") {
+      return vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE");
+    }
     return vouchers.filter((v) => v.discountTarget === activeTab);
   }, [vouchers, activeTab]);
 
   const counts = useMemo(() => {
     return {
       ALL: vouchers.length,
-      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL")
+      ORDER_TOTAL: vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE")
         .length,
       SHIPPING_FEE: vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE")
         .length,

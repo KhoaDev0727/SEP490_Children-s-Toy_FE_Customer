@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   CheckoutConfirmRequest,
   CheckoutConfirmResponse,
+  CheckoutPaymentOptions,
   CheckoutPreviewRequest,
   CheckoutPreviewResponse,
   OrderPaymentInfo,
@@ -151,9 +152,26 @@ export const checkoutApi = {
     }
   },
 
+  getPaymentOptions: async (): Promise<CheckoutPaymentOptions> => {
+    try {
+      const response = await axiosClient.get<
+        CheckoutPaymentOptions | ApiResponse<CheckoutPaymentOptions>
+      >("/checkout/payment-options");
+      return unwrap(response);
+    } catch {
+      return {
+        isCodRestricted: false,
+        suspiciousDeliveryFailOrderCount: 0,
+        codRestrictionReason: null,
+      };
+    }
+  },
+
   /**
    * Kiểm tra xem user có đơn SE_PAY PENDING nào không.
-   * Trả về orderId nếu có, null nếu không.
+   * Trả về orderId nếu có (và chưa hết hạn), null nếu không.
+   * Khi tìm thấy đơn, validate thêm expiresAt từ payment-status để tránh
+   * hiện banner stale khi backend expiry job chưa kịp chạy.
    */
   getPendingSepayOrder: async (): Promise<{ orderId: number; orderCode: string } | null> => {
     try {
@@ -165,11 +183,29 @@ export const checkoutApi = {
       const pending = items.find(
         (o) => o.paymentMethod === "SE_PAY" && o.paymentStatus === "PENDING",
       );
-      return pending ? { orderId: pending.orderId, orderCode: pending.orderCode } : null;
+      if (!pending) return null;
+
+      // Double-check expiry client-side: backend job runs every ~1 min so the order
+      // may already be past its TTL but not yet cancelled in the DB.
+      try {
+        const statusResponse = await axiosClient.get<
+          { paymentStatus?: string; expiresAt?: string | null } | null
+        >(`/orders/${pending.orderId}/payment-status`);
+        const status = statusResponse as { paymentStatus?: string; expiresAt?: string | null } | null;
+        // If server already flipped the status, or TTL has passed client-side → treat as gone
+        const isNoLongerPending = status?.paymentStatus && status.paymentStatus !== "PENDING";
+        const isExpiredByTime = status?.expiresAt ? new Date(status.expiresAt) < new Date() : false;
+        if (isNoLongerPending || isExpiredByTime) return null;
+      } catch {
+        // payment-status call failed — fall through and show the banner (safe default)
+      }
+
+      return { orderId: pending.orderId, orderCode: pending.orderCode };
     } catch {
       return null;
     }
   },
+
 
   /** Lấy thông tin thanh toán nhạy cảm (QR, amount, attemptCode) từ API thay vì URL. */
   getPaymentInfo: async (orderId: number): Promise<OrderPaymentInfo> => {

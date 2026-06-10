@@ -277,6 +277,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             paymentMethod={order.paymentMethod}
             events={trackingEvents}
             hasActiveRefund={order.hasActiveRefund}
+            cancelReason={order.cancelReason}
           />
           <OrderProductList products={products} />
         </div>

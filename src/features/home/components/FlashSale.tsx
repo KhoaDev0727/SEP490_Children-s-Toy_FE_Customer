@@ -2,13 +2,96 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useRef, useEffect } from "react";
 import { useFlashSale } from "@/features/home/hooks/useFlashSale";
 import {
   FlashSaleTimeSlot,
   FlashSaleProduct,
 } from "@/features/home/types/flash-sale";
 import toast from "react-hot-toast";
+
+// ============================================================
+// Custom Hooks
+// ============================================================
+
+export function useDragToScroll() {
+  const elRef = useRef<HTMLDivElement | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const refCallback = useCallback((el: HTMLDivElement | null) => {
+    elRef.current = el;
+
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
+    if (!el) return;
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let startPageX = 0;
+    let totalMoved = 0;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDown = true;
+      startPageX = e.pageX;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+      totalMoved = 0;
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    };
+
+    const handleMouseUp = () => {
+      if (!isDown) return;
+      isDown = false;
+      el.style.cursor = "grab";
+      el.style.removeProperty("user-select");
+
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX) * 1.5;
+      el.scrollLeft = scrollLeft - walk;
+      totalMoved = Math.abs(e.pageX - startPageX);
+    };
+
+    const handleClickCapture = (e: MouseEvent) => {
+      if (totalMoved > 5) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const handleDragStart = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    el.style.cursor = "grab";
+    el.addEventListener("mousedown", handleMouseDown);
+    el.addEventListener("click", handleClickCapture, true);
+    el.addEventListener("dragstart", handleDragStart);
+
+    cleanupRef.current = () => {
+      el.removeEventListener("mousedown", handleMouseDown);
+      el.removeEventListener("click", handleClickCapture, true);
+      el.removeEventListener("dragstart", handleDragStart);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  return [elRef, refCallback] as const;
+}
 
 // ============================================================
 // Helpers
@@ -25,11 +108,8 @@ const toLocal = (utcStr: string) => {
 const formatShortTimeRange = (startAt: string, endAt: string) => {
   const start = toLocal(startAt);
   const end = toLocal(endAt);
-  const startH = start.getHours();
-  const endH = end.getHours();
-  // const dd = String(start.getDate()).padStart(2, "0");
-  // const mm = String(start.getMonth() + 1).padStart(2, "0");
-  return `${startH}-${endH}h`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(start.getHours())}:${pad(start.getMinutes())} - ${pad(end.getHours())}:${pad(end.getMinutes())}`;
 };
 
 const formatShortDate = (dateKey: string) => {
@@ -53,9 +133,8 @@ const TimeBlock = memo(function TimeBlock({
 }) {
   return (
     <div
-      className={`px-1.5 sm:px-2 py-1 rounded-lg text-white font-bold text-sm sm:text-base min-w-8 sm:min-w-10 text-center shadow-sm tracking-widest transition-colors ${
-        isLive ? "bg-rose-600" : "bg-[#0f172a]"
-      }`}
+      className={`px-1.5 sm:px-2 py-1 rounded-lg text-white font-bold text-sm sm:text-base min-w-8 sm:min-w-10 text-center shadow-sm tracking-widest transition-colors ${isLive ? "bg-rose-600" : "bg-[#0f172a]"
+        }`}
     >
       {String(value).padStart(2, "0")}
     </div>
@@ -131,13 +210,11 @@ const ProductCard = memo(function ProductCard({
   return (
     <Link
       href={isUpcoming ? "#" : `/products/${product.productId}`}
-      className={`bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all p-3 flex flex-col relative h-full group ${
-        index === 4 ? "hidden lg:flex" : ""
-      } ${
-        isUpcoming
+      className={`bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all p-3 flex flex-col relative h-full group ${index === 4 ? "hidden lg:flex" : ""
+        } ${isUpcoming
           ? "cursor-default opacity-90"
           : "hover:border-[#ff6a00]/30 hover:shadow-md cursor-pointer"
-      }`}
+        }`}
       onClick={(e) => {
         if (isUpcoming) {
           e.preventDefault();
@@ -153,9 +230,8 @@ const ProductCard = memo(function ProductCard({
             alt={product.productName}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
-            className={`object-cover transition-transform duration-300 ${
-              !isUpcoming && "group-hover:scale-105"
-            }`}
+            className={`object-cover transition-transform duration-300 ${!isUpcoming && "group-hover:scale-105"
+              }`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-50">
@@ -172,15 +248,19 @@ const ProductCard = memo(function ProductCard({
       </h4>
 
       {/* Price */}
-      <div className="flex items-end gap-2 mb-2">
+      <div className="flex flex-col gap-1 mb-2">
         <span className="font-bold text-base sm:text-lg text-[#ff6a00] leading-none">
           {isUpcoming
             ? maskVND(product.salePrice)
             : formatVND(product.salePrice)}
         </span>
-        {product.originalPrice > product.salePrice && (
-          <span className="text-gray-400 text-sm line-through">
+        {product.originalPrice > product.salePrice ? (
+          <span className="text-gray-400 text-xs sm:text-sm line-through leading-tight">
             {formatVND(product.originalPrice)}
+          </span>
+        ) : (
+          <span className="text-transparent text-xs sm:text-sm select-none leading-tight" aria-hidden="true">
+            &nbsp;
           </span>
         )}
       </div>
@@ -201,11 +281,10 @@ const ProductCard = memo(function ProductCard({
           </div>
         )}
         <div
-          className={`w-full py-2 rounded-lg font-bold text-xs sm:text-sm uppercase text-center border transition-colors ${
-            isUpcoming
+          className={`w-full py-2 rounded-lg font-bold text-xs sm:text-sm uppercase text-center border transition-colors ${isUpcoming
               ? "bg-gray-100 text-gray-400 border-gray-100"
               : "border-[#ff6a00] text-[#ff6a00] hover:bg-[#fff7ed]"
-          }`}
+            }`}
         >
           {isUpcoming ? "Upcoming" : "Buy Now"}
         </div>
@@ -240,13 +319,13 @@ const TimeSlotPill = memo(function TimeSlotPill({
       onClick={handleClick}
       disabled={isDisabled}
       title={isDisabled ? "Time slot ended" : undefined}
+      data-active={isSelected}
       className={`flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap transition-all border relative
-        ${
-          isSelected
-            ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-md -translate-y-0.5"
-            : isDisabled
-              ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed opacity-70"
-              : "bg-white text-gray-600 border-gray-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
+        ${isSelected
+          ? "bg-[#ff6a00] text-white border-[#ff6a00] shadow-md -translate-y-0.5"
+          : isDisabled
+            ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed opacity-70"
+            : "bg-white text-gray-600 border-gray-200 hover:border-[#ff6a00] hover:text-[#ff6a00]"
         }
       `}
     >
@@ -284,6 +363,40 @@ export default function FlashSale() {
     getSlotRuntimeStatus,
     selectedSlot,
   } = useFlashSale();
+
+  const [promoRef, setPromoRef] = useDragToScroll();
+  const [dateRef, setDateRef] = useDragToScroll();
+  const [slotRef, setSlotRef] = useDragToScroll();
+
+  // Centering active Promotion tab
+  useEffect(() => {
+    if (promoRef.current) {
+      const activeEl = promoRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+  }, [selectedPromotionId, promoRef]);
+
+  // Centering active Date tab
+  useEffect(() => {
+    if (dateRef.current) {
+      const activeEl = dateRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+  }, [selectedDate, dateRef]);
+
+  // Centering active Time Slot tab
+  useEffect(() => {
+    if (slotRef.current) {
+      const activeEl = slotRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+  }, [selectedSlotId, slotRef]);
 
   const isLive =
     !!selectedSlot && getSlotRuntimeStatus(selectedSlot) === "active";
@@ -358,18 +471,21 @@ export default function FlashSale() {
         {isLoading ? (
           <TabSkeleton />
         ) : promotions.length > 0 ? (
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-6 overflow-x-auto no-scrollbar">
+          <div
+            ref={setPromoRef}
+            className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-6 overflow-x-auto no-scrollbar"
+          >
             {promotions.map((promo) => {
               const isActive = promo.promotionId === selectedPromotionId;
               return (
                 <button
                   key={promo.promotionId}
                   onClick={() => selectPromotion(promo.promotionId)}
-                  className={`relative py-1.5 px-4 rounded-full text-sm sm:text-base font-bold whitespace-nowrap transition-all border ${
-                    isActive
+                  data-active={isActive}
+                  className={`relative py-1.5 px-4 rounded-full text-sm sm:text-base font-bold whitespace-nowrap transition-all border ${isActive
                       ? "bg-rose-50 border-rose-200 text-rose-600 shadow-sm"
                       : "bg-white border-gray-200 text-gray-500 hover:text-rose-500 hover:border-rose-200"
-                  }`}
+                    }`}
                 >
                   {promo.promotionName}
                 </button>
@@ -382,18 +498,21 @@ export default function FlashSale() {
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mb-6 items-start lg:items-center px-1">
           {/* Dates */}
           {!isLoading && availableDates.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto">
+            <div
+              ref={setDateRef}
+              className="flex gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto"
+            >
               {availableDates.map((dateKey) => {
                 const isSelected = dateKey === selectedDate;
                 return (
                   <button
                     key={dateKey}
                     onClick={() => selectDate(dateKey)}
+                    data-active={isSelected}
                     className={`flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-sm whitespace-nowrap transition-all border
-                      ${
-                        isSelected
-                          ? "border-[#ff6a00] text-[#ff6a00] bg-orange-50 shadow-sm"
-                          : "border-gray-200 text-gray-500 hover:border-[#ff6a00]/50 hover:text-[#ff6a00]"
+                      ${isSelected
+                        ? "border-[#ff6a00] text-[#ff6a00] bg-orange-50 shadow-sm"
+                        : "border-gray-200 text-gray-500 hover:border-[#ff6a00]/50 hover:text-[#ff6a00]"
                       }
                     `}
                   >
@@ -412,7 +531,10 @@ export default function FlashSale() {
 
           {/* Time Slots */}
           {!isLoading && timeSlotsForDate.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2.5 w-full lg:w-auto pr-2">
+            <div
+              ref={setSlotRef}
+              className="flex gap-2 overflow-x-auto no-scrollbar py-2.5 w-full lg:w-auto pr-2"
+            >
               {timeSlotsForDate.map((slot) => {
                 const status = getSlotRuntimeStatus(slot);
                 return (
@@ -434,40 +556,40 @@ export default function FlashSale() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className={i === 4 ? "hidden lg:block" : ""}>
-                  <ProductSkeleton />
-                </div>
-              ))
+              <div key={i} className={i === 4 ? "hidden lg:block" : ""}>
+                <ProductSkeleton />
+              </div>
+            ))
             : productsForSlot.length > 0
               ? productsForSlot
-                  .slice(0, 5)
-                  .map((product, i) => (
-                    <ProductCard
-                      key={product.slotProductId}
-                      product={product}
-                      index={i}
-                      isUpcoming={
-                        selectedSlot
-                          ? getSlotRuntimeStatus(selectedSlot) === "upcoming"
-                          : false
-                      }
-                    />
-                  ))
+                .slice(0, 5)
+                .map((product, i) => (
+                  <ProductCard
+                    key={product.slotProductId}
+                    product={product}
+                    index={i}
+                    isUpcoming={
+                      selectedSlot
+                        ? getSlotRuntimeStatus(selectedSlot) === "upcoming"
+                        : false
+                    }
+                  />
+                ))
               : !isLoading && (
-                  <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="w-20 h-20 mb-4 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-                      <span className="material-symbols-outlined text-4xl text-gray-300">
-                        inventory_2
-                      </span>
-                    </div>
-                    <p className="text-gray-500 font-medium text-base">
-                      No products for this time slot
-                    </p>
-                    <p className="text-gray-400 text-sm mt-1">
-                      Please choose another time slot or come back later.
-                    </p>
+                <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="w-20 h-20 mb-4 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+                    <span className="material-symbols-outlined text-4xl text-gray-300">
+                      inventory_2
+                    </span>
                   </div>
-                )}
+                  <p className="text-gray-500 font-medium text-base">
+                    No products for this time slot
+                  </p>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Please choose another time slot or come back later.
+                  </p>
+                </div>
+              )}
         </div>
       </div>
     </section>

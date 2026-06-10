@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { isAxiosError } from "axios";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/context/AuthContext";
@@ -20,6 +21,13 @@ type ApiErrorResponse = {
   Message?: string;
   errors?: Record<string, string[]>;
   Errors?: Record<string, string[]>;
+};
+
+type ReplyTarget = {
+  reviewBlogId: number;
+  parentReplyId?: number;
+  replyToAccountId?: number;
+  label: string;
 };
 
 const translateBlogApiMessage = (message: string) => {
@@ -89,6 +97,14 @@ const moderationBadge = (status: string) => {
   return { text: "Moderation failed", className: "bg-slate-200 text-slate-700" };
 };
 
+const isApprovedModeration = (status: string) => {
+  return status === "Approved";
+};
+
+const canReplyToReview = (item: BlogReview | BlogReviewReply) => {
+  return item.canReply ?? isApprovedModeration(item.moderationStatus);
+};
+
 const flattenReplies = (
   replies: BlogReviewReply[],
   depth = 1,
@@ -133,13 +149,16 @@ function UserAvatar({ imageUrl, name, sizeClass }: { imageUrl?: string | null; n
 export default function CommentSection({ blogPostId, comments, onReload }: CommentSectionProps) {
   const { account, isAuthenticated } = useAuthContext();
   const [newComment, setNewComment] = useState("");
-  const [replyTarget, setReplyTarget] = useState<{ reviewBlogId: number; parentReplyId?: number; replyToAccountId?: number; label: string } | null>(null);
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [replyComment, setReplyComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = newComment.trim().length > 0 && newComment.trim().length <= 500;
 
-  const totalReplies = useMemo(() => comments.reduce((sum, item) => sum + item.replies.length, 0), [comments]);
+  const approvedReviewCount = useMemo(
+    () => comments.filter((item) => isApprovedModeration(item.moderationStatus)).length,
+    [comments],
+  );
 
   const handleCreateReview = async () => {
     if (!canSubmit || isSubmitting) {
@@ -208,6 +227,11 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
     }
   };
 
+  const closeReplyModal = () => {
+    setReplyTarget(null);
+    setReplyComment("");
+  };
+
   const handleReactReview = async (reviewBlogId: number, reactionCode: "like" | "love" | "haha") => {
     if (!isAuthenticated) {
       toast.error("Please login before reacting.");
@@ -272,7 +296,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                 onSelect={(reactionCode) => handleReactReply(reply.replyBlogId, reactionCode)}
               />
             </div>
-            {isAuthenticated && (
+            {isAuthenticated && canReplyToReview(reply) && (
               <button
                 type="button"
                 onClick={() => setReplyTarget({ reviewBlogId, parentReplyId: reply.replyBlogId, replyToAccountId: reply.accountId, label: `Reply ${reply.accountName}` })}
@@ -289,7 +313,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
 
   return (
     <section className="flex flex-col gap-4">
-      <h3 className="font-bold text-xl text-[#261812]">Comments ({comments.length + totalReplies})</h3>
+      <h3 className="font-bold text-xl text-[#261812]">Comments ({approvedReviewCount})</h3>
 
       {isAuthenticated && (
         <div className="rounded-xl border border-[#f8ddd2] bg-white p-3">
@@ -352,7 +376,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                     onSelect={(reactionCode) => handleReactReview(comment.reviewBlogId, reactionCode)}
                   />
                 </div>
-                {isAuthenticated && (
+                {isAuthenticated && canReplyToReview(comment) && (
                   <button
                     type="button"
                     onClick={() => setReplyTarget({ reviewBlogId: comment.reviewBlogId, replyToAccountId: comment.accountId, label: `Reply ${comment.accountName}` })}
@@ -369,29 +393,77 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       </div>
 
       {replyTarget && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/60" onClick={() => setReplyTarget(null)} />
-          <div className="relative z-10 w-full max-w-[620px] rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 lg:p-6 animate-in fade-in zoom-in duration-200">
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-[#261812]">{replyTarget.label}</p>
-              <textarea
-                value={replyComment}
-                onChange={(event) => setReplyComment(event.target.value)}
-                maxLength={500}
-                rows={4}
-                className="w-full resize-none rounded-lg border border-[#f1ddd2] px-3 py-2 text-sm outline-none focus:border-[#c2410c]"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#8e7164]">{replyComment.length}/500</span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setReplyTarget(null)} className="rounded border border-slate-200 px-3 py-1 text-xs text-slate-600">Cancel</button>
-                  <button type="button" onClick={handleReply} disabled={!replyComment.trim() || isSubmitting} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Reply</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ReplyModal
+          replyTarget={replyTarget}
+          replyComment={replyComment}
+          isSubmitting={isSubmitting}
+          onChangeReplyComment={setReplyComment}
+          onClose={closeReplyModal}
+          onSubmit={handleReply}
+        />
       )}
     </section>
   );
+}
+
+interface ReplyModalProps {
+  replyTarget: ReplyTarget;
+  replyComment: string;
+  isSubmitting: boolean;
+  onChangeReplyComment: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}
+
+function ReplyModal({
+  replyTarget,
+  replyComment,
+  isSubmitting,
+  onChangeReplyComment,
+  onClose,
+  onSubmit,
+}: ReplyModalProps) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, []);
+
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-950/60" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-[620px] rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl animate-in fade-in zoom-in duration-200 lg:p-6">
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-[#261812]">{replyTarget.label}</p>
+          <textarea
+            value={replyComment}
+            onChange={(event) => onChangeReplyComment(event.target.value)}
+            maxLength={500}
+            rows={4}
+            className="w-full resize-none rounded-lg border border-[#f1ddd2] px-3 py-2 text-sm outline-none focus:border-[#c2410c]"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[#8e7164]">{replyComment.length}/500</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={onClose} className="rounded border border-slate-200 px-3 py-1 text-xs text-slate-600">Cancel</button>
+              <button type="button" onClick={onSubmit} disabled={!replyComment.trim() || isSubmitting} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Reply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modal, document.body);
 }

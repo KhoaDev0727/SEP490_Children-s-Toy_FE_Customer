@@ -13,6 +13,7 @@ interface ShippingTrackerProps {
   paymentMethod?: string;
   events?: OrderTimelineEvent[];
   hasActiveRefund?: boolean;
+  cancelReason?: string | null;
 }
 
 const STEPS = [
@@ -83,6 +84,7 @@ export default function ShippingTracker({
   paymentMethod,
   events = [],
   hasActiveRefund = false,
+  cancelReason,
 }: ShippingTrackerProps) {
   const display = getCustomerOrderDisplay({
     statusName,
@@ -231,6 +233,10 @@ export default function ShippingTracker({
               refundRejectedReason ? (
                 <span className="text-rose-600 font-bold block mt-2 px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
                   ⚠️ Yêu cầu hoàn tiền bị từ chối: {refundRejectedReason}
+                </span>
+              ) : cancelReason ? (
+                <span className="block mt-2 px-3 py-2 bg-red-50/50 border border-red-100 rounded-xl text-red-600 font-semibold">
+                  Cancellation reason: {cancelReason}
                 </span>
               ) : (
                 "If you have questions, please contact support"

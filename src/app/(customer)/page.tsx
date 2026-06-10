@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import HeroBanner from "@/features/home/components/HeroBanner";
 import FlashSale from "@/features/home/components/FlashSale";
 import RecentlyViewed from "@/features/home/components/RecentlyViewed";
@@ -15,7 +16,9 @@ export default function Home() {
         source="home_trending"
       />
 
-      <FlashSale />
+      <Suspense fallback={null}>
+        <FlashSale />
+      </Suspense>
 
       <RecommendationWidget
         widgetCode={WIDGET_CODES.HOMEPAGE_PERSONAL}
