@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import ChildCard from "./ChildCard";
 import AddEditChildModal from "./AddEditChildModal";
 import { childrenApi } from "@/features/profile/services/children-api";
@@ -20,6 +21,18 @@ export default function ChildrenGrid() {
   useEffect(() => {
     fetchChildren();
   }, []);
+
+  // Prevent scrolling when delete confirmation is open
+  useEffect(() => {
+    if (deleteConfirm !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [deleteConfirm]);
 
   const fetchChildren = async () => {
     setIsLoading(true);
@@ -187,8 +200,8 @@ export default function ChildrenGrid() {
       />
 
       {/* Delete confirmation dialog */}
-      {deleteConfirm !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {deleteConfirm !== null && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-slate-900/50"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
@@ -219,7 +232,8 @@ export default function ChildrenGrid() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </>
