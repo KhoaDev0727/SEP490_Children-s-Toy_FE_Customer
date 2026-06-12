@@ -127,11 +127,11 @@ export default function CartPage() {
       return;
     }
     if (stock <= 0) {
-      toast.error("Product is out of stock.");
+      toast.error("Product is out of quantity.");
       return;
     }
     if (nextQuantity > stock) {
-      toast.error("Cart quantity has reached the maximum available stock.");
+      toast.error("Cart quantity has reached the maximum available quantity.");
       return;
     }
 
@@ -215,8 +215,8 @@ export default function CartPage() {
       <div
         key={item.cartItemId}
         className={`rounded-2xl border bg-white p-4 shadow-sm ${isReadOnlyItem
-            ? "border-amber-300 bg-amber-50/50 opacity-55 saturate-50"
-            : "border-slate-200"
+          ? "border-amber-300 bg-amber-50/50 opacity-55 saturate-50"
+          : "border-slate-200"
           }`}
       >
         <div className="flex flex-col gap-4 md:flex-row">
