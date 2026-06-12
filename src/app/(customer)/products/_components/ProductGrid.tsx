@@ -323,14 +323,14 @@
 
 //   const handleAddToCart = async (product: ProductList) => {
 //     if (product.quantity <= 0 || product.productStatus !== "Active") {
-//       toast.error("Product is out of stock.");
+//       toast.error("Product is out of quantity.");
 //       return;
 //     }
 
 //     const quantityInCart = cartQuantityByProductId.get(product.productId) ?? 0;
 //     const remainingStock = Math.max(product.quantity - quantityInCart, 0);
 //     if (remainingStock <= 0) {
-//       toast.error("Cart quantity has reached the maximum available stock.");
+//       toast.error("Cart quantity has reached the maximum available quantity.");
 //       return;
 //     }
 
@@ -852,14 +852,14 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
 
   const handleAddToCart = async (product: ProductList) => {
     if (product.quantity <= 0 || product.productStatus !== "Active") {
-      toast.error("Product is out of stock.");
+      toast.error("Product is out of quantity.");
       return;
     }
 
     const quantityInCart = cartQuantityByProductId.get(product.productId) ?? 0;
     const remainingStock = Math.max(product.quantity - quantityInCart, 0);
     if (remainingStock <= 0) {
-      toast.error("Cart quantity has reached the maximum available stock.");
+      toast.error("Cart quantity has reached the maximum available quantity.");
       return;
     }
 

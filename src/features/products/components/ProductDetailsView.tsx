@@ -362,12 +362,12 @@ export default function ProductDetailsView({
 
   const handleAddToCart = async () => {
     if (!inStock) {
-      toast.error("Product is out of stock.");
+      toast.error("Product is out of quantity.");
       return;
     }
 
     if (remainingStock <= 0) {
-      toast.error("Cart quantity has reached the maximum available stock.");
+      toast.error("Cart quantity has reached the maximum available quantity.");
       return;
     }
 
@@ -1069,11 +1069,10 @@ export default function ProductDetailsView({
                           </span>
                           <button
                             onClick={() => handleLikeReview(review.reviewId)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 font-semibold cursor-pointer ${
-                              review.isLiked
-                                ? "bg-orange-50 text-[#ff6a00] border-[#ff6a00]/30 shadow-xs"
-                                : "bg-white text-slate-500 border-slate-200 hover:border-[#ff6a00]/30 hover:text-[#ff6a00]"
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 font-semibold cursor-pointer ${review.isLiked
+                              ? "bg-orange-50 text-[#ff6a00] border-[#ff6a00]/30 shadow-xs"
+                              : "bg-white text-slate-500 border-slate-200 hover:border-[#ff6a00]/30 hover:text-[#ff6a00]"
+                              }`}
                           >
                             <span
                               className="material-symbols-outlined text-sm transition-transform active:scale-125"
