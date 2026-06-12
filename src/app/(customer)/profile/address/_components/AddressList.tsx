@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import AddressCard, { type Address } from "./AddressCard";
 import AddressModal from "./AddressModal";
 import { addressApi } from "@/features/address/services/address-api";
@@ -39,6 +40,18 @@ export default function AddressList() {
     void loadAddresses();
     addressApi.getProvinces().then(setProvinces).catch(() => setProvinces([]));
   }, [loadAddresses]);
+
+  // Prevent scrolling when delete confirmation is open
+  useEffect(() => {
+    if (deleteConfirmId) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [deleteConfirmId]);
 
   const handleProvinceChange = useCallback(async (provinceId: number) => {
     if (!provinceId) {
@@ -165,8 +178,8 @@ export default function AddressList() {
         onDistrictChange={handleDistrictChange}
       />
 
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      {deleteConfirmId && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div className="absolute inset-0 bg-[#0f172a]/50" onClick={() => setDeleteConfirmId(null)} />
           <div className="relative z-10 bg-white w-full max-w-sm mx-4 rounded-xl p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
             <div className="mb-4">
@@ -182,7 +195,8 @@ export default function AddressList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -11,6 +11,11 @@ const NAV_ITEMS = [
     icon: "account_balance_wallet",
     href: "/profile/wallet",
   },
+  {
+    label: "Bank",
+    icon: "account_balance",
+    href: "/profile/bank-accounts",
+  },
   { label: "My Orders", icon: "package_2", href: "/profile/orders" },
   { label: "My Reviews", icon: "reviews", href: "/profile/reviews" },
   {
