@@ -34,10 +34,7 @@ const TOP_UP_QUICK_AMOUNTS = [
 ] as const;
 const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
 const TRANSACTION_HISTORY_PAGE_SIZE = 10;
-const SEP_BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "SePay";
-const SEP_BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
-const SEP_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
-const SEP_ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
+// Bank info is provided by the API response — no env vars needed
 
 function getApiError(error: unknown) {
   const err = error as {
@@ -89,10 +86,10 @@ export default function WalletPage() {
   const [isCreatingTopUpQr, setIsCreatingTopUpQr] = useState(false);
   const [isCheckingTopUpStatus, setIsCheckingTopUpStatus] = useState(false);
 
-  const [bankName, setBankName] = useState(SEP_BANK_NAME);
-  const [bankCode, setBankCode] = useState(SEP_BANK_CODE);
-  const [accountNumber, setAccountNumber] = useState(SEP_ACCOUNT_NUMBER);
-  const [accountName, setAccountName] = useState(SEP_ACCOUNT_NAME);
+  const [bankName, setBankName] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   const isWalletActivated = wallet !== null && wallet.hasPin;
   const hasPendingWallet = wallet !== null && !wallet.hasPin;

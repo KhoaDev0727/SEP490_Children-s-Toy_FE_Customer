@@ -10,9 +10,7 @@ import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { useCart } from "@/features/cart/context/CartContext";
 import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
 
-const BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank";
-const ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
-const ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
+// Bank info is provided by the backend API — no env vars needed
 
 interface QRPaymentContentProps {
   orderId?: number;
@@ -30,9 +28,9 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const [amountValue, setAmountValue] = useState<number | null>(null);
   const [isFetchingInfo, setIsFetchingInfo] = useState(true);
 
-  const [bankName, setBankName] = useState(process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "Bank");
-  const [accountNumber, setAccountNumber] = useState(process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "");
-  const [accountName, setAccountName] = useState(process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [expiredByServer, setExpiredByServer] = useState(false);
