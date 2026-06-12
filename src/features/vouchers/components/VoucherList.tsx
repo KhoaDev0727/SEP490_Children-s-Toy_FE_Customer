@@ -68,7 +68,7 @@ export default function VoucherList() {
       (v) => v.voucherCode.toUpperCase() === highlightedCode,
     );
     if (!matched) {
-      toast("Mã voucher từ thông báo không còn khả dụng.", { icon: "ℹ️" });
+      toast("The voucher code from the notification is no longer valid.", { icon: "ℹ️" });
       return;
     }
     // Switch to the right tab so the voucher is visible
@@ -77,7 +77,7 @@ export default function VoucherList() {
     } else {
       setActiveTab("ALL");
     }
-    toast.success("Đây là mã voucher từ thông báo của bạn.");
+    toast.success("This is the voucher code from your notification.");
     // Scroll after render
     const timer = setTimeout(() => {
       if (highlightRef.current) {
@@ -130,11 +130,10 @@ export default function VoucherList() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value as TabValue)}
-                className={`relative py-4 text-sm font-medium transition-all hover:cursor-pointer ${
-                  isActive
-                    ? "text-orange-500 font-semibold"
-                    : "text-slate-600 hover:text-orange-500"
-                }`}
+                className={`relative py-4 text-sm font-medium transition-all hover:cursor-pointer ${isActive
+                  ? "text-orange-500 font-semibold"
+                  : "text-slate-600 hover:text-orange-500"
+                  }`}
               >
                 {tab.label} ({count})
                 {isActive && (
