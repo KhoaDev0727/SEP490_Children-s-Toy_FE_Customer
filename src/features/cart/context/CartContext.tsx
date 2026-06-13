@@ -198,7 +198,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 
       if (eventName === "CartOutOfStock") {
-        toast.error(message || "Some items are out of stock.");
+        toast.error(message || "Some items are out of quantity");
       }
     };
 

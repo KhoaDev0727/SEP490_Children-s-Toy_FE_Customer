@@ -25,6 +25,7 @@ export interface VerifyRegisterOtpRequest {
 export interface LoginRequest {
   email: string;
   password: string;
+  roleId?: number;
 }
 
 export interface ForgotPasswordRequest {

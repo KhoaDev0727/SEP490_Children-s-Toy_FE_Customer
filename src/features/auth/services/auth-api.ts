@@ -35,7 +35,10 @@ export const authApi = {
   },
 
   login: async (payload: LoginRequest): Promise<AuthResponse> => {
-    return axiosClient.post<AuthResponse, LoginRequest>("/auth/login", payload);
+    return axiosClient.post<AuthResponse, LoginRequest>("/auth/login", {
+      ...payload,
+      roleId: 1,
+    });
   },
 
   forgotPassword: async (payload: ForgotPasswordRequest): Promise<void> => {
