@@ -12,7 +12,7 @@ const NAV_ITEMS = [
     href: "/profile/wallet",
   },
   {
-    label: "Bank",
+    label: "My Bank",
     icon: "account_balance",
     href: "/profile/bank-accounts",
   },
