@@ -240,7 +240,7 @@ export default function Header() {
             <div className="flex items-center gap-8">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-                <div 
+                <div
                   className=" rounded-lg text-white"
                   style={{ backgroundColor: "#ff6a00" }}
                 >

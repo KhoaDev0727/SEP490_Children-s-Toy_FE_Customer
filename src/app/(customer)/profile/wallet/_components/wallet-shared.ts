@@ -37,7 +37,7 @@ export type UiTransaction = {
   kind: TransactionKind;
 };
 
-export type PinModalMode = "activate" | "topup" | "viewBalance" | "changePin";
+export type PinModalMode = "activate" | "topup" | "viewBalance" | "changePin" | "withdraw";
 
 export type PinVisibilityField =
   | "pin"
@@ -140,6 +140,11 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
     title = "Top up from bank account";
   }
 
+  if (normalizedType === "withdrawal") {
+    icon = "payments";
+    title = "Withdrawal to bank account";
+  }
+
   if (normalizedType === "refund") {
     icon = "currency_exchange";
     title = txn.reason || (txn.relatedOrderCode ? `Order refund #${txn.relatedOrderCode}` : "Order refund");
@@ -149,11 +154,11 @@ export function mapWalletTransactionToUi(txn: WalletTransactionDto): UiTransacti
   let statusLabel = txn.status;
   let statusClassName = "text-green-600 bg-green-100";
 
-  if (normalizedStatus === "completed") {
+  if (normalizedStatus === "completed" || normalizedStatus === "success") {
     statusLabel = "Successful";
     statusClassName = "text-green-600 bg-green-100";
-  } else if (normalizedStatus === "pending") {
-    statusLabel = "Pending";
+  } else if (normalizedStatus === "pending" || normalizedStatus === "processing") {
+    statusLabel = normalizedStatus === "processing" ? "Processing" : "Pending";
     statusClassName = "text-amber-700 bg-amber-100";
   } else if (normalizedStatus === "failed" || normalizedStatus === "cancelled") {
     statusLabel = "Failed";
@@ -183,6 +188,7 @@ export function getPinModalTitle(mode: PinModalMode, hasPendingWallet = false) {
     return hasPendingWallet ? "Set Up Wallet PIN" : "Activate Wallet";
   }
   if (mode === "topup") return "Verify PIN for Top Up";
+  if (mode === "withdraw") return "Verify PIN for Withdrawal";
   if (mode === "changePin") return "Change Wallet PIN";
   return "Verify PIN for Balance";
 }
@@ -195,6 +201,9 @@ export function getPinModalDescription(mode: PinModalMode, hasPendingWallet = fa
   }
   if (mode === "topup") {
     return "Enter your 6-digit PIN to verify TOP_UP action.";
+  }
+  if (mode === "withdraw") {
+    return "Enter your 6-digit PIN to verify WITHDRAW action.";
   }
   if (mode === "changePin") {
     return "Enter old PIN and set your new 6-digit wallet PIN.";

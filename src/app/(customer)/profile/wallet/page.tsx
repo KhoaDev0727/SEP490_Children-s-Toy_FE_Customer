@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import { walletApi } from "@/features/wallet/services/wallet-api";
@@ -20,6 +21,7 @@ import WalletActivationState from "./_components/WalletActivationState";
 import WalletOverview from "./_components/WalletOverview";
 import WalletPinModal from "./_components/WalletPinModal";
 import WalletTopUpSePayPanel from "./_components/WalletTopUpSePayPanel";
+import WithdrawalForm from "./withdraw/_components/WithdrawalForm";
 import {
   DEFAULT_PIN_VISIBILITY,
   getValidationErrorMessage,
@@ -48,6 +50,7 @@ function getApiError(error: unknown) {
 }
 
 export default function WalletPage() {
+  const router = useRouter();
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [transactions, setTransactions] = useState<UiTransaction[]>([]);
   const [isWalletLoading, setIsWalletLoading] = useState(true);
@@ -78,6 +81,8 @@ export default function WalletPage() {
     Record<PinVisibilityField, boolean>
   >(() => ({ ...DEFAULT_PIN_VISIBILITY }));
   const [isTopUpPanelOpen, setIsTopUpPanelOpen] = useState(false);
+  const [isWithdrawPanelOpen, setIsWithdrawPanelOpen] = useState(false);
+  const [withdrawSuccessCallback, setWithdrawSuccessCallback] = useState<(() => void) | null>(null);
   const [topUpToken, setTopUpToken] = useState<string | null>(null);
   const [topUpAmount, setTopUpAmount] = useState<number>(DEFAULT_TOP_UP_AMOUNT);
   const [topUpAttemptCode, setTopUpAttemptCode] = useState("");
@@ -189,6 +194,11 @@ export default function WalletPage() {
       return;
     setIsPinModalOpen(false);
     resetPinModalFields();
+  };
+
+  const handleRequestPinVerification = (onSuccess: () => void) => {
+    setWithdrawSuccessCallback(() => onSuccess);
+    openPinModal("withdraw");
   };
 
   const togglePinVisibility = (field: PinVisibilityField) => {
@@ -319,6 +329,10 @@ export default function WalletPage() {
       pinModalMode === "viewBalance"
         ? verifyWalletPinSchema.safeParse({ pin, actionType: "VIEW_BALANCE" })
         : null;
+    const withdrawValidation =
+      pinModalMode === "withdraw"
+        ? verifyWalletPinSchema.safeParse({ pin, actionType: "VIEW_BALANCE" })
+        : null;
 
     if (activationValidation && !activationValidation.success) {
       toast.error(getValidationErrorMessage(activationValidation.error));
@@ -332,6 +346,11 @@ export default function WalletPage() {
 
     if (viewBalanceValidation && !viewBalanceValidation.success) {
       toast.error(getValidationErrorMessage(viewBalanceValidation.error));
+      return;
+    }
+
+    if (withdrawValidation && !withdrawValidation.success) {
+      toast.error(getValidationErrorMessage(withdrawValidation.error));
       return;
     }
 
@@ -368,6 +387,13 @@ export default function WalletPage() {
         toast.success("PIN verified. Creating top-up QR...");
 
         await createTopUpQrForAmount(DEFAULT_TOP_UP_AMOUNT, newTopUpToken);
+      } else if (pinModalMode === "withdraw") {
+        await walletApi.verifyPin(withdrawValidation!.data);
+        toast.success("PIN verified successfully.");
+        if (withdrawSuccessCallback) {
+          withdrawSuccessCallback();
+        }
+        setWithdrawSuccessCallback(null);
       } else {
         await walletApi.verifyPin(viewBalanceValidation!.data);
         setIsBalanceVisible(true);
@@ -496,6 +522,16 @@ export default function WalletPage() {
               resetTopUpPanelState();
             }}
           />
+        ) : isWithdrawPanelOpen ? (
+          <WithdrawalForm
+            availableBalance={currentBalance}
+            onBack={() => setIsWithdrawPanelOpen(false)}
+            onSuccessWithdrawal={() => {
+              setIsWithdrawPanelOpen(false);
+              void loadWalletData();
+            }}
+            onRequestPinVerification={handleRequestPinVerification}
+          />
         ) : (
           <WalletOverview
             isBalanceVisible={isBalanceVisible}
@@ -509,6 +545,9 @@ export default function WalletPage() {
             hasPreviousTransactionPage={hasPreviousTransactionPage}
             hasNextTransactionPage={hasNextTransactionPage}
             onTopUp={() => openPinModal("topup")}
+            onWithdraw={() => {
+              setIsWithdrawPanelOpen(true);
+            }}
             onToggleBalanceVisibility={() => {
               if (isBalanceVisible) {
                 setIsBalanceVisible(false);

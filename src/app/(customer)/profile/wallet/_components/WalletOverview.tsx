@@ -18,6 +18,7 @@ type WalletOverviewProps = {
   hasPreviousTransactionPage: boolean;
   hasNextTransactionPage: boolean;
   onTopUp: () => void;
+  onWithdraw: () => void;
   onToggleBalanceVisibility: () => void;
   onChangePin: () => void;
   onTransactionPageChange: (pageNumber: number) => void;
@@ -35,6 +36,7 @@ export default function WalletOverview({
   hasPreviousTransactionPage,
   hasNextTransactionPage,
   onTopUp,
+  onWithdraw,
   onToggleBalanceVisibility,
   onChangePin,
   onTransactionPageChange,
@@ -97,6 +99,14 @@ export default function WalletOverview({
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 Top Up
+              </button>
+              <button
+                type="button"
+                onClick={onWithdraw}
+                className="bg-white text-[#ff4f00] px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#fff5f0] transition-colors flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">payments</span>
+                Withdraw
               </button>
               <button
                 type="button"
@@ -185,9 +195,8 @@ export default function WalletOverview({
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p
-                      className={`text-lg font-bold mb-1 ${
-                        transaction.amount >= 0 ? "text-emerald-600" : "text-red-500"
-                      }`}
+                      className={`text-lg font-bold mb-1 ${transaction.amount >= 0 ? "text-emerald-600" : "text-red-500"
+                        }`}
                     >
                       {formatVnd(transaction.amount)}
                     </p>
@@ -259,11 +268,10 @@ export default function WalletOverview({
               type="button"
               disabled={isTransactionsLoading}
               onClick={() => onTransactionPageChange(page)}
-              className={`px-3 py-1.5 text-sm rounded-md border ${
-                page === transactionPageNumber
+              className={`px-3 py-1.5 text-sm rounded-md border ${page === transactionPageNumber
                   ? "border-[#ff4f00] bg-[#ff4f00] text-white"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
               {page}
             </button>
