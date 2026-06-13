@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import HeroBanner from "@/features/home/components/HeroBanner";
 import FlashSale from "@/features/home/components/FlashSale";
-import RecentlyViewed from "@/features/home/components/RecentlyViewed";
 import RecommendationWidget from "@/components/recommendation/RecommendationWidget";
 import { WIDGET_CODES } from "@/features/recommendation/types/recommendation";
 
@@ -25,8 +24,6 @@ export default function Home() {
         title="Recommended for You"
         source="home_personal"
       />
-
-      <RecentlyViewed />
     </div>
   );
 }
