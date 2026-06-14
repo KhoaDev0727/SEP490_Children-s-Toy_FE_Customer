@@ -38,7 +38,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SidebarProvider>
                   <TrackingBootstrapper />
                   {children}
-                  <Toaster position="top-right" />
+                  <Toaster
+                    position="top-right"
+                    containerStyle={{ zIndex: 9999999 }}
+                    toastOptions={{
+                      style: {
+                        zIndex: 9999999,
+                      },
+                    }}
+                  />
                 </SidebarProvider>
               </NotificationRealtimeProvider>
             </ThemeProvider>

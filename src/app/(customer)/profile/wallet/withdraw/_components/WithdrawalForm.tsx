@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import BankAccountSheet from "./BankAccountSheet";
 import { useWithdrawalPolling } from "./useWithdrawalPolling";
 import { formatVND, maskAccountNumber } from "./types";
 import WithdrawSuccessModal from "./WithdrawSuccessModal";
 import { useRouter } from "next/navigation";
-import type { SavedBankAccount } from "@/features/profile/types/bank-account";
+import type { SavedBankAccount, BankLookupItem } from "@/features/profile/types/bank-account";
+import { bankAccountApi } from "@/features/profile/services/bank-account-api";
 import { withdrawalApi } from "@/features/withdrawal/services/withdrawal-api";
 import type { WithdrawalDto } from "@/features/withdrawal/types/withdrawal";
 
@@ -51,6 +52,13 @@ export default function WithdrawalForm({
   } | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [banks, setBanks] = useState<BankLookupItem[]>([]);
+
+  useEffect(() => {
+    bankAccountApi.getBanksList()
+      .then(setBanks)
+      .catch((err) => console.error("Failed to load banks list:", err));
+  }, []);
 
   const numericAmount = parseAmount(rawAmount);
   const afterBalance = availableBalance - numericAmount;
@@ -298,15 +306,31 @@ export default function WithdrawalForm({
               className="w-full flex items-center justify-between bg-white border border-slate-200 hover:border-slate-400 rounded-xl p-4 transition-all text-left focus:outline-none focus:ring-1 focus:ring-[#ff4f00] shadow-sm group"
             >
               {selectedAccount ? (
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ backgroundColor: "#94a3b8" }}>
-                    {selectedAccount.bankShortName?.slice(0, 3)}
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="font-semibold text-slate-900 truncate">{selectedAccount.bankName}</p>
-                    <p className="text-sm text-slate-500 truncate">{selectedAccount.accountName} — ****{selectedAccount.accountNumber.slice(-4)}</p>
-                  </div>
-                </div>
+                (() => {
+                  const matchedBank = banks.find((b) => b.bin === selectedAccount.bankBin || b.code === selectedAccount.bankCode);
+                  const bankIcon = matchedBank?.icon_url || matchedBank?.logo_url;
+                  return (
+                    <div className="flex items-center gap-4">
+                      {bankIcon ? (
+                        <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-100 flex items-center justify-center bg-white shrink-0 p-1">
+                          <img
+                            src={bankIcon}
+                            alt={selectedAccount.bankShortName}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ backgroundColor: "#94a3b8" }}>
+                          {selectedAccount.bankShortName?.slice(0, 3)}
+                        </div>
+                      )}
+                      <div className="overflow-hidden">
+                        <p className="font-semibold text-slate-900 truncate">{selectedAccount.bankName}</p>
+                        <p className="text-sm text-slate-500 truncate">{selectedAccount.accountName} — ****{selectedAccount.accountNumber.slice(-4)}</p>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <span className="text-slate-400 text-sm">Select a bank account...</span>
               )}

@@ -146,7 +146,7 @@ export default function NotificationPopup() {
       {/* Popup */}
       {visible && (
         <div
-          className={`absolute top-full right-0 mt-2 w-80 bg-white shadow-xl rounded-xl border border-gray-200/80 overflow-hidden z-[60]
+          className={`absolute top-full right-0 mt-2 w-95 bg-white shadow-xl rounded-xl border border-gray-200/80 overflow-hidden z-[60]
             transition-all duration-200
             ${open ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"}
           `}
