@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import { walletApi } from "@/features/wallet/services/wallet-api";
@@ -20,6 +21,7 @@ import WalletActivationState from "./_components/WalletActivationState";
 import WalletOverview from "./_components/WalletOverview";
 import WalletPinModal from "./_components/WalletPinModal";
 import WalletTopUpSePayPanel from "./_components/WalletTopUpSePayPanel";
+import WithdrawalForm from "./withdraw/_components/WithdrawalForm";
 import {
   DEFAULT_PIN_VISIBILITY,
   getValidationErrorMessage,
@@ -28,16 +30,15 @@ import {
   type PinVisibilityField,
   type UiTransaction,
 } from "./_components/wallet-shared";
+import { withdrawalApi } from "@/features/withdrawal/services/withdrawal-api";
+import type { WithdrawalDto } from "@/features/withdrawal/types/withdrawal";
 
 const TOP_UP_QUICK_AMOUNTS = [
   10000, 20000, 50000, 100000, 200000, 500000,
 ] as const;
 const DEFAULT_TOP_UP_AMOUNT = TOP_UP_QUICK_AMOUNTS[0];
 const TRANSACTION_HISTORY_PAGE_SIZE = 10;
-const SEP_BANK_NAME = process.env.NEXT_PUBLIC_SEPAY_BANK_NAME ?? "SePay";
-const SEP_BANK_CODE = process.env.NEXT_PUBLIC_SEPAY_BANK_CODE ?? "";
-const SEP_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NUMBER ?? "";
-const SEP_ACCOUNT_NAME = process.env.NEXT_PUBLIC_SEPAY_ACCOUNT_NAME ?? "";
+// Bank info is provided by the API response — no env vars needed
 
 function getApiError(error: unknown) {
   const err = error as {
@@ -51,6 +52,7 @@ function getApiError(error: unknown) {
 }
 
 export default function WalletPage() {
+  const router = useRouter();
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [transactions, setTransactions] = useState<UiTransaction[]>([]);
   const [isWalletLoading, setIsWalletLoading] = useState(true);
@@ -61,6 +63,14 @@ export default function WalletPage() {
   const [hasPreviousTransactionPage, setHasPreviousTransactionPage] =
     useState(false);
   const [hasNextTransactionPage, setHasNextTransactionPage] = useState(false);
+
+  const [withdrawals, setWithdrawals] = useState<WithdrawalDto[]>([]);
+  const [isWithdrawalsLoading, setIsWithdrawalsLoading] = useState(false);
+  const [withdrawalPageNumber, setWithdrawalPageNumber] = useState(1);
+  const [withdrawalTotalPages, setWithdrawalTotalPages] = useState(1);
+  const [withdrawalTotalCount, setWithdrawalTotalCount] = useState(0);
+  const [hasPreviousWithdrawalPage, setHasPreviousWithdrawalPage] = useState(false);
+  const [hasNextWithdrawalPage, setHasNextWithdrawalPage] = useState(false);
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<PinModalMode>("activate");
@@ -81,6 +91,8 @@ export default function WalletPage() {
     Record<PinVisibilityField, boolean>
   >(() => ({ ...DEFAULT_PIN_VISIBILITY }));
   const [isTopUpPanelOpen, setIsTopUpPanelOpen] = useState(false);
+  const [isWithdrawPanelOpen, setIsWithdrawPanelOpen] = useState(false);
+  const [withdrawSuccessCallback, setWithdrawSuccessCallback] = useState<((pin: string) => void) | null>(null);
   const [topUpToken, setTopUpToken] = useState<string | null>(null);
   const [topUpAmount, setTopUpAmount] = useState<number>(DEFAULT_TOP_UP_AMOUNT);
   const [topUpAttemptCode, setTopUpAttemptCode] = useState("");
@@ -89,10 +101,10 @@ export default function WalletPage() {
   const [isCreatingTopUpQr, setIsCreatingTopUpQr] = useState(false);
   const [isCheckingTopUpStatus, setIsCheckingTopUpStatus] = useState(false);
 
-  const [bankName, setBankName] = useState(SEP_BANK_NAME);
-  const [bankCode, setBankCode] = useState(SEP_BANK_CODE);
-  const [accountNumber, setAccountNumber] = useState(SEP_ACCOUNT_NUMBER);
-  const [accountName, setAccountName] = useState(SEP_ACCOUNT_NAME);
+  const [bankName, setBankName] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   const isWalletActivated = wallet !== null && wallet.hasPin;
   const hasPendingWallet = wallet !== null && !wallet.hasPin;
@@ -130,6 +142,23 @@ export default function WalletPage() {
     }
   }, []);
 
+  const loadWithdrawalPage = useCallback(async (page: number) => {
+    setIsWithdrawalsLoading(true);
+    try {
+      const res = await withdrawalApi.getMyWithdrawals(page, 10);
+      setWithdrawals(res.items);
+      setWithdrawalPageNumber(res.pageNumber);
+      setWithdrawalTotalPages(res.totalPages || 1);
+      setWithdrawalTotalCount(res.totalCount);
+      setHasPreviousWithdrawalPage(res.hasPreviousPage);
+      setHasNextWithdrawalPage(res.hasNextPage);
+    } catch {
+      // Non-critical — don't toast; the tab will show empty state
+    } finally {
+      setIsWithdrawalsLoading(false);
+    }
+  }, []);
+
   const loadWalletData = useCallback(async () => {
     setIsWalletLoading(true);
 
@@ -137,6 +166,7 @@ export default function WalletPage() {
       const walletResponse = await walletApi.getMyWallet();
       setWallet(walletResponse);
       await loadTransactionPage(1);
+      void loadWithdrawalPage(1);
     } catch (error) {
       const apiError = getApiError(error);
       if (apiError.status === 404 || apiError.code === "NOT_FOUND") {
@@ -153,7 +183,7 @@ export default function WalletPage() {
     } finally {
       setIsWalletLoading(false);
     }
-  }, [loadTransactionPage]);
+  }, [loadTransactionPage, loadWithdrawalPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -166,6 +196,12 @@ export default function WalletPage() {
     if (nextPage < 1 || nextPage > transactionTotalPages) return;
     if (nextPage === transactionPageNumber) return;
     void loadTransactionPage(nextPage);
+  };
+
+  const handleWithdrawalPageChange = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > withdrawalTotalPages) return;
+    if (nextPage === withdrawalPageNumber) return;
+    void loadWithdrawalPage(nextPage);
   };
 
   const resetPinModalFields = () => {
@@ -192,6 +228,11 @@ export default function WalletPage() {
       return;
     setIsPinModalOpen(false);
     resetPinModalFields();
+  };
+
+  const handleRequestPinVerification = (onPinCaptured: (pin: string) => void) => {
+    setWithdrawSuccessCallback(() => onPinCaptured);
+    openPinModal("withdraw");
   };
 
   const togglePinVisibility = (field: PinVisibilityField) => {
@@ -322,6 +363,10 @@ export default function WalletPage() {
       pinModalMode === "viewBalance"
         ? verifyWalletPinSchema.safeParse({ pin, actionType: "VIEW_BALANCE" })
         : null;
+    const withdrawValidation =
+      pinModalMode === "withdraw"
+        ? verifyWalletPinSchema.safeParse({ pin, actionType: "WITHDRAWAL" })
+        : null;
 
     if (activationValidation && !activationValidation.success) {
       toast.error(getValidationErrorMessage(activationValidation.error));
@@ -335,6 +380,11 @@ export default function WalletPage() {
 
     if (viewBalanceValidation && !viewBalanceValidation.success) {
       toast.error(getValidationErrorMessage(viewBalanceValidation.error));
+      return;
+    }
+
+    if (withdrawValidation && !withdrawValidation.success) {
+      toast.error(getValidationErrorMessage(withdrawValidation.error));
       return;
     }
 
@@ -371,6 +421,17 @@ export default function WalletPage() {
         toast.success("PIN verified. Creating top-up QR...");
 
         await createTopUpQrForAmount(DEFAULT_TOP_UP_AMOUNT, newTopUpToken);
+      } else if (pinModalMode === "withdraw") {
+        // Close the modal first so the user sees the WithdrawalForm immediately,
+        // then fire the async API call — the form will switch to its processing step.
+        const capturedPin = pin;
+        const capturedCallback = withdrawSuccessCallback;
+        setWithdrawSuccessCallback(null);
+        closePinModal();
+        if (capturedCallback) {
+          await capturedCallback(capturedPin);
+        }
+        return; // skip the generic closePinModal() at the end
       } else {
         await walletApi.verifyPin(viewBalanceValidation!.data);
         setIsBalanceVisible(true);
@@ -499,6 +560,16 @@ export default function WalletPage() {
               resetTopUpPanelState();
             }}
           />
+        ) : isWithdrawPanelOpen ? (
+          <WithdrawalForm
+            availableBalance={wallet?.availableBalance ?? currentBalance}
+            onBack={() => setIsWithdrawPanelOpen(false)}
+            onSuccessWithdrawal={() => {
+              setIsWithdrawPanelOpen(false);
+              void loadWalletData();
+            }}
+            onRequestPin={handleRequestPinVerification}
+          />
         ) : (
           <WalletOverview
             isBalanceVisible={isBalanceVisible}
@@ -511,7 +582,17 @@ export default function WalletPage() {
             transactionTotalCount={transactionTotalCount}
             hasPreviousTransactionPage={hasPreviousTransactionPage}
             hasNextTransactionPage={hasNextTransactionPage}
+            withdrawals={withdrawals}
+            isWithdrawalsLoading={isWithdrawalsLoading}
+            withdrawalPageNumber={withdrawalPageNumber}
+            withdrawalTotalPages={withdrawalTotalPages}
+            withdrawalTotalCount={withdrawalTotalCount}
+            hasPreviousWithdrawalPage={hasPreviousWithdrawalPage}
+            hasNextWithdrawalPage={hasNextWithdrawalPage}
             onTopUp={() => openPinModal("topup")}
+            onWithdraw={() => {
+              setIsWithdrawPanelOpen(true);
+            }}
             onToggleBalanceVisibility={() => {
               if (isBalanceVisible) {
                 setIsBalanceVisible(false);
@@ -521,6 +602,7 @@ export default function WalletPage() {
             }}
             onChangePin={() => openPinModal("changePin")}
             onTransactionPageChange={handleTransactionPageChange}
+            onWithdrawalPageChange={handleWithdrawalPageChange}
           />
         )}
       </section>

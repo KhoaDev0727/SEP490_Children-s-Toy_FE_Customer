@@ -131,7 +131,7 @@ export default function NotificationPopup() {
       {/* Bell button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2 hover:bg-gray-100 rounded-full relative dark:hover:bg-slate-800 dark:text-slate-300 text-gray-600 transition-colors"
+        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative text-slate-600 dark:text-slate-300 transition-colors"
         aria-label="Notifications"
       >
         <span className="material-symbols-outlined">notifications</span>

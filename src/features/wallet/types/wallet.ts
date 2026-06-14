@@ -1,11 +1,13 @@
 export type WalletStatus = "Active" | "Frozen" | "Closed" | string;
 
-export type WalletActionType = "PAYMENT" | "VIEW_BALANCE" | "TOP_UP";
+export type WalletActionType = "PAYMENT" | "VIEW_BALANCE" | "TOP_UP" | "WITHDRAWAL";
 
 export interface WalletDto {
   walletId: number;
   currency: string;
   balance: number;
+  lockedBalance: number;
+  availableBalance: number;
   status: WalletStatus;
   hasPin: boolean;
 }
