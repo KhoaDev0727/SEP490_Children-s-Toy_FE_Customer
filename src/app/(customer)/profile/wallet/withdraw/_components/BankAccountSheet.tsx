@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { bankAccountApi } from "@/features/profile/services/bank-account-api";
-import type { SavedBankAccount } from "@/features/profile/types/bank-account";
+import type { SavedBankAccount, BankLookupItem } from "@/features/profile/types/bank-account";
 
 interface BankAccountSheetProps {
   selectedId: number | null;
@@ -30,13 +30,23 @@ function getBankColor(shortName: string): string {
 
 export default function BankAccountSheet({ selectedId, onSelect, onClose }: BankAccountSheetProps) {
   const [accounts, setAccounts] = useState<SavedBankAccount[]>([]);
+  const [banks, setBanks] = useState<BankLookupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    bankAccountApi.getMyBankAccounts()
-      .then(setAccounts)
+    Promise.all([
+      bankAccountApi.getMyBankAccounts(),
+      bankAccountApi.getBanksList().catch((err) => {
+        console.error("Failed to load banks list:", err);
+        return [] as BankLookupItem[];
+      }),
+    ])
+      .then(([accountsData, banksData]) => {
+        setAccounts(accountsData);
+        setBanks(banksData);
+      })
       .catch(() => setError("Unable to load bank accounts."))
       .finally(() => setLoading(false));
   }, []);
@@ -81,6 +91,8 @@ export default function BankAccountSheet({ selectedId, onSelect, onClose }: Bank
               const isSelected = selectedId === account.savedBankAccountId;
               const color = getBankColor(account.bankShortName);
               const last4 = account.accountNumber.slice(-4);
+              const matchedBank = banks.find((b) => b.bin === account.bankBin || b.code === account.bankCode);
+              const bankIcon = matchedBank?.icon_url || matchedBank?.logo_url;
               return (
                 <button
                   key={account.savedBankAccountId}
@@ -91,12 +103,22 @@ export default function BankAccountSheet({ selectedId, onSelect, onClose }: Bank
                       : "border-slate-200 hover:border-[#ff4f00]/50 bg-white hover:bg-slate-50"
                   }`}
                 >
-                  <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
-                    style={{ backgroundColor: color }}
-                  >
-                    {account.bankShortName?.slice(0, 3)}
-                  </div>
+                  {bankIcon ? (
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-100 flex items-center justify-center bg-white shrink-0 p-1">
+                      <img
+                        src={bankIcon}
+                        alt={account.bankShortName}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
+                      style={{ backgroundColor: color }}
+                    >
+                      {account.bankShortName?.slice(0, 3)}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 text-sm">{account.bankName}</p>
                     <p className="text-xs text-slate-500 truncate">
