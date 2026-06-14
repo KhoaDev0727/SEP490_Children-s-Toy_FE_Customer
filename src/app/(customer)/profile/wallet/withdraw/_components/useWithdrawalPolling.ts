@@ -1,26 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { WithdrawalDetail, WithdrawalStatus } from "./types";
+import { withdrawalApi } from "@/features/withdrawal/services/withdrawal-api";
+import type { WithdrawalDto, WithdrawalStatus } from "@/features/withdrawal/types/withdrawal";
 
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_DURATION_MS = 120000; // 2 minutes
+const MAX_POLL_DURATION_MS = 120_000; // 2 minutes
 
 interface UseWithdrawalPollingResult {
-  data: WithdrawalDetail | null;
+  data: WithdrawalDto | null;
   isTimedOut: boolean;
   error: string | null;
 }
 
 export function useWithdrawalPolling(
-  withdrawalId: string,
-  onFinished: (status: WithdrawalStatus, data: WithdrawalDetail) => void
+  withdrawalId: number | null,
+  onFinished: (status: WithdrawalStatus, data: WithdrawalDto) => void
 ): UseWithdrawalPollingResult {
-  const [data, setData] = useState<WithdrawalDetail | null>(null);
+  const [data, setData] = useState<WithdrawalDto | null>(null);
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep latest callback without re-triggering effect
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
 
@@ -30,41 +30,28 @@ export function useWithdrawalPolling(
     let cancelled = false;
     const startedAt = Date.now();
 
-    const fetchStatus = async () => {
+    const fetchStatus = async (): Promise<boolean> => {
       try {
-        const queryParams = typeof window !== "undefined" ? window.location.search : "";
-        const cacheBuster = `_t=${Date.now()}`;
-        const separator = queryParams ? "&" : "?";
-        const res = await fetch(`/api/withdrawals/${withdrawalId}${queryParams}${separator}${cacheBuster}`, {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error(`Request failed with status ${res.status}`);
-        }
-
-        const json: WithdrawalDetail = await res.json();
-        if (cancelled) return;
+        const json = await withdrawalApi.getWithdrawal(withdrawalId);
+        if (cancelled) return false;
 
         setData(json);
         setError(null);
 
-        if (json.status === "SUCCESS" || json.status === "FAILED") {
+        if (json.status === "SUCCESS" || json.status === "FAILED" || json.status === "CANCELLED") {
           onFinishedRef.current(json.status, json);
-          return true; // Stop polling
+          return true;
         }
 
         if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
           setIsTimedOut(true);
-          return true; // Stop polling
+          return true;
         }
 
         return false;
       } catch (err) {
         if (cancelled) return false;
-        setError(
-          err instanceof Error ? err.message : "An error occurred while fetching withdrawal status"
-        );
+        setError(err instanceof Error ? err.message : "Failed to check transaction status");
         return false;
       }
     };
@@ -78,7 +65,6 @@ export function useWithdrawalPolling(
       }
     };
 
-    // First execution immediately, then tick
     void tick();
 
     return () => {
