@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  ALLOWED_SEX_OPTIONS,
+  FULL_NAME_MAX_LENGTH,
+  FULL_NAME_MIN_LENGTH,
+  getChildDobBounds,
+  MAX_CHILD_AGE_YEARS,
+  NICK_NAME_MAX_LENGTH,
+} from "@/features/profile/constants/children.constants";
+import {
+  ChildFormValues,
+  validateChildForm,
+} from "@/features/profile/types/children.schema";
 import { Child, CreateChildPayload, UpdateChildPayload } from "@/features/profile/types/children";
 
 type Props = {
@@ -11,24 +23,23 @@ type Props = {
   editTarget?: Child | null;
 };
 
+type FieldErrors = Partial<Record<keyof ChildFormValues, string>>;
+
 export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget }: Props) {
   const [fullName, setFullName] = useState("");
   const [nickName, setNickName] = useState("");
   const [dob, setDob] = useState("");
   const [sexId, setSexId] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const today = new Date();
-  const maxDob = today.toISOString().split("T")[0];
-  const minDob = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate())
-    .toISOString()
-    .split("T")[0];
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const { minDob, maxDob } = getChildDobBounds();
 
   useEffect(() => {
     if (isOpen) {
+      setFieldErrors({});
       if (editTarget) {
         setFullName(editTarget.fullName);
         setNickName(editTarget.nickName || "");
-        // Format ISO date to YYYY-MM-DD for input type="date"
         setDob(editTarget.dob ? editTarget.dob.split("T")[0] : "");
         setSexId(editTarget.sexId || 1);
       } else {
@@ -40,7 +51,6 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
     }
   }, [editTarget, isOpen]);
 
-  // Prevent scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -54,21 +64,37 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
 
   if (!isOpen) return null;
 
+  const clearFieldError = (field: keyof ChildFormValues) => {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !dob.trim()) return;
+
+    const validation = validateChildForm(
+      { fullName, nickName, dob, sexId },
+      Boolean(editTarget),
+    );
+
+    if (!validation.success) {
+      setFieldErrors(validation.fieldErrors);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      // Ensure we send the date correctly without timezone shifts
-      // backend expects DateTime, so we can send YYYY-MM-DDT00:00:00Z
       const isoDob = `${dob}T00:00:00Z`;
 
       await onSave({
         fullName: fullName.trim(),
         nickName: nickName.trim() || null,
         dob: isoDob,
-        sexId
+        sexId,
       });
       onClose();
     } catch (error) {
@@ -77,6 +103,17 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
       setIsSubmitting(false);
     }
   };
+
+  const inputErrorClass = (field: keyof ChildFormValues) =>
+    fieldErrors[field] ? "border-red-400 focus:border-red-500 focus:ring-red-500" : "";
+
+  const charCounterClass = (current: number, max: number) =>
+    current >= max
+      ? "text-red-500 font-medium"
+      : current >= max - 10
+        ? "text-amber-500"
+        : "text-gray-400";
+
   const modal = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200"
@@ -88,12 +125,9 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
         onClick={onClose}
       />
 
-      {/* Modal Card */}
       <div className="relative bg-white w-full max-w-md rounded-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-200/80 overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Subtle decorative gradient background */}
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#ff4f00]/5 to-transparent pointer-events-none" />
 
-        {/* Header */}
         <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between relative bg-white/80 backdrop-blur-xl">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
@@ -108,37 +142,66 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
           </button>
         </div>
 
-        {/* Form Body */}
         <form id="child-form" onSubmit={handleSubmit} className="px-6 py-6 space-y-5 bg-white">
           <div className="space-y-1.5">
-            <label htmlFor="input-fullName" className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 ml-1">
-              Full Name
-            </label>
+            <div className="flex items-center justify-between ml-1 mr-1">
+              <label htmlFor="input-fullName" className="block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                Full Name
+              </label>
+              <span className={`text-xs tabular-nums ${charCounterClass(fullName.length, FULL_NAME_MAX_LENGTH)}`}>
+                {fullName.length}/{FULL_NAME_MAX_LENGTH}
+              </span>
+            </div>
             <input
               id="input-fullName"
               type="text"
               required
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                clearFieldError("fullName");
+              }}
               placeholder="e.g. John Doe"
               disabled={isSubmitting}
-              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
+              maxLength={FULL_NAME_MAX_LENGTH}
+              className={`w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 ${inputErrorClass("fullName")}`}
             />
+            <p className="text-xs text-gray-400 ml-1">
+              {FULL_NAME_MIN_LENGTH}–{FULL_NAME_MAX_LENGTH} characters required
+            </p>
+            {fieldErrors.fullName && (
+              <p className="text-xs text-red-500 ml-1">{fieldErrors.fullName}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="input-nickName" className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 ml-1">
-              Nickname <span className="text-gray-400 font-normal lowercase tracking-normal">(Optional)</span>
-            </label>
+            <div className="flex items-center justify-between ml-1 mr-1">
+              <label htmlFor="input-nickName" className="block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                Nickname <span className="text-gray-400 font-normal lowercase tracking-normal">(Optional)</span>
+              </label>
+              <span className={`text-xs tabular-nums ${charCounterClass(nickName.length, NICK_NAME_MAX_LENGTH)}`}>
+                {nickName.length}/{NICK_NAME_MAX_LENGTH}
+              </span>
+            </div>
             <input
               id="input-nickName"
               type="text"
               value={nickName}
-              onChange={(e) => setNickName(e.target.value)}
+              onChange={(e) => {
+                setNickName(e.target.value);
+                clearFieldError("nickName");
+              }}
               placeholder="e.g. Junior, Sunny..."
               disabled={isSubmitting}
-              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
+              maxLength={NICK_NAME_MAX_LENGTH}
+              className={`w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 ${inputErrorClass("nickName")}`}
             />
+            <p className="text-xs text-gray-400 ml-1">
+              Max {NICK_NAME_MAX_LENGTH} characters
+            </p>
+            {fieldErrors.nickName && (
+              <p className="text-xs text-red-500 ml-1">{fieldErrors.nickName}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -150,42 +213,49 @@ export default function AddEditChildModal({ isOpen, onClose, onSave, editTarget 
               type="date"
               required
               value={dob}
-              onChange={(e) => setDob(e.target.value)}
+              onChange={(e) => {
+                setDob(e.target.value);
+                clearFieldError("dob");
+              }}
               disabled={isSubmitting}
               min={minDob}
               max={maxDob}
-              className="w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600"
+              className={`w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 placeholder:text-gray-400 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 ${inputErrorClass("dob")}`}
             />
+            <p className="text-xs text-gray-400 ml-1">
+              Allowed: child age 0–{MAX_CHILD_AGE_YEARS} years (DOB from {minDob} to {maxDob})
+            </p>
+            {fieldErrors.dob && (
+              <p className="text-xs text-red-500 ml-1">{fieldErrors.dob}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 ml-1">
+          <div className="space-y-1.5">
+            <label htmlFor="input-sexId" className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 ml-1">
               Gender
             </label>
-            <div className="flex gap-3">
-              {[
-                { id: 1, label: "Male", icon: "👦" },
-                { id: 2, label: "Female", icon: "👧" },
-              ].map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setSexId(g.id)}
-                  disabled={isSubmitting}
-                  className={`flex-1 py-4 rounded-xl text-sm font-semibold border-2 transition-all duration-300 ${sexId === g.id
-                    ? "border-[#ff4f00] bg-[#ff4f00]/5 text-[#ff4f00] shadow-sm"
-                    : "bg-white text-gray-900 border-gray-200 hover:border-gray-400 hover:shadow-sm"
-                    } disabled:opacity-50`}
-                >
-                  <span className="mr-2 text-xl">{g.icon}</span>
-                  {g.label}
-                </button>
+            <select
+              id="input-sexId"
+              value={sexId}
+              onChange={(e) => {
+                setSexId(Number(e.target.value));
+                clearFieldError("sexId");
+              }}
+              disabled={isSubmitting}
+              className={`w-full rounded-xl border border-gray-200/80 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-[#ff4f00] focus:ring-1 focus:ring-[#ff4f00] text-gray-900 text-sm p-4 outline-none transition-all duration-300 font-medium disabled:opacity-60 disabled:bg-gray-100/50 disabled:cursor-not-allowed disabled:text-gray-600 ${inputErrorClass("sexId")}`}
+            >
+              {ALLOWED_SEX_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
               ))}
-            </div>
+            </select>
+            {fieldErrors.sexId && (
+              <p className="text-xs text-red-500 ml-1">{fieldErrors.sexId}</p>
+            )}
           </div>
         </form>
 
-        {/* Footer */}
         <div className="px-6 py-5 bg-white border-t border-gray-100 flex justify-end gap-3 rounded-b-xl">
           <button
             type="button"
