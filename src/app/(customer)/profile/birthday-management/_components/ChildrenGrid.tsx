@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import ChildCard from "./ChildCard";
 import AddEditChildModal from "./AddEditChildModal";
+import {
+  MAX_CHILD_PROFILE_EDITS,
+  MAX_CHILDREN_PER_USER,
+} from "@/features/profile/constants/children.constants";
 import { childrenApi } from "@/features/profile/services/children-api";
 import { Child, CreateChildPayload, UpdateChildPayload } from "@/features/profile/types/children";
 import { toast } from "react-hot-toast";
 import type { AxiosError } from "axios";
 
 export default function ChildrenGrid() {
-  const maxChildProfileEdits = 2;
   const [children, setChildren] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -22,7 +25,6 @@ export default function ChildrenGrid() {
     fetchChildren();
   }, []);
 
-  // Prevent scrolling when delete confirmation is open
   useEffect(() => {
     if (deleteConfirm !== null) {
       document.body.style.overflow = "hidden";
@@ -51,13 +53,17 @@ export default function ChildrenGrid() {
   };
 
   const openAdd = () => {
+    if (children.length >= MAX_CHILDREN_PER_USER) {
+      toast.error(`You can only have a maximum of ${MAX_CHILDREN_PER_USER} children profiles.`);
+      return;
+    }
     setEditTarget(null);
     setModalOpen(true);
   };
 
   const openEdit = (child: Child) => {
-    if (child.editCount >= maxChildProfileEdits) {
-      toast.error(`You can only edit a child profile up to ${maxChildProfileEdits} times.`);
+    if (child.editCount >= MAX_CHILD_PROFILE_EDITS) {
+      toast.error(`You can only edit a child profile up to ${MAX_CHILD_PROFILE_EDITS} times.`);
       return;
     }
     setEditTarget(child);
@@ -78,13 +84,17 @@ export default function ChildrenGrid() {
       }
 
       if (editTarget) {
-        if (editTarget.editCount >= maxChildProfileEdits) {
-          toast.error(`You can only edit a child profile up to ${maxChildProfileEdits} times.`);
+        if (editTarget.editCount >= MAX_CHILD_PROFILE_EDITS) {
+          toast.error(`You can only edit a child profile up to ${MAX_CHILD_PROFILE_EDITS} times.`);
           return;
         }
         await childrenApi.updateChild(editTarget.childId, data as UpdateChildPayload);
         toast.success("Child profile updated successfully");
       } else {
+        if (children.length >= MAX_CHILDREN_PER_USER) {
+          toast.error(`You can only have a maximum of ${MAX_CHILDREN_PER_USER} children profiles.`);
+          return;
+        }
         await childrenApi.createChild(data as CreateChildPayload);
         toast.success("Child profile added successfully");
       }
@@ -99,7 +109,6 @@ export default function ChildrenGrid() {
 
       if (errorData) {
         if (errorData.errors) {
-          // Extract first validation error
           const firstKey = Object.keys(errorData.errors)[0];
           message = errorData.errors[firstKey][0];
         } else if (errorData.message) {
@@ -135,7 +144,6 @@ export default function ChildrenGrid() {
 
   return (
     <>
-      {/* Section header */}
       <div className="px-6 py-4 border-b border-gray-200/60 flex justify-between items-center bg-white">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Children's Birthdays</h1>
@@ -144,21 +152,17 @@ export default function ChildrenGrid() {
           </p>
         </div>
         <button
-          onClick={() => {
-            if (children.length >= 4) return;
-            openAdd();
-          }}
-          disabled={children.length >= 4}
-          title={children.length >= 4 ? "Maximum limit of 4 children reached" : "Add new child"}
+          onClick={openAdd}
+          disabled={children.length >= MAX_CHILDREN_PER_USER}
+          title={children.length >= MAX_CHILDREN_PER_USER ? `Maximum limit of ${MAX_CHILDREN_PER_USER} children reached` : "Add new child"}
           className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${
-            children.length >= 4 ? "bg-[#ff6a00]/50 cursor-not-allowed" : "bg-[#ff6a00]"
+            children.length >= MAX_CHILDREN_PER_USER ? "bg-[#ff6a00]/50 cursor-not-allowed" : "bg-[#ff6a00]"
           }`}
         >
           Add new child
         </button>
       </div>
 
-      {/* Cards grid */}
       <div className="p-6">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -191,7 +195,6 @@ export default function ChildrenGrid() {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
       <AddEditChildModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -199,7 +202,6 @@ export default function ChildrenGrid() {
         editTarget={editTarget}
       />
 
-      {/* Delete confirmation dialog */}
       {deleteConfirm !== null && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div

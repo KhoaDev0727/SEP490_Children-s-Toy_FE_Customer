@@ -781,12 +781,6 @@ export default function OrderSummary({
           Please check your items — some products are unavailable.
         </p>
       )}
-
-      <p className="text-[11px] text-center text-gray-400 mt-4 font-semibold">
-        By placing an order, you agree to{" "}
-        <a href="#" className="text-[#ff4f00] hover:underline font-black">Terms of Service</a> of Toy Store.
-      </p>
-
       {isVoucherModalOpen && (
         <UnifiedVoucherModal
           subtotal={subtotal}
@@ -1066,12 +1060,12 @@ function UnifiedVoucherModal({
         key={voucher.voucherId}
         onClick={toggleSelect}
         className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${(!eligible || isLocked)
-            ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
-            : isSelected
-              ? isOrderTarget
-                ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
-                : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
-              : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
+          ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
+          : isSelected
+            ? isOrderTarget
+              ? "border-[#ff4f00] ring-1 ring-[#ff4f00] cursor-pointer bg-white"
+              : "border-emerald-500 ring-1 ring-emerald-500 cursor-pointer bg-white"
+            : "border-gray-200 hover:border-gray-400 cursor-pointer hover:shadow-sm bg-white"
           }`}
       >
         {/* Left side: Image/Ticket Edge with Shopee-style perforations */}
@@ -1106,8 +1100,8 @@ function UnifiedVoucherModal({
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0 font-mono ${isOrderTarget
-                    ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
-                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  ? "bg-[#ff4f00]/10 text-[#ff4f00] border-[#ff4f00]/15"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-100"
                   }`}>
                   {voucher.voucherCode}
                 </span>
@@ -1159,10 +1153,10 @@ function UnifiedVoucherModal({
           {/* Selection indicator inside card */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected
-                ? isOrderTarget
-                  ? "border-[#ff4f00] bg-[#ff4f00]"
-                  : "border-emerald-500 bg-emerald-500"
-                : "border-gray-300"
+              ? isOrderTarget
+                ? "border-[#ff4f00] bg-[#ff4f00]"
+                : "border-emerald-500 bg-emerald-500"
+              : "border-gray-300"
               }`}>
               {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
             </div>
