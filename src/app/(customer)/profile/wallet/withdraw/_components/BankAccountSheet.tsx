@@ -79,10 +79,7 @@ export default function BankAccountSheet({ selectedId, onSelect, onClose }: Bank
           )}
           {!loading && !error && accounts.length === 0 && (
             <div className="py-8 text-center text-sm text-slate-400">
-              You do not have any saved bank accounts.{" "}
-              <a href="/profile/bank-accounts" className="text-[#ff4f00] font-medium hover:underline">
-                Add one now
-              </a>
+              You do not have any saved bank accounts.
             </div>
           )}
 
@@ -97,11 +94,10 @@ export default function BankAccountSheet({ selectedId, onSelect, onClose }: Bank
                 <button
                   key={account.savedBankAccountId}
                   onClick={() => { onSelect(account); onClose(); }}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${
-                    isSelected
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${isSelected
                       ? "border-[#ff4f00] bg-orange-50/50"
                       : "border-slate-200 hover:border-[#ff4f00]/50 bg-white hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   {bankIcon ? (
                     <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-100 flex items-center justify-center bg-white shrink-0 p-1">
@@ -126,9 +122,8 @@ export default function BankAccountSheet({ selectedId, onSelect, onClose }: Bank
                     </p>
                   </div>
                   <span
-                    className={`material-symbols-outlined text-[20px] shrink-0 transition-colors ${
-                      isSelected ? "text-[#ff4f00]" : "text-slate-300"
-                    }`}
+                    className={`material-symbols-outlined text-[20px] shrink-0 transition-colors ${isSelected ? "text-[#ff4f00]" : "text-slate-300"
+                      }`}
                     style={{ fontVariationSettings: isSelected ? "'FILL' 1" : undefined }}
                   >
                     {isSelected ? "radio_button_checked" : "radio_button_unchecked"}
