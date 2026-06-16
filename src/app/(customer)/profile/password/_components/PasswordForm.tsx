@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import type { AxiosError } from "axios";
 import toast from "react-hot-toast";
@@ -23,8 +23,6 @@ type ApiErrorResponse = {
   Errors?: Record<string, string[]>;
 };
 
-const DEFAULT_GOOGLE_CURRENT_PASSWORD = "SystemGeneratedPassword";
-
 const fieldNameMap: Record<string, PasswordFieldKey> = {
   CurrentPassword: "currentPassword",
   currentPassword: "currentPassword",
@@ -46,7 +44,7 @@ const getValidationErrors = (error: AxiosError<ApiErrorResponse>) =>
 export default function PasswordForm() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFirstGooglePasswordChange, setIsFirstGooglePasswordChange] = useState(false);
+  const [isFirstPasswordSetup, setIsFirstPasswordSetup] = useState(false);
   const [form, setForm] = useState<PasswordFormData>({
     currentPassword: "",
     newPassword: "",
@@ -59,13 +57,6 @@ export default function PasswordForm() {
   });
   const [errors, setErrors] = useState<Partial<Record<PasswordFieldKey, string>>>({});
 
-  const currentPasswordValue = useMemo(() => {
-    if (isFirstGooglePasswordChange && !form.currentPassword) {
-      return DEFAULT_GOOGLE_CURRENT_PASSWORD;
-    }
-    return form.currentPassword;
-  }, [form.currentPassword, isFirstGooglePasswordChange]);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -74,15 +65,10 @@ export default function PasswordForm() {
       try {
         const profile = await profileApi.getMyProfile();
         if (cancelled) return;
-        const normalizedProvider = (profile.provider ?? "").trim().toLowerCase();
-        const isFirstGoogle = normalizedProvider === "google";
-        setIsFirstGooglePasswordChange(isFirstGoogle);
-        if (isFirstGoogle) {
-          setForm((prev) => ({ ...prev, currentPassword: DEFAULT_GOOGLE_CURRENT_PASSWORD }));
-        }
+        setIsFirstPasswordSetup(profile.hasPassword === false);
       } catch {
         if (!cancelled) {
-          toast.error("Unable to load account provider.");
+          toast.error("Unable to load profile.");
         }
       } finally {
         if (!cancelled) {
@@ -105,7 +91,7 @@ export default function PasswordForm() {
   const validateClient = () => {
     const nextErrors: Partial<Record<PasswordFieldKey, string>> = {};
 
-    if (!form.currentPassword.trim()) {
+    if (!isFirstPasswordSetup && !form.currentPassword.trim()) {
       nextErrors.currentPassword = "Current password is required.";
       setErrors(nextErrors);
       return false;
@@ -190,15 +176,21 @@ export default function PasswordForm() {
 
     setIsSubmitting(true);
     try {
-      await profileApi.changeMyPassword(form);
+      await profileApi.changeMyPassword({
+        ...form,
+        currentPassword: isFirstPasswordSetup ? "" : form.currentPassword,
+      });
       setForm({
         currentPassword: "",
         newPassword: "",
         confirmNewPassword: "",
       });
       setErrors({});
-      if (isFirstGooglePasswordChange) {
-        setIsFirstGooglePasswordChange(false);
+      try {
+        const profile = await profileApi.getMyProfile();
+        setIsFirstPasswordSetup(profile.hasPassword === false);
+      } catch {
+        setIsFirstPasswordSetup(false);
       }
       toast.success("Password changed successfully.");
     } catch (rawError) {
@@ -233,26 +225,27 @@ export default function PasswordForm() {
                 <input
                   id="currentPassword"
                   type={show.currentPassword ? "text" : "password"}
-                  value={currentPasswordValue}
+                  value={form.currentPassword}
                   onChange={(event) => setField("currentPassword", event.target.value)}
-                  readOnly={isFirstGooglePasswordChange}
-                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white read-only:bg-slate-50/90 read-only:text-slate-600"
+                  disabled={isFirstPasswordSetup}
+                  className="w-full h-12 pl-4 pr-12 border border-slate-200 rounded-md text-[15px] outline-none focus:ring-2 focus:border-[#ff4f00] transition bg-white disabled:bg-slate-50/90 disabled:text-slate-500"
                   style={{ "--tw-ring-color": "#ff4f00" } as CSSProperties}
                 />
                 <button
                   type="button"
                   aria-label={show.currentPassword ? "Hide current password" : "Show current password"}
+                  disabled={isFirstPasswordSetup}
                   onClick={() => setShow((prev) => ({ ...prev, currentPassword: !prev.currentPassword }))}
-                  className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-orange-500"
+                  className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-orange-500 disabled:text-slate-300"
                 >
                   <span className="material-symbols-outlined text-[20px]">
                     {show.currentPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
               </div>
-              {isFirstGooglePasswordChange ? (
+              {isFirstPasswordSetup ? (
                 <p className="mt-2 text-xs leading-5 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                  Your account is using a system-generated password. For better security, please set a new personal password now.
+                  This account does not have a personal password yet. Set a new password now; current password is not required for this first setup.
                 </p>
               ) : null}
               {errors.currentPassword ? <p className="mt-1.5 text-xs text-red-500">{errors.currentPassword}</p> : null}

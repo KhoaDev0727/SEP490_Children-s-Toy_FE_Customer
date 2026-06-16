@@ -8,6 +8,7 @@ export interface CustomerProfile {
   sexId: number | null;
   sexName: string | null;
   provider: string | null;
+  hasPassword: boolean;
 }
 
 export interface UpdateCustomerProfilePayload {
