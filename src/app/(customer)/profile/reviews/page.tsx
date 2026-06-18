@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import ProfileSidebar from "../_components/ProfileSidebar";
 import ReviewTabs from "@/features/reviews/components/ReviewTabs";
 
@@ -23,7 +24,19 @@ export default function ProfileReviewsPage() {
         </div>
         
         <div className="flex flex-col grow">
-          <ReviewTabs />
+          <Suspense fallback={
+            <div className="flex flex-col justify-center items-center py-20 space-y-4">
+              <div className="relative w-12 h-12">
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-[#ff4f00] border-t-transparent animate-spin"></div>
+              </div>
+              <p className="text-sm text-slate-500 animate-pulse font-medium">
+                Loading reviews...
+              </p>
+            </div>
+          }>
+            <ReviewTabs />
+          </Suspense>
         </div>
       </section>
     </main>

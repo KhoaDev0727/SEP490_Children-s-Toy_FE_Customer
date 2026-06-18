@@ -125,7 +125,6 @@ export default function BankAccountList() {
           onClick={() => setModalOpen(true)}
           className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#ff4f00] hover:bg-[#e04500] hover:-translate-y-0.5 transition-all shadow-md shadow-[#ff4f00]/10 flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
           Link Bank Account
         </button>
       </div>

@@ -1,13 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UnreviewedList from "./UnreviewedList";
 import ReviewedList from "./ReviewedList";
+import { useSearchParams } from "next/navigation";
 
 export default function ReviewTabs() {
-  const [activeTab, setActiveTab] = useState<"unreviewed" | "reviewed">(
-    "unreviewed",
-  );
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get("tab") === "reviewed" ? "reviewed" : "unreviewed";
+  
+  const [activeTab, setActiveTab] = useState<"unreviewed" | "reviewed">(defaultTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "reviewed" || tabParam === "unreviewed") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const tabs = [
     { value: "unreviewed", label: "Not reviewed yet" },
@@ -23,9 +32,12 @@ export default function ReviewTabs() {
           return (
             <button
               key={tab.value}
-              onClick={() =>
-                setActiveTab(tab.value as "unreviewed" | "reviewed")
-              }
+              onClick={() => {
+                setActiveTab(tab.value as "unreviewed" | "reviewed");
+                const params = new URLSearchParams(window.location.search);
+                params.set("tab", tab.value);
+                window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+              }}
               className={`relative py-4 text-sm font-medium transition-all hover:cursor-pointer ${
                 isActive
                   ? "text-[#ff4f00] font-semibold"

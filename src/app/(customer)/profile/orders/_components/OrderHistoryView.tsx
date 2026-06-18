@@ -16,6 +16,7 @@ import axiosClient from "@/configs/axios-client";
 import type { CustomerOrderListItem } from "@/features/orders/types/orders";
 import { toast } from "react-hot-toast";
 import { mapCustomerStatusNameToUi } from "@/features/orders/utils/map-customer-order-status";
+import { reviewApi } from "@/features/reviews/services/review-api";
 
 const ORDERS_PER_PAGE = 3;
 
@@ -169,10 +170,35 @@ export default function OrderHistoryView() {
   );
 
   const handleSecondaryAction = useCallback(
-    (order: Order) => {
+    async (order: Order) => {
       if (order.status === "pending") {
         setOrderToCancel(order);
         setIsCancelModalOpen(true);
+      } else if (order.status === "completed") {
+        const loadingToast = toast.loading("Checking review status...");
+        const startTime = Date.now();
+        try {
+          const res = await reviewApi.getUnreviewedProducts(1, 100);
+          const hasUnreviewedProduct = res.items.some(
+            (item) => item.orderId === order.orderId
+          );
+          
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 500) {
+            await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
+          }
+          
+          toast.dismiss(loadingToast);
+          if (hasUnreviewedProduct) {
+            router.push("/profile/reviews?tab=unreviewed");
+          } else {
+            router.push("/profile/reviews?tab=reviewed");
+          }
+        } catch (error) {
+          toast.dismiss(loadingToast);
+          console.error("Failed to check unreviewed products", error);
+          router.push("/profile/reviews");
+        }
       } else {
         router.push(`/profile/orders/${order.orderId}`);
       }
