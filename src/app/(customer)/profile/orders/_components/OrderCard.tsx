@@ -131,9 +131,8 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
           return (
             <div
               key={idx}
-              className={`p-6 flex flex-col md:flex-row gap-6 ${
-                showBorder ? "border-b border-gray-100" : ""
-              } group-hover:bg-gray-50/30 transition-colors`}
+              className={`p-6 flex flex-col md:flex-row gap-6 ${showBorder ? "border-b border-gray-100" : ""
+                } group-hover:bg-gray-50/30 transition-colors`}
             >
               <div className="w-24 h-24 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 relative shadow-sm">
                 <Image
@@ -192,7 +191,7 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
       {order.status === "delivering" && order.hasActiveRefund && (
         <div className="px-6 py-3 bg-sky-50 border-t border-gray-100 text-sky-700 text-xs font-semibold flex items-center gap-2">
           <span className="material-symbols-outlined text-[16px] text-sky-600">info</span>
-          <span>The order has been or is being returned to the warehouse. The system is automatically processing your refund request. Please track the details in the Refunds section.</span>
+          <span>The order has been or is being returned to the shop. The system is automatically processing your refund request. Please track the details in the Refunds section.</span>
         </div>
       )}
 
@@ -208,28 +207,29 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           {actions.secondary && (
-            order.status === "cancelled" ? (
-              <Link
-                href={`/profile/orders/${order.orderId}`}
-                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
-              >
-                {actions.secondary}
-              </Link>
-            ) : (order.status === "pending" && !canCancel) ? (
-              <Link
-                href={`/profile/orders/${order.orderId}`}
-                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
-              >
-                View Details
-              </Link>
-            ) : (
-              <button
-                onClick={() => onSecondaryAction?.(order)}
-                className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all"
-              >
-                {actions.secondary}
-              </button>
-            )
+            actions.secondary === "Review" && order.rawStatusName?.toLowerCase() !== "completed" ? null :
+              order.status === "cancelled" ? (
+                <Link
+                  href={`/profile/orders/${order.orderId}`}
+                  className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
+                >
+                  {actions.secondary}
+                </Link>
+              ) : (order.status === "pending" && !canCancel) ? (
+                <Link
+                  href={`/profile/orders/${order.orderId}`}
+                  className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
+                >
+                  View Details
+                </Link>
+              ) : (
+                <button
+                  onClick={() => onSecondaryAction?.(order)}
+                  className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all"
+                >
+                  {actions.secondary}
+                </button>
+              )
           )}
           <button
             onClick={() => onPrimaryAction?.(order)}
@@ -253,11 +253,10 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
               onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
               disabled={order.hasActiveRefund}
               title={order.hasActiveRefund ? "Each order is only allowed to have exactly 1 refund request." : undefined}
-              className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
-                order.hasActiveRefund
+              className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${order.hasActiveRefund
                   ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                   : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {order.hasActiveRefund ? "Refund Requested" : "Request Refund"}
             </button>

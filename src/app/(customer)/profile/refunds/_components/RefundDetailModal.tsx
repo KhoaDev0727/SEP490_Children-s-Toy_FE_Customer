@@ -94,10 +94,10 @@ export default function RefundDetailModal({
         isActive: ["transporting", "sorting", "delivering", "money_collect_delivering", "return_transporting", "return_sorting", "returning"].includes(latestShippingStatus || ""),
       },
       {
-        title: "Delivered to Warehouse",
+        title: "Delivered to Shop",
         desc: ["delivered", "returned"].includes(latestShippingStatus || "") || ["RefundReceived", "RefundInspectionPending", "RefundCompleted"].includes(refund.refundStatus)
-          ? "ToyStore warehouse has received the package."
-          : "Pending delivery to warehouse.",
+          ? "ToyStore has received the package."
+          : "Pending delivery to shop.",
         isCompleted: ["delivered", "returned"].includes(latestShippingStatus || "") || ["RefundReceived", "RefundInspectionPending", "RefundCompleted"].includes(refund.refundStatus),
         isActive: ["delivered", "returned"].includes(latestShippingStatus || "") || ["RefundReceived", "RefundInspectionPending", "RefundCompleted"].includes(refund.refundStatus),
       },
@@ -385,10 +385,10 @@ export default function RefundDetailModal({
 
                           {/* Dot indicator */}
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border z-10 ${isCompleted
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : isActive
-                                ? "bg-[#ff4f00] border-[#ff4f00] text-white"
-                                : "bg-white border-slate-200 text-slate-400"
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : isActive
+                              ? "bg-[#ff4f00] border-[#ff4f00] text-white"
+                              : "bg-white border-slate-200 text-slate-400"
                             }`}>
                             {isCompleted ? (
                               <span className="material-symbols-outlined text-[12px] font-bold">check</span>
@@ -420,7 +420,7 @@ export default function RefundDetailModal({
                     <span className="material-symbols-outlined text-[16px] text-blue-500">
                       fact_check
                     </span>
-                    Warehouse Receipt / Quality Inspection Result
+                    Shop Receipt / Quality Inspection Result
                   </p>
                   <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
                     {refund.adminNote}

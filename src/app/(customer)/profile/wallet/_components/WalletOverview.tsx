@@ -159,10 +159,6 @@ export default function WalletOverview({
             account_balance_wallet
           </span>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          Total incoming transactions:{" "}
-          <span className="font-semibold text-emerald-700">{formatVnd(totalCredit)}</span>
-        </p>
       </div>
 
       <div className="px-6 py-4 border-t border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-white">
@@ -323,8 +319,8 @@ export default function WalletOverview({
                   disabled={isTransactionsLoading}
                   onClick={() => onTransactionPageChange(page)}
                   className={`px-3 py-1.5 text-sm rounded-md border ${page === transactionPageNumber
-                      ? "border-[#ff4f00] bg-[#ff4f00] text-white"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    ? "border-[#ff4f00] bg-[#ff4f00] text-white"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
                     }`}
                 >
                   {page}

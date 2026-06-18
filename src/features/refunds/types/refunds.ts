@@ -119,9 +119,11 @@ export type RefundStatus =
   | "RefundInspectionPending"
   | "RefundCompleted"
   | "RefundCancelled"
+  | "RefundDamage"
   | "Requested"
   | "Approved"
   | "Rejected"
   | "Completed"
   | "Cancelled"
-  | "Processing";
+  | "Processing"
+  | "Damaged";

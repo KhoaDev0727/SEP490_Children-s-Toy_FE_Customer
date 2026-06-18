@@ -7,9 +7,9 @@ export const BENEFITS = [
     description: "Fast, seamless checkout without entering your PIN repeatedly.",
   },
   {
-    icon: "savings",
-    title: "10% cashback",
-    description: "Earn rewards and receive wallet cashback on every order.",
+    icon: "payments",
+    title: "Refund & Withdrawal",
+    description: "Refunds are returned to your internal wallet, which you can withdraw to your bank account.",
   },
   {
     icon: "security",
