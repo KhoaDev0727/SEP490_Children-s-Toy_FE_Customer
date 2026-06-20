@@ -254,8 +254,8 @@ export default function ProfileForm() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      toast.error("File exceeds 1 MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File exceeds 5 MB.");
       return;
     }
 
@@ -397,7 +397,7 @@ export default function ProfileForm() {
                     disabled={isUploading}
                     className="block text-sm text-slate-600 file:mr-3 file:rounded-xl file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-2 file:font-semibold file:text-[#ff4f00] hover:file:bg-slate-100"
                   />
-                  <p className="text-xs text-slate-400">Max size 1MB, format JPG/PNG.</p>
+                  <p className="text-xs text-slate-400">Max size 5MB, format JPG/PNG.</p>
                 </div>
               ) : null}
             </div>
