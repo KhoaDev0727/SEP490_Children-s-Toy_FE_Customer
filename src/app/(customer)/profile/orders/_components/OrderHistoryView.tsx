@@ -17,12 +17,14 @@ import type { CustomerOrderListItem } from "@/features/orders/types/orders";
 import { toast } from "react-hot-toast";
 import { mapCustomerStatusNameToUi } from "@/features/orders/utils/map-customer-order-status";
 import { reviewApi } from "@/features/reviews/services/review-api";
+import { useCart } from "@/features/cart/context/CartContext";
 
 const ORDERS_PER_PAGE = 3;
 
 export default function OrderHistoryView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshCart } = useCart();
   
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
@@ -58,6 +60,7 @@ export default function OrderHistoryView() {
 
   // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelQRModalOpen, setIsCancelQRModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -174,7 +177,11 @@ export default function OrderHistoryView() {
     async (order: Order) => {
       if (order.status === "pending") {
         setOrderToCancel(order);
-        setIsCancelModalOpen(true);
+        if (order.paymentMethod === "SE_PAY") {
+          setIsCancelQRModalOpen(true);
+        } else {
+          setIsCancelModalOpen(true);
+        }
       } else if (order.status === "completed") {
         const loadingToast = toast.loading("Checking review status...");
         const startTime = Date.now();
@@ -226,6 +233,29 @@ export default function OrderHistoryView() {
     } finally {
       setIsCancelling(false);
       setIsCancelModalOpen(false);
+      setOrderToCancel(null);
+    }
+  };
+
+  const confirmCancelQR = async () => {
+    if (!orderToCancel) return;
+    setIsCancelling(true);
+    try {
+      await checkoutApi.cancelOrder(
+        orderToCancel.orderId,
+        "Customer cancelled pending QR from order history",
+        true
+      );
+      toast.success("Transaction cancelled. Products restored to cart.");
+      await refreshCart();
+      await loadOrders();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to cancel order.",
+      );
+    } finally {
+      setIsCancelling(false);
+      setIsCancelQRModalOpen(false);
       setOrderToCancel(null);
     }
   };
@@ -298,6 +328,20 @@ export default function OrderHistoryView() {
           setOrderToCancel(null);
         }}
         isSubmitting={isCancelling}
+      />
+
+      <ConfirmModal
+        isOpen={isCancelQRModalOpen}
+        title="Cancel QR Order"
+        message={`Are you sure you want to cancel the QR payment for order #${orderToCancel?.orderCode ?? ""}? Your items will be restored to your cart.`}
+        onConfirm={confirmCancelQR}
+        onCancel={() => {
+          setIsCancelQRModalOpen(false);
+          setOrderToCancel(null);
+        }}
+        confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel"}
+        cancelText="Keep Paying"
+        type="danger"
       />
 
       {orderToRefund && (
