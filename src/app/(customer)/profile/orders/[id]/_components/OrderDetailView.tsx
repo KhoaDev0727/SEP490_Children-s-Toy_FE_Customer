@@ -278,6 +278,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             events={trackingEvents}
             hasActiveRefund={order.hasActiveRefund}
             cancelReason={order.cancelReason}
+            statusBucket={order.statusBucket as any}
+            apiDisplayLabel={order.displayLabel}
           />
           <OrderProductList products={products} />
         </div>

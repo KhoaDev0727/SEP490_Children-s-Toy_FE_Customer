@@ -100,6 +100,7 @@ export default function OrderHistoryView() {
         displayLabel: item.displayLabel,
         hasActiveRefund: item.hasActiveRefund,
         canCancel: item.canCancel,
+        canRefund: item.canRefund,
       };
     },
     [mapStatusNameToUi],
