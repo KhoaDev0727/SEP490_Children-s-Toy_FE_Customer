@@ -25,6 +25,11 @@ interface ItemSelection {
   quantity: number;
 }
 
+interface SelectedImage {
+  file: File;
+  preview: string;
+}
+
 function formatPrice(amount: number): string {
   return amount.toLocaleString("vi-VN") + " ₫";
 }
@@ -39,13 +44,55 @@ export default function CreateRefundModal({
   const [reasons, setReasons] = useState<RefundReason[]>([]);
   const [reasonId, setReasonId] = useState<number | "">("");
   const [details, setDetails] = useState("");
+  const [refundType, setRefundType] = useState<"ReturnAndRefund" | "RefundOnly">("ReturnAndRefund");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReasons, setIsLoadingReasons] = useState(false);
   const [walletStatus, setWalletStatus] = useState<"checking" | "active" | "none">("checking");
   const [orderDetail, setOrderDetail] = useState<CustomerOrderDetail | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [selectedItems, setSelectedItems] = useState<{ [productId: number]: ItemSelection }>({});
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Clean up object URLs
+  useEffect(() => {
+    if (!isOpen) {
+      selectedImages.forEach((img) => URL.revokeObjectURL(img.preview));
+      setSelectedImages([]);
+    }
+    return () => {
+      selectedImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const totalImages = selectedImages.length + filesArray.length;
+      if (totalImages > 5) {
+        toast.error("Maximum 5 evidence images");
+        e.target.value = "";
+        return;
+      }
+
+      const newImages = filesArray.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+
+      setSelectedImages((prev) => [...prev, ...newImages]);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const imgObj = selectedImages[index];
+    if (imgObj) {
+      URL.revokeObjectURL(imgObj.preview);
+    }
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const hasActiveWallet = walletStatus === "active";
 
@@ -100,8 +147,10 @@ export default function CreateRefundModal({
     if (isOpen) {
       setReasonId("");
       setDetails("");
+      setRefundType("ReturnAndRefund");
       setOrderDetail(null);
       setSelectedItems({});
+      setSelectedImages([]);
       void checkWallet();
       void loadReasons();
       void loadOrderDetail();
@@ -189,13 +238,26 @@ export default function CreateRefundModal({
       return;
     }
 
+    if (selectedImages.length === 0) {
+      toast.error("Please upload at least one evidence image.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Upload evidence images first to get Cloudinary URLs
+      const uploadedUrls: string[] = [];
+      for (const img of selectedImages) {
+        const uploadResult = await refundsApi.uploadEvidenceImage(img.file);
+        uploadedUrls.push(uploadResult.url);
+      }
+
       await refundsApi.createRefund({
         orderId,
         refundReasonId: reasonId as number,
+        refundType,
         reasonDetails: details.trim() || undefined,
-        images: [],
+        images: uploadedUrls,
         items: returnItems,
       });
       toast.success("Refund request submitted successfully!");
@@ -234,7 +296,7 @@ export default function CreateRefundModal({
             <div className="flex items-center gap-3">
               <div>
                 <h3 className="text-lg font-bold text-[#261812]">
-                  Create Return/Refund Request
+                  Create Refund Request
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Order Code: <span className="font-semibold text-slate-700">#{orderCode}</span>
@@ -287,10 +349,58 @@ export default function CreateRefundModal({
               </div>
             )}
 
+            {/* Refund Type Selection */}
+            <div>
+              <label className="block text-sm font-bold text-[#261812] mb-3">
+                Refund Type <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setRefundType("ReturnAndRefund")}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    refundType === "ReturnAndRefund"
+                      ? "border-[#ff6a00] bg-[#ff6a00]/5 ring-1 ring-[#ff6a00]"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`material-symbols-outlined text-[18px] ${refundType === "ReturnAndRefund" ? "text-[#ff6a00]" : "text-slate-400"}`}>
+                      keyboard_return
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">Return & Refund</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Return items to the store to get a refund.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRefundType("RefundOnly")}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    refundType === "RefundOnly"
+                      ? "border-[#ff6a00] bg-[#ff6a00]/5 ring-1 ring-[#ff6a00]"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`material-symbols-outlined text-[18px] ${refundType === "RefundOnly" ? "text-[#ff6a00]" : "text-slate-400"}`}>
+                      account_balance_wallet
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">Refund Only</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Get a refund without returning items (missing/broken).
+                  </p>
+                </button>
+              </div>
+            </div>
+
             {/* Refund Items List */}
             <div>
               <label className="block text-sm font-bold text-[#261812] mb-3">
-                Select Products to Return <span className="text-red-500">*</span>
+                {refundType === "ReturnAndRefund" ? "Select Products to Return" : "Select Products for Refund"} <span className="text-red-500">*</span>
               </label>
 
               {isLoadingOrder ? (
@@ -449,7 +559,6 @@ export default function CreateRefundModal({
                 </select>
               )}
             </div>
-
             {/* Additional Details */}
             <div>
               <label className="block text-sm font-bold text-[#261812] mb-2">
@@ -469,6 +578,64 @@ export default function CreateRefundModal({
               </p>
             </div>
 
+            {/* Evidence Image Upload */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-bold text-[#261812]">
+                  Evidence Images <span className="text-red-500">*</span>
+                </label>
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider">
+                  {selectedImages.length} / 5
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {selectedImages.map((imgObj, idx) => (
+                  <div
+                    key={idx}
+                    className="relative group/img w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shadow-sm animate-in zoom-in duration-200 flex-shrink-0"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imgObj.preview}
+                      alt="preview"
+                      className="w-full h-full object-cover transition-transform group-hover/img:scale-110"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-slate-900/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 hover:bg-red-500 transition-all duration-200"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        close
+                      </span>
+                    </button>
+                  </div>
+                ))}
+
+                {selectedImages.length < 5 && (
+                  <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#ff6a00]/40 hover:bg-[#ff6a00]/5 hover:text-[#ff6a00] transition-all text-slate-400 flex-shrink-0 bg-white">
+                    <span className="material-symbols-outlined text-[24px]">
+                      add_photo_alternate
+                    </span>
+                    <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">
+                      Add Image
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Please upload at least 1 image of the toy showing the defect or issue. Max 5 images.
+              </p>
+            </div>
+
           </div>
 
           {/* Fixed Footer */}
@@ -483,7 +650,7 @@ export default function CreateRefundModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || walletStatus !== "active" || !reasonId || estimatedRefundAmount === 0}
+              disabled={isSubmitting || walletStatus !== "active" || !reasonId || estimatedRefundAmount === 0 || selectedImages.length === 0}
               className="flex-grow h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",

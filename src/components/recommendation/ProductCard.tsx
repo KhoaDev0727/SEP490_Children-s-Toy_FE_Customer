@@ -96,7 +96,7 @@ export default function ProductCard({ item, source }: ProductCardProps) {
             {item.reviewCount > 0 && <span>({item.reviewCount})</span>}
           </div>
           {item.soldQuantity > 0 && (
-            <span>Đã bán {item.soldQuantity}</span>
+            <span>Sold {item.soldQuantity}</span>
           )}
         </div>
       </div>

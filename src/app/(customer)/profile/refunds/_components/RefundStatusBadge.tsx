@@ -70,6 +70,30 @@ const STATUS_CONFIG: Partial<Record<
     text: "#b91c1c",
     border: "#fecaca",
   },
+  RefundReturnShipmentCreated: {
+    label: "Return Created",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    border: "#bfdbfe",
+  },
+  RefundReturningToCustomer: {
+    label: "Returning",
+    bg: "#eff6ff",
+    text: "#1d4ed8",
+    border: "#bfdbfe",
+  },
+  RefundReturnedToCustomer: {
+    label: "Returned (Rejected)",
+    bg: "#fef2f2",
+    text: "#b91c1c",
+    border: "#fecaca",
+  },
+  RefundReturnToCustomerFailed: {
+    label: "Return Failed",
+    bg: "#fef2f2",
+    text: "#b91c1c",
+    border: "#fecaca",
+  },
 
   // ── Legacy (không có prefix Refund) ──────────────────────────
   Requested: {

@@ -7,6 +7,8 @@ import OrderProductList, { type OrderProduct } from "./OrderProductList";
 import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
 import CancelOrderModal from "@/components/common/CancelOrderModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { useCart } from "@/features/cart/context/CartContext";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
 import type { CustomerOrderDetail } from "@/features/orders/types/orders";
@@ -68,7 +70,9 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelQRModalOpen, setIsCancelQRModalOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const { refreshCart } = useCart();
 
   const handleBack = () => {
     if (fromCheckoutSuccess) {
@@ -182,6 +186,23 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
     }
   }, [loadOrder, order]);
 
+  const handleCancelQR = useCallback(async () => {
+    if (!order) return;
+
+    setIsCancelling(true);
+    try {
+      await checkoutApi.cancelOrder(order.orderId, "Customer cancelled pending QR from order details", true);
+      toast.success("Transaction cancelled. Products restored to cart.");
+      await refreshCart();
+      await loadOrder();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order.");
+    } finally {
+      setIsCancelling(false);
+      setIsCancelQRModalOpen(false);
+    }
+  }, [loadOrder, order, refreshCart]);
+
   const handleComplete = useCallback(async () => {
     if (!order) return;
     setIsCompleting(true);
@@ -240,7 +261,13 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           <div className="flex gap-3 w-full sm:w-auto">
             {isCancellable && (
               <button
-                onClick={() => setIsCancelModalOpen(true)}
+                onClick={() => {
+                  if (order?.paymentMethod === "SE_PAY") {
+                    setIsCancelQRModalOpen(true);
+                  } else {
+                    setIsCancelModalOpen(true);
+                  }
+                }}
                 disabled={isCancelling || isCompleting}
                 className="flex-1 sm:flex-none px-6 py-2.5 bg-[#261812] text-white text-sm font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-lg shadow-black/10 disabled:opacity-60"
               >
@@ -268,6 +295,17 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         isSubmitting={isCancelling}
       />
 
+      <ConfirmModal
+        isOpen={isCancelQRModalOpen}
+        title="Cancel QR Order"
+        message={`Are you sure you want to cancel the QR payment for order #${order.orderCode}? Your items will be restored to your cart.`}
+        onConfirm={handleCancelQR}
+        onCancel={() => setIsCancelQRModalOpen(false)}
+        confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel"}
+        cancelText="Keep Paying"
+        type="danger"
+      />
+
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: tracker + products */}
@@ -278,6 +316,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             events={trackingEvents}
             hasActiveRefund={order.hasActiveRefund}
             cancelReason={order.cancelReason}
+            statusBucket={order.statusBucket as any}
+            apiDisplayLabel={order.displayLabel}
           />
           <OrderProductList products={products} />
         </div>

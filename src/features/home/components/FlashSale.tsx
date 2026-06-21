@@ -179,11 +179,13 @@ const ProductCard = memo(function ProductCard({
   index: number;
   isUpcoming: boolean;
 }) {
+  const totalClaimed = product.soldQuantity + product.reservedQuantity;
+  const isSoldOut = totalClaimed >= product.saleQuantity;
   const soldPct =
     product.saleQuantity > 0
-      ? Math.round((product.soldQuantity / product.saleQuantity) * 100)
+      ? Math.round((totalClaimed / product.saleQuantity) * 100)
       : 0;
-  const almostOut = soldPct >= 80;
+  const almostOut = !isSoldOut && soldPct >= 80;
 
   const formatVND = (price: number) => price.toLocaleString("vi-VN") + " VND";
 
@@ -274,19 +276,21 @@ const ProductCard = memo(function ProductCard({
               style={{ width: `${Math.min(soldPct, 100)}%` }}
             />
             <div className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white z-10 drop-shadow-sm">
-              {almostOut
-                ? `ALMOST SOLD OUT (${product.soldQuantity}/${product.saleQuantity})`
-                : `SOLD ${product.soldQuantity}/${product.saleQuantity}`}
+              {isSoldOut
+                ? "SOLD OUT"
+                : almostOut
+                  ? `ALMOST SOLD OUT (${totalClaimed}/${product.saleQuantity})`
+                  : `SOLD ${totalClaimed}/${product.saleQuantity}`}
             </div>
           </div>
         )}
         <div
-          className={`w-full py-2 rounded-lg font-bold text-xs sm:text-sm uppercase text-center border transition-colors ${isUpcoming
-              ? "bg-gray-100 text-gray-400 border-gray-100"
+          className={`w-full py-2 rounded-lg font-bold text-xs sm:text-sm uppercase text-center border transition-colors ${isUpcoming || isSoldOut
+              ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed"
               : "border-[#ff6a00] text-[#ff6a00] hover:bg-[#fff7ed]"
             }`}
         >
-          {isUpcoming ? "Upcoming" : "Buy Now"}
+          {isUpcoming ? "Upcoming" : isSoldOut ? "Sold Out" : "Buy Now"}
         </div>
       </div>
     </Link>
@@ -370,30 +374,51 @@ export default function FlashSale() {
 
   // Centering active Promotion tab
   useEffect(() => {
-    if (promoRef.current) {
-      const activeEl = promoRef.current.querySelector('[data-active="true"]');
+    const container = promoRef.current;
+    if (container) {
+      const activeEl = container.querySelector('[data-active="true"]') as HTMLElement;
       if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        const containerWidth = container.clientWidth;
+        const elOffsetLeft = activeEl.offsetLeft;
+        const elWidth = activeEl.clientWidth;
+        container.scrollTo({
+          left: elOffsetLeft - containerWidth / 2 + elWidth / 2,
+          behavior: "smooth"
+        });
       }
     }
   }, [selectedPromotionId, promoRef]);
 
   // Centering active Date tab
   useEffect(() => {
-    if (dateRef.current) {
-      const activeEl = dateRef.current.querySelector('[data-active="true"]');
+    const container = dateRef.current;
+    if (container) {
+      const activeEl = container.querySelector('[data-active="true"]') as HTMLElement;
       if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        const containerWidth = container.clientWidth;
+        const elOffsetLeft = activeEl.offsetLeft;
+        const elWidth = activeEl.clientWidth;
+        container.scrollTo({
+          left: elOffsetLeft - containerWidth / 2 + elWidth / 2,
+          behavior: "smooth"
+        });
       }
     }
   }, [selectedDate, dateRef]);
 
   // Centering active Time Slot tab
   useEffect(() => {
-    if (slotRef.current) {
-      const activeEl = slotRef.current.querySelector('[data-active="true"]');
+    const container = slotRef.current;
+    if (container) {
+      const activeEl = container.querySelector('[data-active="true"]') as HTMLElement;
       if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        const containerWidth = container.clientWidth;
+        const elOffsetLeft = activeEl.offsetLeft;
+        const elWidth = activeEl.clientWidth;
+        container.scrollTo({
+          left: elOffsetLeft - containerWidth / 2 + elWidth / 2,
+          behavior: "smooth"
+        });
       }
     }
   }, [selectedSlotId, slotRef]);

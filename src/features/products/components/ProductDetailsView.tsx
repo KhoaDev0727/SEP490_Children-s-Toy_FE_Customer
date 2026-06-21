@@ -707,7 +707,7 @@ export default function ProductDetailsView({
               <span className="material-symbols-outlined text-base">
                 confirmation_number
               </span>
-              <span>Use code TOY200 to save 200k on orders from 999k</span>
+              <span>Got a voucher? Use it at checkout.</span>
             </div>
           </div>
 
@@ -801,7 +801,7 @@ export default function ProductDetailsView({
                 </span>
               </div>
               <span className="text-xs font-semibold">
-                Free shipping on orders from 499k
+                Enjoy free shipping on eligible orders.
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -809,7 +809,7 @@ export default function ProductDetailsView({
                 <span className="material-symbols-outlined">cached</span>
               </div>
               <span className="text-xs font-semibold">
-                Free returns within 7 days
+                Returns within 3 days
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -870,7 +870,7 @@ export default function ProductDetailsView({
                 </p>
               )}
               <div className="clear-both" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div className="rounded-xl border border-slate-100 p-4">
                   <p className="text-sm font-semibold text-slate-900">
                     Release date
@@ -887,7 +887,7 @@ export default function ProductDetailsView({
                     {formatDateTime(product.updatedAt)}
                   </p>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         )}

@@ -37,6 +37,7 @@ export interface Order {
   displayLabel?: string;
   hasActiveRefund?: boolean;
   canCancel?: boolean;
+  canRefund?: boolean;
 }
 
 const ACTION_BUTTONS: Record<
@@ -248,15 +249,22 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
               Order Received
             </button>
           )}
-          {order.rawStatusName?.toLowerCase() === "completed" && onRequestRefund && (
+          {order.rawStatusName?.toLowerCase() === "completed" && onRequestRefund && (order.canRefund || order.hasActiveRefund) && (
             <button
-              onClick={() => !order.hasActiveRefund && onRequestRefund(order)}
-              disabled={order.hasActiveRefund}
-              title={order.hasActiveRefund ? "Each order is only allowed to have exactly 1 refund request." : undefined}
-              className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${order.hasActiveRefund
+              onClick={() => order.canRefund && !order.hasActiveRefund && onRequestRefund(order)}
+              disabled={!order.canRefund || order.hasActiveRefund}
+              title={
+                order.hasActiveRefund
+                  ? "Each order is only allowed to have exactly 1 refund request."
+                  : !order.canRefund
+                    ? "Refund request window has expired or the request has been finalized."
+                    : undefined
+              }
+              className={`flex-1 sm:flex-none px-6 py-2.5 border text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                (!order.canRefund || order.hasActiveRefund)
                   ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                   : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+              }`}
             >
               {order.hasActiveRefund ? "Refund Requested" : "Request Refund"}
             </button>
