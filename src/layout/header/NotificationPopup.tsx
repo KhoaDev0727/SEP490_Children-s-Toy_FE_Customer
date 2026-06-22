@@ -9,7 +9,22 @@ import { formatTimeAgo } from "@/utils/date-utils";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { resolveNotificationTarget } from "@/features/notifications/utils/resolve-notification-target";
 
-const getIconMeta = (type: string) => {
+const getIconMeta = (type: string, actionTarget?: string) => {
+  const target = (actionTarget || "").toLowerCase();
+  
+  if (type === "BLOG" || target.startsWith("/blogs") || target.startsWith("/blog/")) {
+    return { icon: "article", bg: "bg-green-100", color: "text-green-600" };
+  }
+  if (type === "STOCK" || target.startsWith("/products") || target.startsWith("/product/")) {
+    return { icon: "bolt", bg: "bg-red-100", color: "text-red-600" };
+  }
+  if (type === "ORDER" || target.startsWith("/orders") || target.startsWith("/profile/orders")) {
+    return { icon: "local_shipping", bg: "bg-blue-100", color: "text-blue-600" };
+  }
+  if (type === "PROMOTION" || type === "SALE" || type === "VOUCHER" || target.startsWith("/flash-sale") || target.startsWith("/profile/vouchers")) {
+    return { icon: "sell", bg: "bg-orange-100", color: "text-orange-500" };
+  }
+
   switch (type) {
     case "ORDER": return { icon: "local_shipping", bg: "bg-blue-100", color: "text-blue-600" };
     case "PROMOTION": return { icon: "sell", bg: "bg-orange-100", color: "text-orange-500" };
@@ -176,7 +191,7 @@ export default function NotificationPopup() {
             {items.length === 0 ? (
               <li className="py-6 text-center text-sm font-medium text-gray-400">No notifications yet</li>
             ) : items.map((n) => {
-              const meta = getIconMeta(n.notificationType);
+              const meta = getIconMeta(n.notificationType, n.actionTarget);
               const isUnread = n.status === "Unread";
               return (
                 <li
@@ -186,10 +201,18 @@ export default function NotificationPopup() {
                     ${!isUnread ? "opacity-60 hover:opacity-80" : "bg-primary/[0.03] hover:bg-primary/[0.06]"}
                   `}
                 >
-                  {/* Icon */}
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${meta.bg} ${meta.color}`}>
-                    <span className="material-symbols-outlined text-[18px]">{meta.icon}</span>
-                  </div>
+                  {/* Icon or Image */}
+                  {n.imageUrl ? (
+                    <img
+                      src={n.imageUrl}
+                      alt={n.title}
+                      className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-100"
+                    />
+                  ) : (
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${meta.bg} ${meta.color}`}>
+                      <span className="material-symbols-outlined text-[18px]">{meta.icon}</span>
+                    </div>
+                  )}
 
                   {/* Text */}
                   <div className="flex-1 min-w-0">

@@ -13,13 +13,31 @@ import { formatFullDateTime } from "@/utils/date-utils";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { resolveNotificationTarget } from "@/features/notifications/utils/resolve-notification-target";
 
-const mapCategory = (type: string): NotificationCategory => {
-  if (type === "ORDER") return "order";
-  if (type === "PROMOTION" || type === "SALE" || type === "VOUCHER") return "promotion";
+const mapCategory = (type: string, actionTarget?: string): NotificationCategory => {
+  const target = (actionTarget || "").toLowerCase();
+  if (type === "ORDER" || target.startsWith("/orders") || target.startsWith("/profile/orders")) return "order";
+  if (type === "BLOG" || target.startsWith("/blogs") || target.startsWith("/blog/")) return "news";
+  if (type === "STOCK" || target.startsWith("/products") || target.startsWith("/product/")) return "news";
+  if (type === "PROMOTION" || type === "SALE" || type === "VOUCHER" || target.startsWith("/flash-sale") || target.startsWith("/profile/vouchers")) return "promotion";
   return "system";
 };
 
-const getIconMeta = (type: string) => {
+const getIconMeta = (type: string, actionTarget?: string) => {
+  const target = (actionTarget || "").toLowerCase();
+  
+  if (type === "BLOG" || target.startsWith("/blogs") || target.startsWith("/blog/")) {
+    return { icon: "article", iconBg: "bg-green-100", iconColor: "text-green-600" };
+  }
+  if (type === "STOCK" || target.startsWith("/products") || target.startsWith("/product/")) {
+    return { icon: "bolt", iconBg: "bg-red-100", iconColor: "text-red-600" };
+  }
+  if (type === "ORDER" || target.startsWith("/orders") || target.startsWith("/profile/orders")) {
+    return { icon: "local_shipping", iconBg: "bg-blue-100", iconColor: "text-blue-600" };
+  }
+  if (type === "PROMOTION" || type === "SALE" || type === "VOUCHER" || target.startsWith("/flash-sale") || target.startsWith("/profile/vouchers")) {
+    return { icon: "sell", iconBg: "bg-orange-100", iconColor: "text-orange-500" };
+  }
+
   switch (type) {
     case "ORDER": return { icon: "local_shipping", iconBg: "bg-blue-100", iconColor: "text-blue-600" };
     case "PROMOTION": return { icon: "sell", iconBg: "bg-orange-100", iconColor: "text-orange-500" };
@@ -55,10 +73,10 @@ export default function NotificationsPage() {
     try {
       const res = await notificationApi.getNotifications(1, 100);
       const mapped: Notification[] = res.items.map((n) => {
-        const meta = getIconMeta(n.notificationType);
+        const meta = getIconMeta(n.notificationType, n.actionTarget);
         return {
           id: n.deliveryId.toString(),
-          category: mapCategory(n.notificationType),
+          category: mapCategory(n.notificationType, n.actionTarget),
           notificationType: n.notificationType,
           read: n.status !== "Unread",
           title: n.title,
@@ -89,6 +107,7 @@ export default function NotificationsPage() {
       all: unread.length,
       promotion: unread.filter((n) => n.category === "promotion").length,
       order: unread.filter((n) => n.category === "order").length,
+      news: unread.filter((n) => n.category === "news").length,
       system: unread.filter((n) => n.category === "system").length,
     } satisfies Record<NotificationCategory, number>;
   }, [notifications]);

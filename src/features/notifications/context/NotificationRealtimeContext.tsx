@@ -5,6 +5,7 @@ import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signal
 import toast from "react-hot-toast";
 import { notificationApi } from "../services/notification-api";
 import { useAuthContext } from "@/context/AuthContext";
+import { notificationPreferencesApi } from "@/features/profile/services/notification-preferences-api";
 
 interface BellNotificationDto {
   deliveryId: number;
@@ -43,6 +44,7 @@ const shouldSuppressCurrentPageAiModerationToast = (notification: BellNotificati
 interface NotificationRealtimeContextType {
   unreadCount: number;
   refreshUnread: () => Promise<void>;
+  refreshPreferences: () => Promise<void>;
   connection: HubConnection | null;
   isConnected: boolean;
 }
@@ -54,6 +56,12 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [webPushEnabled, setWebPushEnabled] = useState(true);
+  const webPushEnabledRef = React.useRef(true);
+
+  useEffect(() => {
+    webPushEnabledRef.current = webPushEnabled;
+  }, [webPushEnabled]);
 
   const refreshUnread = useCallback(async () => {
     if (!isAuthenticated) {
@@ -68,14 +76,29 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
     }
   }, [isAuthenticated]);
 
+  const refreshPreferences = useCallback(async () => {
+    if (!isAuthenticated) {
+      setWebPushEnabled(true);
+      return;
+    }
+    try {
+      const prefs = await notificationPreferencesApi.getMy();
+      setWebPushEnabled(prefs.webPushOptIn);
+    } catch (error) {
+      console.error("Failed to fetch notification preferences", error);
+    }
+  }, [isAuthenticated]);
+
   // Initial fetch
   useEffect(() => {
     if (isAuthenticated) {
       void refreshUnread();
+      void refreshPreferences();
     } else {
       setUnreadCount(0);
+      setWebPushEnabled(true);
     }
-  }, [isAuthenticated, refreshUnread]);
+  }, [isAuthenticated, refreshUnread, refreshPreferences]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -112,6 +135,10 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
             return;
           }
 
+          if (!webPushEnabledRef.current) {
+            return;
+          }
+
           const showToast = isErrorNotification(n) ? toast.error : toast.success;
           showToast(
             <div>
@@ -136,7 +163,7 @@ export const NotificationRealtimeProvider = ({ children }: { children: ReactNode
   }, [isAuthenticated]); // Only re-run if auth state changes
 
   return (
-    <NotificationRealtimeContext.Provider value={{ unreadCount, refreshUnread, connection, isConnected }}>
+    <NotificationRealtimeContext.Provider value={{ unreadCount, refreshUnread, refreshPreferences, connection, isConnected }}>
       {children}
     </NotificationRealtimeContext.Provider>
   );

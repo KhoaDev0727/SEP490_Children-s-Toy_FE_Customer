@@ -96,24 +96,36 @@ function NotificationItem({
         <span className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#ff6a00] rounded-full" />
       )}
 
-      {/* Icon */}
-      <div
-        className={`
-          w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
-          ${n.iconBg} ${n.iconColor}
-        `}
-      >
-        <span
-          className="material-symbols-outlined"
-          style={
-            n.icon === "sell"
-              ? ({ fontVariationSettings: "'FILL' 1" } as React.CSSProperties)
-              : undefined
-          }
+      {/* Icon or Image */}
+      {n.image ? (
+        <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-[#e2bfb0]/30">
+          <Image
+            src={n.image}
+            alt={n.title}
+            width={48}
+            height={48}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : (
+        <div
+          className={`
+            w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
+            ${n.iconBg} ${n.iconColor}
+          `}
         >
-          {n.icon}
-        </span>
-      </div>
+          <span
+            className="material-symbols-outlined"
+            style={
+              n.icon === "sell"
+                ? ({ fontVariationSettings: "'FILL' 1" } as React.CSSProperties)
+                : undefined
+            }
+          >
+            {n.icon}
+          </span>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-grow pl-2 min-w-0">
@@ -135,19 +147,6 @@ function NotificationItem({
         </p>
         <time className="text-xs text-[#565e74]">{n.timestamp}</time>
       </div>
-
-      {/* Optional product image */}
-      {n.image && (
-        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden hidden sm:block">
-          <Image
-            src={n.image}
-            alt="Product thumbnail"
-            width={64}
-            height={64}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
 
       {/* Delete Button */}
       <button
