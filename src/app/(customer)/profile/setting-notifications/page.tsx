@@ -9,6 +9,7 @@ import ProfileSidebar from "../_components/ProfileSidebar";
 import ChannelSettings from "./_components/ChannelSettings";
 import ContentSettings from "./_components/ContentSettings";
 import SaveButton from "./_components/SaveButton";
+import { useNotificationRealtime } from "@/features/notifications/context/NotificationRealtimeContext";
 
 type ChannelState = {
   email: boolean;
@@ -57,6 +58,7 @@ function mapFormToPayload(channels: ChannelState, content: ContentState) {
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
+  const { refreshPreferences } = useNotificationRealtime();
   const [channels, setChannels] = useState<ChannelState>({
     email: true,
     webPush: true,
@@ -137,6 +139,7 @@ export default function NotificationSettingsPage() {
       setChannels(mapped.channels);
       setContent(mapped.content);
       toast.success("Notification settings saved successfully");
+      void refreshPreferences();
     } catch (err) {
       if (handleAuthError(err)) return;
       toast.error("Could not save settings. Please try again.");
