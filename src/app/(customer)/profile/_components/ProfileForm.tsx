@@ -9,7 +9,7 @@ import type { CustomerProfile } from "@/features/profile/types/profile";
 import toast from "react-hot-toast";
 
 const SEX_OPTIONS = [
-  { id: 1, label: "Nam" },
+  { id: 1, label: "Male" },
   { id: 2, label: "Female" },
   { id: 3, label: "Other" },
 ] as const;
@@ -151,8 +151,6 @@ export default function ProfileForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [sexes, setSexes] = useState<Array<{ id: number; label: string }>>([]);
-
   const [accountName, setAccountName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
