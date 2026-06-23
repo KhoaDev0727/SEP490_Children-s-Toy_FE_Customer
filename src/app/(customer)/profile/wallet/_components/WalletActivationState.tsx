@@ -52,7 +52,7 @@ export default function WalletActivationState({
         <>
           <h2 className="text-3xl font-bold text-gray-900 mb-3">Activate Toy Store Wallet</h2>
           <p className="text-sm text-gray-500 max-w-[560px] mb-8">
-            Experience lightning-fast, secure payments and unlock exclusive rewards with Toy Store Wallet.
+            Experience lightning-fast, secure payments and manage your refunds with Toy Store Wallet.
           </p>
         </>
       )}

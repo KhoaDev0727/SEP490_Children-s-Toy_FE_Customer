@@ -37,6 +37,9 @@ const ENGLISH_DISPLAY_STATUS_TO_UI: Record<string, OrderStatus> = {
   lost: "delivering",
   damaged: "delivering",
   "refund processing": "delivering",     // Đang xử lý hoàn tiền
+  "returning to you": "delivering",
+  "returned (rejected)": "completed",
+  "return to you failed": "cancelled",
   cancelled: "cancelled",
   refunded: "refunded",
 };
@@ -53,6 +56,9 @@ const ENGLISH_DISPLAY_LABELS: Record<string, string> = {
   lost: "LOST",
   damaged: "DAMAGED",
   "refund processing": "REFUND PROCESSING",
+  "returning to you": "RETURNING TO YOU",
+  "returned (rejected)": "RETURNED (REJECTED)",
+  "return to you failed": "RETURN TO YOU FAILED",
   cancelled: "CANCELLED",
   refunded: "REFUNDED",
 };
@@ -276,7 +282,7 @@ export function getTrackerActiveStep(
   }
   if (bucket === "delivering") return 2;
   if (bucket === "completed") {
-    if (raw === "completed") return 4;
+    if (raw === "completed" || raw.includes("returned (rejected)")) return 4;
     return 3;
   }
   return 0;

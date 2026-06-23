@@ -43,7 +43,7 @@ export default function BankAccountCard({ account, logoUrl, onDelete, onSetDefau
           )}
         </div>
         <div className="text-slate-500 text-sm font-semibold uppercase">{account.accountName}</div>
-        <div className="text-slate-400 text-xs mt-1">Added on {new Date(account.createdAt).toLocaleDateString()}</div>
+        <div className="text-slate-400 text-xs mt-1">Added on {new Date(account.createdAt).toLocaleDateString("vi-VN")}</div>
       </div>
       <div className="shrink-0 flex items-center justify-end w-full sm:w-auto gap-2">
         {!account.isDefault && (

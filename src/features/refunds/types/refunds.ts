@@ -95,6 +95,7 @@ export interface RefundDetail {
 export interface CreateRefundRequest {
   orderId: number;
   refundReasonId: number;
+  refundType?: string;
   reasonDetails?: string;
   images?: string[];
   items?: { productId: number; quantity: number }[];
@@ -119,9 +120,15 @@ export type RefundStatus =
   | "RefundInspectionPending"
   | "RefundCompleted"
   | "RefundCancelled"
+  | "RefundDamage"
+  | "RefundReturnShipmentCreated"
+  | "RefundReturningToCustomer"
+  | "RefundReturnedToCustomer"
+  | "RefundReturnToCustomerFailed"
   | "Requested"
   | "Approved"
   | "Rejected"
   | "Completed"
   | "Cancelled"
-  | "Processing";
+  | "Processing"
+  | "Damaged";

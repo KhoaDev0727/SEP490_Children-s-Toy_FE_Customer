@@ -73,10 +73,28 @@ axiosInstance.interceptors.response.use(
 
 type RequestConfig = Omit<AxiosRequestConfig, "url" | "method" | "data">;
 
+const activeGetRequests = new Map<string, Promise<any>>();
+
 const axiosClient = {
   get: async <TResponse>(url: string, config?: RequestConfig): Promise<TResponse> => {
-    const response = await axiosInstance.get<TResponse>(url, config);
-    return response.data;
+    const key = JSON.stringify({ url, params: config?.params });
+
+    if (activeGetRequests.has(key)) {
+      return activeGetRequests.get(key) as Promise<TResponse>;
+    }
+
+    const promise = (async () => {
+      const response = await axiosInstance.get<TResponse>(url, config);
+      return response.data;
+    })();
+
+    activeGetRequests.set(key, promise);
+
+    try {
+      return await promise;
+    } finally {
+      activeGetRequests.delete(key);
+    }
   },
   post: async <TResponse, TPayload = unknown>(
     url: string,

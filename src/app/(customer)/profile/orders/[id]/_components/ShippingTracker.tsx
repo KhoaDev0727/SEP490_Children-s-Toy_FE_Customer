@@ -14,6 +14,8 @@ interface ShippingTrackerProps {
   events?: OrderTimelineEvent[];
   hasActiveRefund?: boolean;
   cancelReason?: string | null;
+  statusBucket?: OrderStatus;
+  apiDisplayLabel?: string | null;
 }
 
 const STEPS = [
@@ -85,11 +87,15 @@ export default function ShippingTracker({
   events = [],
   hasActiveRefund = false,
   cancelReason,
+  statusBucket,
+  apiDisplayLabel,
 }: ShippingTrackerProps) {
   const display = getCustomerOrderDisplay({
     statusName,
     paymentMethod,
     hasActiveRefund,
+    statusBucket,
+    apiDisplayLabel,
   });
   const activeStep = getTrackerActiveStep(statusName, display.uiStatus);
   const isCancelled = display.uiStatus === "cancelled";

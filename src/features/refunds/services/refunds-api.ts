@@ -96,6 +96,25 @@ export const refundsApi = {
     }
   },
 
+  uploadEvidenceImage: async (file: File): Promise<{ url: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await axiosClient.post<
+        { url: string } | ApiResponse<{ url: string }>
+      >("/refunds/upload-image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return unwrap(response);
+    } catch (error) {
+      throw new Error(
+        extractErrorMessage(error, "Unable to upload evidence image."),
+      );
+    }
+  },
+
   cancelRefund: async (refundId: number): Promise<RefundDetail> => {
     try {
       const response = await axiosClient.post<
