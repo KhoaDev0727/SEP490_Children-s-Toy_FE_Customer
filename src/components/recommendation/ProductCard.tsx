@@ -91,7 +91,7 @@ export default function ProductCard({ item, source }: ProductCardProps) {
               star
             </span>
             <span className="font-medium text-slate-700">
-              {ratingValue > 0 ? ratingValue.toFixed(1) : "Chưa có"}
+              {ratingValue > 0 ? ratingValue.toFixed(1) : "No reviews"}
             </span>
             {item.reviewCount > 0 && <span>({item.reviewCount})</span>}
           </div>
