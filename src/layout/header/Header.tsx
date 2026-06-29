@@ -62,6 +62,7 @@ export default function Header() {
     setSearchTerm(currentTerm);
   }, [searchParams]);
 
+
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const keyword = searchTerm.trim();
@@ -113,6 +114,25 @@ export default function Header() {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isHydrated || !isAuthenticated) {
+      setWishlistItems([]);
+      return;
+    }
+
+    void fetchWishlistPreview();
+
+    const handleWishlistUpdate = () => {
+      void fetchWishlistPreview();
+    };
+
+    window.addEventListener("wishlist-updated", handleWishlistUpdate);
+
+    return () => {
+      window.removeEventListener("wishlist-updated", handleWishlistUpdate);
+    };
+  }, [isHydrated, isAuthenticated, fetchWishlistPreview]);
+
+  useEffect(() => {
     if (!isWishlistOpen) {
       return;
     }
@@ -156,6 +176,7 @@ export default function Header() {
         prev.filter((item) => item.productId !== productId),
       );
       toast.success("Item removed from wishlist.");
+      window.dispatchEvent(new Event("wishlist-updated"));
     } catch (error) {
       const message =
         error instanceof Error
@@ -320,7 +341,7 @@ export default function Header() {
                     className="absolute top-1 right-1 w-4 h-4 text-white text-[10px] flex items-center justify-center rounded-full font-bold"
                     style={{ backgroundColor: "#ff6a00" }}
                   >
-                    {cartCount}
+                    {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}
               </Link>

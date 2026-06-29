@@ -32,11 +32,15 @@ export default function OrderSummary({
   externalAddresses,
   externalLoading,
   onTotalChange,
+  isWalletActivated,
+  isWalletLoading,
 }: {
   formData: CheckoutFormData;
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
   onTotalChange?: (total: number) => void;
+  isWalletActivated?: boolean;
+  isWalletLoading?: boolean;
 }) {
   const [orderVoucherCode, setOrderVoucherCode] = useState("");
   const [shippingVoucherCode, setShippingVoucherCode] = useState("");
@@ -529,6 +533,14 @@ export default function OrderSummary({
 
     // Wallet payment requires PIN verification first
     if (paymentMethod === "WALLET") {
+      if (isWalletLoading) {
+        toast.error("Loading wallet info, please try again in a moment.");
+        return;
+      }
+      if (!isWalletActivated) {
+        toast.error("Your wallet is not activated yet. Please activate your wallet in profile settings before placing an order.");
+        return;
+      }
       setPinError(null);
       setPinRemainingAttempts(null);
       setPinLockedUntil(null);
@@ -641,11 +653,11 @@ export default function OrderSummary({
               <p className="text-[13px] font-bold text-gray-850 leading-snug line-clamp-2 mb-2 group-hover:text-[#ff4f00] transition-colors">
                 {item.productName}
               </p>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-md">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md shrink-0">
                   QTY: {item.quantity}
                 </span>
-                <span className="text-sm font-black text-[#ff4f00]">
+                <span className="text-sm sm:text-base font-black text-[#ff4f00] truncate">
                   {fmt(item.lineTotal)}
                 </span>
               </div>

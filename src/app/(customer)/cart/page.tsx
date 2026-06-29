@@ -307,7 +307,7 @@ export default function CartPage() {
                         item.lineTotal,
                       )
                     }
-                    disabled={busy || isReadOnlyItem || item.quantity >= item.stockQuantity}
+                    disabled={busy || isReadOnlyItem}
                     className="flex h-full w-10 items-center justify-center rounded-r-xl text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-sm">add</span>

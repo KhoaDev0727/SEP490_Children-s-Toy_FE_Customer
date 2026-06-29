@@ -233,8 +233,16 @@ export default function ProductDetailsView({
     };
 
     void fetchWishlist();
+
+    const handleWishlistUpdate = () => {
+      void fetchWishlist();
+    };
+
+    window.addEventListener("wishlist-updated", handleWishlistUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener("wishlist-updated", handleWishlistUpdate);
     };
   }, [isAuthenticated, isHydrated]);
 
@@ -431,6 +439,7 @@ export default function ProductDetailsView({
         });
         toast.success("Added to wishlist.");
       }
+      window.dispatchEvent(new Event("wishlist-updated"));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to update wishlist.";
@@ -770,14 +779,14 @@ export default function ProductDetailsView({
                   />
                   <button
                     className="px-3 py-2 hover:bg-slate-100 transition-colors"
-                    onClick={() =>
-                      setQuantity(
-                        Math.min(maxSelectableQuantity, selectedQuantity + 1),
-                      )
-                    }
-                    disabled={
-                      !canAddToCart || selectedQuantity >= maxSelectableQuantity
-                    }
+                    onClick={() => {
+                      if (selectedQuantity >= remainingStock) {
+                        toast.error("Cart quantity has reached the maximum available quantity.");
+                      } else {
+                        setQuantity(selectedQuantity + 1);
+                      }
+                    }}
+                    disabled={!inStock}
                   >
                     <span className="material-symbols-outlined text-base">
                       add
