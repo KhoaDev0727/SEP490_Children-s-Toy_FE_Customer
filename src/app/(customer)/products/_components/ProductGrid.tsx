@@ -810,8 +810,16 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
     };
 
     void fetchWishlist();
+
+    const handleWishlistUpdate = () => {
+      void fetchWishlist();
+    };
+
+    window.addEventListener("wishlist-updated", handleWishlistUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener("wishlist-updated", handleWishlistUpdate);
     };
   }, [isAuthenticated, isHydrated]);
 
@@ -914,6 +922,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
         });
         toast.success("Added to wishlist.");
       }
+      window.dispatchEvent(new Event("wishlist-updated"));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to update wishlist.";
