@@ -777,7 +777,7 @@ export default function ProductDetailsView({
                         setQuantity(selectedQuantity + 1);
                       }
                     }}
-                    disabled={!canAddToCart}
+                    disabled={!inStock}
                   >
                     <span className="material-symbols-outlined text-base">
                       add
