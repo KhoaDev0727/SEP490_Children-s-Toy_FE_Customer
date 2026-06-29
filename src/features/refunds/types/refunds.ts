@@ -19,6 +19,11 @@ export interface RefundReason {
   refundReasonId: number;
   content: string;
   description?: string | null;
+  /**
+   * Bên chịu phí vận chuyển hoàn trả mặc định: "Store" hoặc "Customer".
+   * FE dùng để hiển thị cảnh báo cho khách khi chọn lý do.
+   */
+  responsibleParty?: "Store" | "Customer";
 }
 
 export interface RefundListItem {
@@ -33,6 +38,8 @@ export interface RefundListItem {
   refundReasonContent?: string | null;
   requestedByName?: string | null;
   approvedAmount: number;
+  /** Số tiền thực tế sẽ được hoàn vào ví. = approvedAmount nếu store chịu phí, < approvedAmount nếu khách chịu phí. */
+  finalRefundAmount?: number;
   refundStatus: string;
   createdAt: string;
 }
@@ -90,6 +97,12 @@ export interface RefundDetail {
   details?: RefundDetailItem[];
   statusHistory?: RefundStatusHistory[];
   shippingHistory?: ShippingStatusHistory[];
+  /** Phí vận chuyển hoàn trả bị trừ khỏi refund (nếu Customer chịu). */
+  returnShippingFee?: number;
+  /** Bên chịu phí: "Store" hoặc "Customer". */
+  returnShippingFeeBy?: "Store" | "Customer";
+  /** Số tiền thực tế sẽ được credit vào ví khách. */
+  finalRefundAmount?: number;
 }
 
 export interface CreateRefundRequest {

@@ -75,10 +75,33 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
         {/* Amount + Action */}
         <div className="flex flex-col items-end justify-between gap-4">
           <div className="text-right">
-            <p className="text-xs text-slate-400 mb-0.5">Refund Amount</p>
-            <p className="text-xl font-black text-[#ff4f00]">
-              {formatPrice(refund.approvedAmount)}
-            </p>
+            {(() => {
+              const PRE_APPROVE = ["RefundRequested", "RefundRejected", "RefundCancelled", "Requested", "Rejected", "Cancelled"];
+              const isPreApproval = PRE_APPROVE.includes(refund.refundStatus);
+              const hasDeduction = !isPreApproval
+                && refund.finalRefundAmount != null
+                && refund.finalRefundAmount !== refund.approvedAmount
+                && refund.finalRefundAmount >= 0;
+              const displayAmount = isPreApproval
+                ? refund.approvedAmount
+                : (refund.finalRefundAmount ?? refund.approvedAmount);
+
+              return (
+                <>
+                  <p className="text-xs text-slate-400 mb-0.5">
+                    {hasDeduction ? "You will receive" : "Refund Amount"}
+                  </p>
+                  <p className="text-xl font-black text-[#ff4f00]">
+                    {formatPrice(displayAmount)}
+                  </p>
+                  {hasDeduction && (
+                    <p className="text-[10px] text-slate-400 line-through mt-0.5">
+                      Approved: {formatPrice(refund.approvedAmount)}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <button
             onClick={() => onViewDetail(refund.refundId)}
