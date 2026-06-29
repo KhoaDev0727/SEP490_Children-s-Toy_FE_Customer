@@ -81,7 +81,11 @@ export default function OrderProductList({
                   <p className="text-sm text-[#5a4136] mb-2">
                     Variant: {classificationText}
                   </p>
-                  <p className="text-sm font-semibold text-[#5a4136]">Quantity: x{product.quantity}</p>
+                  <div className="mt-1">
+                    <span className="inline-block px-2.5 py-1 text-xs sm:text-sm font-extrabold text-slate-700 bg-slate-100 border border-slate-200 rounded-md">
+                      QTY: {product.quantity}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-end justify-end flex-shrink-0">
