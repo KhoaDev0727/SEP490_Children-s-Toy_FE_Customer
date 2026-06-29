@@ -9,6 +9,8 @@ import type { AddressItem } from "@/features/address/types/address";
 import { useAuthContext } from "@/context/AuthContext";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import type { CheckoutPaymentOptions } from "@/features/checkout/types/checkout";
+import { walletApi } from "@/features/wallet/services/wallet-api";
+import type { WalletDto } from "@/features/wallet/types/wallet";
 
 const DEFAULT_FORM: CheckoutFormData = {
   addressId: 0,
@@ -31,29 +33,37 @@ export default function CheckoutClient() {
   const [orderTotal, setOrderTotal] = useState<number | null>(null);
   const [pendingSepay, setPendingSepay] = useState<{ orderId: number; orderCode: string } | null>(null);
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
+  const [wallet, setWallet] = useState<WalletDto | null>(null);
+  const [isWalletLoading, setIsWalletLoading] = useState(true);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
 
     const load = async () => {
       setIsLoadingAddresses(true);
+      setIsWalletLoading(true);
       try {
-        const [addressData, pending, options] = await Promise.all([
+        const [addressData, pending, options, walletData] = await Promise.all([
           addressApi.getMyAddresses(),
           checkoutApi.getPendingSepayOrder(),
           checkoutApi.getPaymentOptions(),
+          walletApi.getMyWallet().catch(() => null),
         ]);
         setAddresses(addressData ?? []);
         setPendingSepay(pending);
         setPaymentOptions(options);
+        setWallet(walletData);
       } catch (err) {
         console.error("Failed to load checkout data", err);
       } finally {
         setIsLoadingAddresses(false);
+        setIsWalletLoading(false);
       }
     };
     void load();
   }, [isAuthenticated, isHydrated]);
+
+  const isWalletActivated = wallet !== null && wallet.hasPin;
 
   return (
     <>
@@ -82,6 +92,8 @@ export default function CheckoutClient() {
           externalLoading={isLoadingAddresses}
           orderTotal={orderTotal}
           paymentOptions={paymentOptions}
+          isWalletActivated={isWalletActivated}
+          isWalletLoading={isWalletLoading}
         />
       </div>
 
@@ -91,6 +103,8 @@ export default function CheckoutClient() {
           externalAddresses={addresses}
           externalLoading={isLoadingAddresses}
           onTotalChange={setOrderTotal}
+          isWalletActivated={isWalletActivated}
+          isWalletLoading={isWalletLoading}
         />
       </aside>
     </>

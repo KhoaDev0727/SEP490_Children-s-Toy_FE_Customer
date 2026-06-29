@@ -32,11 +32,15 @@ export default function OrderSummary({
   externalAddresses,
   externalLoading,
   onTotalChange,
+  isWalletActivated,
+  isWalletLoading,
 }: {
   formData: CheckoutFormData;
   externalAddresses?: AddressItem[];
   externalLoading?: boolean;
   onTotalChange?: (total: number) => void;
+  isWalletActivated?: boolean;
+  isWalletLoading?: boolean;
 }) {
   const [orderVoucherCode, setOrderVoucherCode] = useState("");
   const [shippingVoucherCode, setShippingVoucherCode] = useState("");
@@ -529,6 +533,14 @@ export default function OrderSummary({
 
     // Wallet payment requires PIN verification first
     if (paymentMethod === "WALLET") {
+      if (isWalletLoading) {
+        toast.error("Loading wallet info, please try again in a moment.");
+        return;
+      }
+      if (!isWalletActivated) {
+        toast.error("Your wallet is not activated yet. Please activate your wallet in profile settings before placing an order.");
+        return;
+      }
       setPinError(null);
       setPinRemainingAttempts(null);
       setPinLockedUntil(null);
