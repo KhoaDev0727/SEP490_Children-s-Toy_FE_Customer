@@ -311,7 +311,6 @@ export default function ProductDetailsView({
       { label: "Length", value: product.lengthCm ? `${product.lengthCm} cm` : "Updating" },
       { label: "Width", value: product.widthCm ? `${product.widthCm} cm` : "Updating" },
       { label: "Height", value: product.heightCm ? `${product.heightCm} cm` : "Updating" },
-      { label: "Remaining stock", value: product.productStatus === "ComingSoon" ? "Updating" : product.quantity.toString() },
     ];
   }, [product]);
 
@@ -498,6 +497,20 @@ export default function ProductDetailsView({
     }
   };
 
+  const handlePrevImage = () => {
+    if (images.length <= 1) return;
+    const currentIndex = images.indexOf(safeImage);
+    const newIndex = currentIndex <= 0 ? images.length - 1 : currentIndex - 1;
+    setActiveImage(images[newIndex]);
+  };
+
+  const handleNextImage = () => {
+    if (images.length <= 1) return;
+    const currentIndex = images.indexOf(safeImage);
+    const newIndex = currentIndex >= images.length - 1 ? 0 : currentIndex + 1;
+    setActiveImage(images[newIndex]);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
@@ -516,7 +529,7 @@ export default function ProductDetailsView({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         <div className="space-y-4">
-          <div className="aspect-square w-full rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm relative">
+          <div className="aspect-square w-full rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm relative group">
             <Image
               className="object-contain p-8"
               src={safeImage}
@@ -524,6 +537,24 @@ export default function ProductDetailsView({
               fill
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
             />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-200/50 text-slate-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-[#ff6a00] hover:scale-110 z-10"
+                  aria-label="Previous image"
+                >
+                  <span className="material-symbols-outlined text-xl">chevron_left</span>
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-200/50 text-slate-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-[#ff6a00] hover:scale-110 z-10"
+                  aria-label="Next image"
+                >
+                  <span className="material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+              </>
+            )}
           </div>
           {images.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
@@ -615,6 +646,11 @@ export default function ProductDetailsView({
                 </span>
               </>
             )}
+            <span className="text-slate-400">|</span>
+            <span>Remaining stock:</span>
+            <span className="font-semibold text-slate-900">
+              {product.productStatus === "ComingSoon" ? "Updating" : product.quantity}
+            </span>
           </div>
 
           <div className="p-6 bg-slate-50 rounded-2xl mb-8 relative overflow-hidden">
