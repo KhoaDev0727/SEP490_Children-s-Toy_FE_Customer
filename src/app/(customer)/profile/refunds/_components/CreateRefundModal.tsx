@@ -43,6 +43,8 @@ export default function CreateRefundModal({
 }: CreateRefundModalProps) {
   const [reasons, setReasons] = useState<RefundReason[]>([]);
   const [reasonId, setReasonId] = useState<number | "">("");
+  // Derive selected reason object for responsibleParty check
+  const selectedReason = reasons.find((r) => r.refundReasonId === reasonId);
   const [details, setDetails] = useState("");
   const [refundType, setRefundType] = useState<"ReturnAndRefund" | "RefundOnly">("ReturnAndRefund");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -631,6 +633,20 @@ export default function CreateRefundModal({
                   </label>
                 )}
               </div>
+
+              {/* Warning nếu khách chịu phí ship hoàn trả */}
+              {selectedReason?.responsibleParty === "Customer" && (
+                <div className="flex gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                  <span className="material-symbols-outlined text-amber-500 text-[18px] shrink-0 mt-0.5">info</span>
+                  <div>
+                    <p className="text-xs font-bold text-amber-800 mb-0.5">Return shipping fee notice</p>
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      For this reason, <strong>you are responsible</strong> for the return shipping cost.
+                      The fee will be deducted from your refund amount when the shop approves your request.
+                    </p>
+                  </div>
+                </div>
+              )}
               <p className="text-[10px] text-slate-400">
                 Please upload at least 1 image of the toy showing the defect or issue. Max 5 images.
               </p>
