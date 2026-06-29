@@ -271,9 +271,11 @@ function OrderSuccessContent() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-gray-900 text-sm line-clamp-2">{item.productName}</p>
                           </div>
-                          <div className="text-right flex-shrink-0">
+                          <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
                             <p className="font-bold text-gray-900 text-sm whitespace-nowrap">{fmt(item.unitPrice)}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">×{item.quantity}</p>
+                            <span className="inline-block px-2 py-0.5 text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 rounded-md">
+                              QTY: {item.quantity}
+                            </span>
                           </div>
                         </li>
                       ))}

@@ -52,6 +52,8 @@ interface CheckoutFormProps {
   externalLoading?: boolean;
   orderTotal?: number | null;
   paymentOptions?: CheckoutPaymentOptions | null;
+  isWalletActivated?: boolean;
+  isWalletLoading?: boolean;
 }
 
 export default function CheckoutForm({
@@ -59,7 +61,9 @@ export default function CheckoutForm({
   externalAddresses,
   externalLoading,
   orderTotal,
-  paymentOptions: checkoutPaymentOptions
+  paymentOptions: checkoutPaymentOptions,
+  isWalletActivated,
+  isWalletLoading,
 }: CheckoutFormProps) {
   const { isAuthenticated, isHydrated } = useAuthContext();
   const { cart } = useCart();
@@ -68,7 +72,7 @@ export default function CheckoutForm({
     () => cart?.items?.filter((i) => i.isSelected).reduce((sum, i) => sum + i.lineTotal, 0) ?? 0,
     [cart]
   );
-  
+
   const currentTotal = orderTotal !== null && orderTotal !== undefined ? orderTotal : selectedSubtotal;
   const isCodDisabledByTotal = currentTotal > 50000000;
   const isCodRestrictedByAccount = checkoutPaymentOptions?.isCodRestricted ?? false;
@@ -442,10 +446,10 @@ export default function CheckoutForm({
               <label
                 key={opt.id}
                 className={`group flex items-center gap-5 p-5 rounded-xl border-2 transition-all duration-200 ${disabled
-                    ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
-                    : checked
-                      ? "border-[#ff4f00] bg-white shadow-sm cursor-pointer"
-                      : "border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-400 cursor-pointer"
+                  ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+                  : checked
+                    ? "border-[#ff4f00] bg-white shadow-sm cursor-pointer"
+                    : "border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-400 cursor-pointer"
                   }`}
               >
                 <div className="relative flex items-center justify-center w-5 h-5 flex-shrink-0">
@@ -466,22 +470,19 @@ export default function CheckoutForm({
                 <span className={`text-2xl lg:text-3xl filter drop-shadow-sm transition-transform duration-200 ${!disabled && 'group-hover:scale-105'}`}>{opt.icon}</span>
                 <div className="flex-1">
                   <p className={`text-base font-extrabold transition-colors ${checked ? 'text-[#ff4f00]' : 'text-gray-900'}`}>{opt.label}</p>
-                  <p className="text-xs text-gray-500 mt-1 font-semibold">
+                  <p className="text-xs text-gray-500 mt-1 font-semibold flex flex-col items-start gap-1">
                     {disabled ? (
                       <span className="text-red-500">{codDisabledMessage}</span>
                     ) : (
                       opt.desc
                     )}
+                    {opt.id === "shopwallet" && !isWalletLoading && !isWalletActivated && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-md">
+                        Wallet not activated yet. <a href="/profile/wallet" target="_blank" rel="noopener noreferrer" className="underline font-black text-amber-900 hover:text-amber-950 ml-0.5">Activate now</a>
+                      </span>
+                    )}
                   </p>
                 </div>
-
-                {checked && (
-                  <div className="w-8 h-8 rounded-xl bg-[#ff4f00]/10 flex items-center justify-center flex-shrink-0 animate-in fade-in duration-200">
-                    <svg className="w-4 h-4 text-[#ff4f00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
               </label>
             );
           })}
