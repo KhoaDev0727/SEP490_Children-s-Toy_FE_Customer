@@ -199,7 +199,7 @@ export default function Header() {
     try {
       setAddingWishlistProductId(item.productId);
       await addItem(item.productId, 1);
-      toast.success("Item added to cart.");
+      toast.success("Added to cart successfully.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to add item to cart.";
