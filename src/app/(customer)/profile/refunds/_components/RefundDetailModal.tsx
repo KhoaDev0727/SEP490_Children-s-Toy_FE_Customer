@@ -213,19 +213,74 @@ export default function RefundDetailModal({
             <>
               {/* Status Banner */}
               <div
-                className="rounded-xl p-4 flex items-center justify-between"
+                className="rounded-xl p-4"
                 style={{ background: "linear-gradient(135deg, #f8fafc, #fff)" }}
               >
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Current Status</p>
-                  <RefundStatusBadge status={refund.refundStatus} />
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 mb-1">Refund Amount</p>
-                  <p className="text-xl font-black text-[#ff4f00]">
-                    {formatPrice(refund.approvedAmount)}
-                  </p>
-                </div>
+                {(() => {
+                  // Pre-Approve: finalRefundAmount = 0 is just DB default
+                  const PRE_APPROVE = ["RefundRequested", "RefundRejected", "RefundCancelled", "Requested", "Rejected", "Cancelled"];
+                  const isPreApproval = PRE_APPROVE.includes(refund.refundStatus);
+                  const hasDeduction = !isPreApproval
+                    && (refund.returnShippingFee ?? 0) > 0
+                    && refund.returnShippingFeeBy === "Customer";
+                  const displayAmount = isPreApproval
+                    ? refund.approvedAmount
+                    : (refund.finalRefundAmount != null && refund.finalRefundAmount > 0)
+                      ? refund.finalRefundAmount
+                      : refund.returnShippingFeeBy === "Customer"
+                        ? (refund.finalRefundAmount ?? 0)
+                        : refund.approvedAmount;
+
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-xs text-slate-500 mb-1">Current Status</p>
+                          <RefundStatusBadge status={refund.refundStatus} />
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500 mb-1">
+                            {hasDeduction ? "You will receive" : "Refund Amount"}
+                          </p>
+                          <p className="text-xl font-black text-[#ff4f00]">
+                            {formatPrice(displayAmount)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown — chỉ hiển thị sau khi Approve và có deduction */}
+                      {hasDeduction && (
+                        <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">Approved amount</span>
+                            <span className="font-medium text-slate-700">{formatPrice(refund.approvedAmount)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-amber-700 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">local_shipping</span>
+                              Return shipping fee (your responsibility)
+                            </span>
+                            <span className="font-medium text-amber-700">-{formatPrice(refund.returnShippingFee ?? 0)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs border-t border-amber-200 pt-1.5">
+                            <span className="font-bold text-[#ff4f00]">Net refund to wallet</span>
+                            <span className="font-black text-[#ff4f00]">{formatPrice(displayAmount)}</span>
+                          </div>
+                          <p className="text-[10px] text-amber-600 italic mt-1">
+                            Return shipping fee is deducted because the reason for return was on your side.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Note khi pre-approval */}
+                      {isPreApproval && (
+                        <p className="text-[11px] text-slate-400 italic mt-2">
+                          Final amount may vary if a return shipping fee applies upon approval.
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Info Grid */}
@@ -335,7 +390,12 @@ export default function RefundDetailModal({
                         check_box_outline_blank
                       </span>
                       <span>
-                        <strong>Hand over to courier:</strong> Wait for the GHN shipper to call and pick up the package. <em>Note: You do not need to pay any shipping fee to the shipper.</em>
+                        <strong>Hand over to courier:</strong> Wait for the GHN shipper to call and pick up the package.
+                        {refund.returnShippingFeeBy === "Customer" ? (
+                          <em className="text-amber-700"> Note: A return shipping fee of <strong>{formatPrice(refund.returnShippingFee ?? 0)}</strong> will be deducted from your refund.</em>
+                        ) : (
+                          <em> Note: You do not need to pay any shipping fee to the shipper.</em>
+                        )}
                       </span>
                     </li>
                   </ul>
