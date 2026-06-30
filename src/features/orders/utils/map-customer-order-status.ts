@@ -249,8 +249,14 @@ export function getCustomerOrderDisplay(params: {
       }
     }
   } else if (uiStatus === "cancelled") {
-    label = "CANCELLED";
-    className = "text-red-600";
+    // GHN failed delivery + system refund in progress → hiển thị trạng thái hoàn tiền thay vì "CANCELLED"
+    if (params.hasActiveRefund) {
+      label = "REFUND PROCESSING";
+      className = "text-sky-600";
+    } else {
+      label = "CANCELLED";
+      className = "text-red-600";
+    }
   } else if (uiStatus === "refunded") {
     label = "REFUNDED";
     className = "text-sky-600";

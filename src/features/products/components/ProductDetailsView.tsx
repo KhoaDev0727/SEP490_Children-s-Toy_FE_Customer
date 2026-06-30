@@ -378,11 +378,6 @@ export default function ProductDetailsView({
       return;
     }
 
-    if (selectedQuantity > remainingStock) {
-      toast.error(`You can only add up to ${remainingStock} more item(s).`);
-      return;
-    }
-
     const fallbackUnitPrice = product.discountedPrice ?? product.price;
     const unitPrice = cartItemForProduct
       ? (cartItemForProduct.currentPrice > 0 ? cartItemForProduct.currentPrice : cartItemForProduct.priceAtThatTime)
@@ -427,7 +422,7 @@ export default function ProductDetailsView({
           next.delete(product.productId);
           return next;
         });
-        toast.success("Removed from wishlist.");
+        toast.success("Item removed from wishlist.");
       } else {
         await wishlistApi.addItem(product.productId);
         // Tracking add_to_wishlist
