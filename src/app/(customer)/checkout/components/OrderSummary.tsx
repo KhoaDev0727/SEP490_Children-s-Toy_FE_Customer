@@ -378,6 +378,7 @@ export default function OrderSummary({
       const activeVouchers = res.items.filter((v) => {
         if (smartParseDate(v.endDate).getTime() <= now) return false;
         if (v.maxUsagePerUser && v.currentUserUsageCount !== null && v.currentUserUsageCount >= v.maxUsagePerUser) return false;
+        if (v.discountTarget === "FINAL_PRICE" && v.voucherCode !== appliedOrderVoucherCode) return false;
         return true;
       });
       setVoucherList(activeVouchers);
@@ -936,6 +937,8 @@ function UnifiedVoucherModal({
   const [typedCode, setTypedCode] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
   const [isSearchingCode, setIsSearchingCode] = useState(false);
+  const [visibleOrderCount, setVisibleOrderCount] = useState(3);
+  const [visibleShippingCount, setVisibleShippingCount] = useState(3);
   const [now] = useState(() => Date.now());
 
   const selectedOrderVoucher = vouchers.find((v) => v.voucherCode === selectedOrderCode);
@@ -1001,9 +1004,9 @@ function UnifiedVoucherModal({
         return;
       }
 
-      // Check if trying to apply a regular voucher when compensation voucher is selected
-      if (isCompensationSelected && matchedVoucher.discountTarget !== "FINAL_PRICE") {
-        setInputError("Remove the compensation voucher to apply a regular voucher.");
+      // Check if trying to apply a shipping voucher when FINAL_PRICE is selected
+      if (isCompensationSelected && matchedVoucher.discountTarget === "SHIPPING_FEE") {
+        setInputError("Remove the FINAL_PRICE voucher to apply a shipping voucher.");
         return;
       }
 
@@ -1011,15 +1014,15 @@ function UnifiedVoucherModal({
       if (matchedVoucher.discountTarget === "ORDER_TOTAL" || matchedVoucher.discountTarget === "FINAL_PRICE") {
         if (matchedVoucher.discountTarget === "FINAL_PRICE") {
           setSelectedShippingCode(undefined);
-          toast.success(`Applied Compensation Voucher: ${matchedVoucher.voucherCode}. Shipping discount cleared.`);
-        } else {
-          toast.success(`Applied Discount Voucher: ${matchedVoucher.voucherCode}`);
         }
         setSelectedOrderCode(matchedVoucher.voucherCode);
       } else {
+        if (isCompensationSelected) {
+          setSelectedOrderCode(undefined);
+        }
         setSelectedShippingCode(matchedVoucher.voucherCode);
-        toast.success(`Applied Free Shipping Voucher: ${matchedVoucher.voucherCode}`);
       }
+      toast.success(`Successfully applied voucher: ${matchedVoucher.voucherCode}`);
       setTypedCode("");
       setInputError(null);
     } catch (err) {
@@ -1038,32 +1041,28 @@ function UnifiedVoucherModal({
       ? Math.max(0, voucher.maxUsagePerUser - (voucher.currentUserUsageCount ?? 0))
       : null;
 
-    const isLocked = isCompensationSelected && !isSelected;
-
     const toggleSelect = () => {
       if (!eligible) return;
       if (isOrderTarget) {
-        if (voucher.discountTarget === "FINAL_PRICE") {
-          if (!isSelected) {
-            setSelectedShippingCode(undefined);
-            setSelectedOrderCode(voucher.voucherCode);
-            toast.success(`Applied Compensation Voucher: ${voucher.voucherCode}. Shipping discount cleared.`);
-          } else {
-            setSelectedOrderCode(undefined);
-          }
-        } else {
-          if (isCompensationSelected) {
-            toast.error("Remove the compensation voucher to select a regular voucher.");
-            return;
-          }
-          setSelectedOrderCode(isSelected ? undefined : voucher.voucherCode);
-        }
-      } else {
-        if (isCompensationSelected) {
-          toast.error("Remove the compensation voucher to apply a shipping voucher.");
+        if (isSelected) {
+          setSelectedOrderCode(undefined);
           return;
         }
-        setSelectedShippingCode(isSelected ? undefined : voucher.voucherCode);
+        if (voucher.discountTarget === "FINAL_PRICE") {
+          setSelectedShippingCode(undefined);
+          setSelectedOrderCode(voucher.voucherCode);
+        } else {
+          setSelectedOrderCode(voucher.voucherCode);
+        }
+      } else {
+        if (isSelected) {
+          setSelectedShippingCode(undefined);
+          return;
+        }
+        if (isCompensationSelected) {
+          setSelectedOrderCode(undefined);
+        }
+        setSelectedShippingCode(voucher.voucherCode);
       }
     };
 
@@ -1071,7 +1070,7 @@ function UnifiedVoucherModal({
       <div
         key={voucher.voucherId}
         onClick={toggleSelect}
-        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${(!eligible || isLocked)
+        className={`relative flex flex-row h-[116px] w-full transition-all border rounded-xl overflow-hidden filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${!eligible
           ? "opacity-60 grayscale cursor-not-allowed border-gray-200 bg-gray-50"
           : isSelected
             ? isOrderTarget
@@ -1261,8 +1260,16 @@ function UnifiedVoucherModal({
                     Order Discount Vouchers ({orderVouchers.length})
                   </h4>
                   <div className="space-y-4">
-                    {orderVouchers.map((voucher) => renderVoucherCard(voucher))}
+                    {orderVouchers.slice(0, visibleOrderCount).map((voucher) => renderVoucherCard(voucher))}
                   </div>
+                  {orderVouchers.length > visibleOrderCount && (
+                    <button
+                      onClick={() => setVisibleOrderCount((prev) => prev + 3)}
+                      className="w-full mt-3 py-2 text-xs font-bold text-[#ff4f00] bg-[#ff4f00]/10 rounded-lg hover:bg-[#ff4f00]/20 transition-colors"
+                    >
+                      Show More
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -1274,8 +1281,16 @@ function UnifiedVoucherModal({
                     Free Shipping Vouchers ({shippingVouchers.length})
                   </h4>
                   <div className="space-y-4">
-                    {shippingVouchers.map((voucher) => renderVoucherCard(voucher))}
+                    {shippingVouchers.slice(0, visibleShippingCount).map((voucher) => renderVoucherCard(voucher))}
                   </div>
+                  {shippingVouchers.length > visibleShippingCount && (
+                    <button
+                      onClick={() => setVisibleShippingCount((prev) => prev + 3)}
+                      className="w-full mt-3 py-2 text-xs font-bold text-[#ff4f00] bg-[#ff4f00]/10 rounded-lg hover:bg-[#ff4f00]/20 transition-colors"
+                    >
+                      Show More
+                    </button>
+                  )}
                 </div>
               )}
             </>
