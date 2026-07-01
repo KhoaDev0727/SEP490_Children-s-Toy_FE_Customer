@@ -885,7 +885,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
       setAddingProductId(product.productId);
       await addItem(product.productId, 1);
       trackAddToCart(product.productId, { quantity: 1, source: "plp" });
-      toast.success("Item added to cart.");
+      toast.success("Added to cart successfully.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to add item to cart.";
       toast.error(message);
@@ -911,7 +911,7 @@ export default function ProductGrid({ filters }: { filters: ProductFilters }) {
           next.delete(productId);
           return next;
         });
-        toast.success("Removed from wishlist.");
+        toast.success("Item removed from wishlist.");
       } else {
         await wishlistApi.addItem(productId);
         trackAddToWishlist(productId);
