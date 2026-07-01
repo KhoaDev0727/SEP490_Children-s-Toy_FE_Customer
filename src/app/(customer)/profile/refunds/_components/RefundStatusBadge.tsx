@@ -35,7 +35,7 @@ const STATUS_CONFIG: Partial<Record<
     border: "#bfdbfe",
   },
   RefundReceived: {
-    label: "Received at Warehouse",
+    label: "Received at Shop",
     bg: "#eff6ff",
     text: "#1d4ed8",
     border: "#bfdbfe",

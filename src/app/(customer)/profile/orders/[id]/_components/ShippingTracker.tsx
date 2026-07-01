@@ -230,9 +230,9 @@ export default function ShippingTracker({
           <p className="text-sm font-bold text-slate-600">
             {isCancelled
               ? "This order has been cancelled"
-              : hasActiveRefund || isRefundFlow
-                ? "Refund has been requested"
-                : "Order has been refunded"}
+              : display.uiStatus === "refunded"
+                ? "Order has been refunded"
+                : "Refund has been requested"}
           </p>
           <p className="text-xs text-slate-400 mt-1 max-w-[85%] text-center leading-relaxed">
             {isCancelled ? (
@@ -247,10 +247,10 @@ export default function ShippingTracker({
               ) : (
                 "If you have questions, please contact support"
               )
-            ) : hasActiveRefund ? (
-              "Our staff is reviewing your refund request"
-            ) : (
+            ) : display.uiStatus === "refunded" ? (
               "Refund has been returned to your wallet"
+            ) : (
+              "Our staff is reviewing your refund request"
             )}
           </p>
         </div>
