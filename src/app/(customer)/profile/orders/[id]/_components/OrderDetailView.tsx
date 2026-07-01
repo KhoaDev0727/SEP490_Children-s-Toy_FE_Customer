@@ -103,6 +103,7 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
         buildOrderTimelineEvents(tracking?.events ?? [], detail.statusHistory ?? [], {
           cancelledAt: detail.cancelledAt,
           currentStatusName: detail.statusName,
+          paymentMethod: detail.paymentMethod,
         }),
       );
     } catch (error) {
