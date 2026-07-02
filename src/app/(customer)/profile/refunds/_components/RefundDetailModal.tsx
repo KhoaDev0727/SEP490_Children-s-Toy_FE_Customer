@@ -6,6 +6,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import RefundStatusBadge from "./RefundStatusBadge";
 import { refundsApi } from "@/features/refunds/services/refunds-api";
+import { walletApi } from "@/features/wallet/services/wallet-api";
 import type { RefundDetail } from "@/features/refunds/types/refunds";
 
 interface RefundDetailModalProps {
@@ -21,13 +22,16 @@ function formatPrice(amount: number): string {
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
-  return d.toLocaleString("en-GB", {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false
   });
+  return formatter.format(d).replace(",", "");
 }
 
 export default function RefundDetailModal({
@@ -39,7 +43,53 @@ export default function RefundDetailModal({
   const [refund, setRefund] = useState<RefundDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [isPayingFee, setIsPayingFee] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  const fetchWallet = async () => {
+    try {
+      const res = await walletApi.getMyWallet();
+      setWalletBalance(res.balance);
+    } catch (e) {
+      console.error("Failed to load wallet balance", e);
+    }
+  };
+
+  const hasCustomerFault = useMemo(() => {
+    if (!refund || !refund.details) return false;
+    return refund.details.some(d => (d.failedCustomerQty ?? 0) > 0);
+  }, [refund]);
+
+  const originalShipFeeRefund = useMemo(() => {
+    if (!refund) return 0;
+    return hasCustomerFault ? 0 : (refund.shippingFee ?? 0);
+  }, [refund, hasCustomerFault]);
+
+  const candidateAmount = useMemo(() => {
+    if (!refund) return 0;
+    return (refund.itemApprovedSubTotal ?? 0) + originalShipFeeRefund;
+  }, [refund, originalShipFeeRefund]);
+
+  const shortfall = useMemo(() => {
+    if (!refund) return 0;
+    return (refund.returnToCustomerFee ?? 0) - candidateAmount;
+  }, [refund, candidateAmount]);
+
+  const handlePayShortfall = async () => {
+    if (!refundId) return;
+    setIsPayingFee(true);
+    try {
+      const updated = await refundsApi.payReturnFee(refundId);
+      setRefund(updated);
+      toast.success("Return shipping fee paid successfully!");
+      onCancelSuccess();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to pay return shipping fee shortfall.");
+    } finally {
+      setIsPayingFee(false);
+    }
+  };
 
   const latestShippingStatus = useMemo(() => {
     if (!refund || !refund.shippingHistory || refund.shippingHistory.length === 0) {
@@ -108,9 +158,16 @@ export default function RefundDetailModal({
     if (!isOpen || !refundId) return;
     setIsLoading(true);
     setRefund(null);
+    setWalletBalance(null);
     refundsApi
       .getRefundById(refundId)
-      .then(setRefund)
+      .then((data) => {
+        setRefund(data);
+        const hasFault = (data.details ?? []).some(d => (d.failedCustomerQty ?? 0) > 0);
+        if (hasFault && !data.returnToCustomerFeePaid) {
+          fetchWallet();
+        }
+      })
       .catch(() => toast.error("Unable to load refund details."))
       .finally(() => setIsLoading(false));
   }, [isOpen, refundId]);
@@ -217,68 +274,216 @@ export default function RefundDetailModal({
                 style={{ background: "linear-gradient(135deg, #f8fafc, #fff)" }}
               >
                 {(() => {
-                  // Pre-Approve: finalRefundAmount = 0 is just DB default
                   const PRE_APPROVE = ["RefundRequested", "RefundRejected", "RefundCancelled", "Requested", "Rejected", "Cancelled"];
                   const isPreApproval = PRE_APPROVE.includes(refund.refundStatus);
-                  const hasDeduction = !isPreApproval
-                    && (refund.returnShippingFee ?? 0) > 0
-                    && refund.returnShippingFeeBy === "Customer";
-                  const displayAmount = isPreApproval
-                    ? refund.approvedAmount
-                    : (refund.finalRefundAmount != null && refund.finalRefundAmount > 0)
+                  const isCompletedOrInspected = ["RefundInspectionPending", "RefundCompleted", "RefundDamage", "Completed", "Damaged"].includes(refund.refundStatus)
+                    || (refund.refundStatus === "Processing" && (
+                      (refund.returnToCustomerFee ?? 0) > 0 ||
+                      (refund.details ?? []).some(d => d.restorableQuantity != null || (d.failedCustomerQty ?? 0) > 0 || (d.failedCarrierQty ?? 0) > 0)
+                    ));
+
+                  if (isPreApproval) {
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Current Status</p>
+                            <RefundStatusBadge status={refund.refundStatus} />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500 mb-1">Expected Refund</p>
+                            <p className="text-xl font-black text-[#ff4f00]">
+                              {formatPrice(refund.approvedAmount)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-400 italic mt-2">
+                          Final amount may vary if a return shipping fee applies upon approval.
+                        </p>
+                      </>
+                    );
+                  }
+
+                  if (refund.isSystemReturn) {
+                    const productAmount = (refund.totalAmount ?? refund.approvedAmount) - (refund.customerShippingPaid ?? 0);
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Current Status</p>
+                            <RefundStatusBadge status={refund.refundStatus} />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500 mb-1">Refund Amount</p>
+                            <p className="text-xl font-black text-[#ff4f00]">
+                              {formatPrice(refund.finalRefundAmount ?? refund.approvedAmount)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 space-y-1">
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>Product amount (after voucher)</span>
+                            <span>{formatPrice(productAmount)}</span>
+                          </div>
+                          {(refund.customerShippingPaid ?? 0) > 0 && (
+                            <div className="flex justify-between text-xs text-slate-500">
+                              <span>Shipping fee refund</span>
+                              <span>{refund.includeShippingInRefund ? formatPrice(refund.customerShippingPaid ?? 0) : "No refund"}</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  }
+
+                  // Customer return
+                  if (!isCompletedOrInspected) {
+                    const hasDeduction = (refund.returnShippingFee ?? 0) > 0 && refund.returnShippingFeeBy === "Customer";
+                    const displayAmount = (refund.finalRefundAmount != null && refund.finalRefundAmount > 0)
                       ? refund.finalRefundAmount
                       : refund.returnShippingFeeBy === "Customer"
-                        ? (refund.finalRefundAmount ?? 0)
+                        ? 0
                         : refund.approvedAmount;
 
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Current Status</p>
+                            <RefundStatusBadge status={refund.refundStatus} />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500 mb-1">
+                              {hasDeduction ? "Expected refund" : "Refund Amount"}
+                            </p>
+                            <p className="text-xl font-black text-[#ff4f00]">
+                              {formatPrice(displayAmount)}
+                            </p>
+                          </div>
+                        </div>
+                        {hasDeduction && (
+                          <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 space-y-1">
+                            <div className="flex justify-between text-xs text-slate-500">
+                              <span>Approved amount</span>
+                              <span>{formatPrice(refund.approvedAmount)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-slate-500">
+                              <span>Return shipping fee (deducted)</span>
+                              <span>-{formatPrice(refund.returnShippingFee ?? 0)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
+
+                  // Customer return after inspection
                   return (
-                    <>
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs text-slate-500 mb-1">Current Status</p>
                           <RefundStatusBadge status={refund.refundStatus} />
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-slate-500 mb-1">
-                            {hasDeduction ? "You will receive" : "Refund Amount"}
-                          </p>
+                          <p className="text-xs text-slate-500 mb-1">Final Refund to Wallet</p>
                           <p className="text-xl font-black text-[#ff4f00]">
-                            {formatPrice(displayAmount)}
+                            {formatPrice(refund.finalRefundAmount ?? 0)}
                           </p>
                         </div>
                       </div>
 
-                      {/* Breakdown — chỉ hiển thị sau khi Approve và có deduction */}
-                      {hasDeduction && (
-                        <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 space-y-1.5">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Approved amount</span>
-                            <span className="font-medium text-slate-700">{formatPrice(refund.approvedAmount)}</span>
+                      {/* Detailed breakdown */}
+                      <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 space-y-1.5 text-xs text-slate-650">
+                        <div className="flex justify-between">
+                          <span>Approved Items Subtotal</span>
+                          <span className="font-medium text-slate-800">{formatPrice(refund.itemApprovedSubTotal ?? 0)}</span>
+                        </div>
+                        {(refund.itemRejectedSubTotal ?? 0) > 0 && (
+                          <div className="flex justify-between text-red-600">
+                            <span>Rejected Items Subtotal (Customer fault)</span>
+                            <span className="font-medium">-{formatPrice(refund.itemRejectedSubTotal ?? 0)}</span>
                           </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-amber-700 flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[12px]">local_shipping</span>
-                              Return shipping fee (your responsibility)
+                        )}
+                        <div className="flex justify-between">
+                          <span>Original Shipping Fee Refund</span>
+                          <span className="font-medium text-slate-800">
+                            {(refund.itemRejectedSubTotal ?? 0) > 0 ? "0 (Forfeited)" : formatPrice(refund.shippingFee ?? 0)}
+                          </span>
+                        </div>
+                        {(refund.returnToCustomerFee ?? 0) > 0 && (
+                          <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5">
+                            <span>Return Shipping Fee (Shop → You)</span>
+                            <span className="font-medium text-amber-600">{formatPrice(refund.returnToCustomerFee ?? 0)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Shortfall payment section */}
+                      {hasCustomerFault && !refund.returnToCustomerFeePaid && shortfall > 0 && (
+                        <div className="rounded-xl border border-red-100 bg-red-50/40 p-4 space-y-3">
+                          <div className="flex items-start gap-2">
+                            <div>
+                              <p className="text-xs font-bold text-red-700">Return Shipping Fee Shortfall Unpaid</p>
+                              <p className="text-[11px] text-slate-550 mt-0.5 leading-relaxed">
+                                To receive your rejected products back, you must pay the return shipping fee shortfall of{" "}
+                                <strong className="text-red-650">{formatPrice(shortfall)}</strong>.
+                              </p>
+                            </div>
+                          </div>
+
+                          {refund.customerResponseDeadline && (
+                            <p className="text-[10px] text-red-500 font-medium">
+                              Payment Deadline (48 hours): {formatDate(refund.customerResponseDeadline)}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between text-xs border-t border-red-100/50 pt-2.5">
+                            <span className="text-slate-550">Your Wallet Balance:</span>
+                            <span className="font-bold text-slate-800">
+                              {walletBalance !== null ? formatPrice(walletBalance) : "Loading..."}
                             </span>
-                            <span className="font-medium text-amber-700">-{formatPrice(refund.returnShippingFee ?? 0)}</span>
                           </div>
-                          <div className="flex justify-between text-xs border-t border-amber-200 pt-1.5">
-                            <span className="font-bold text-[#ff4f00]">Net refund to wallet</span>
-                            <span className="font-black text-[#ff4f00]">{formatPrice(displayAmount)}</span>
-                          </div>
-                          <p className="text-[10px] text-amber-600 italic mt-1">
-                            Return shipping fee is deducted because the reason for return was on your side.
-                          </p>
+
+                          {walletBalance !== null && walletBalance < shortfall ? (
+                            <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-700 flex flex-col gap-1">
+                              <p>⚠ Insufficient wallet balance to pay shortfall.</p>
+                              <a
+                                href="/profile/wallet"
+                                className="text-[#ff4f00] font-bold hover:underline"
+                              >
+                                Go to Wallet to Top Up →
+                              </a>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={handlePayShortfall}
+                              disabled={isPayingFee || walletBalance === null}
+                              className="w-full h-9 rounded-lg bg-[#ff4f00] text-white text-xs font-bold hover:bg-[#e04500] transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                            >
+                              {isPayingFee ? (
+                                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <span className="material-symbols-outlined text-[14px]">account_balance_wallet</span>
+                              )}
+                              Pay Shortfall ({formatPrice(shortfall)})
+                            </button>
+                          )}
                         </div>
                       )}
 
-                      {/* Note khi pre-approval */}
-                      {isPreApproval && (
-                        <p className="text-[11px] text-slate-400 italic mt-2">
-                          Final amount may vary if a return shipping fee applies upon approval.
-                        </p>
+                      {hasCustomerFault && refund.returnToCustomerFeePaid && (
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/20 p-3 flex items-start gap-2">
+                          <span className="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>
+                          <div>
+                            <p className="text-xs font-bold text-emerald-800">Return Shipping Fee Paid</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">
+                              The fee shortfall has been fully paid. Rejected products are being prepared for shipping back to you.
+                            </p>
+                          </div>
+                        </div>
                       )}
-                    </>
+                    </div>
                   );
                 })()}
               </div>
@@ -350,7 +555,21 @@ export default function RefundDetailModal({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-slate-700 truncate">{item.productName}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Qty: <strong className="text-slate-600">{item.quantity}</strong></p>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[10px]">
+                            <span className="text-slate-450">Qty: <strong className="text-slate-600">{item.quantity}</strong></span>
+                            {(item.restorableQuantity != null || item.failedCustomerQty != null || item.failedCarrierQty != null) && (
+                              <span className="text-slate-300">|</span>
+                            )}
+                            {(item.restorableQuantity ?? 0) > 0 && (
+                              <span className="text-green-605 font-semibold">Passed: {item.restorableQuantity}</span>
+                            )}
+                            {(item.failedCustomerQty ?? 0) > 0 && (
+                              <span className="text-red-600 font-semibold">Failed (Cust): {item.failedCustomerQty}</span>
+                            )}
+                            {(item.failedCarrierQty ?? 0) > 0 && (
+                              <span className="text-amber-600 font-semibold">Failed (Carrier): {item.failedCarrierQty}</span>
+                            )}
+                          </div>
                         </div>
                         <span className="font-bold text-[#ff4f00] shrink-0 ml-4">{formatPrice(item.refundAmount)}</span>
                       </div>
