@@ -127,4 +127,17 @@ export const refundsApi = {
       );
     }
   },
+
+  payReturnFee: async (refundId: number): Promise<RefundDetail> => {
+    try {
+      const response = await axiosClient.post<
+        RefundDetail | ApiResponse<RefundDetail>
+      >(`/refunds/${refundId}/pay-return-fee`);
+      return unwrap(response);
+    } catch (error) {
+      throw new Error(
+        extractErrorMessage(error, "Unable to pay return shipping fee shortfall."),
+      );
+    }
+  },
 };

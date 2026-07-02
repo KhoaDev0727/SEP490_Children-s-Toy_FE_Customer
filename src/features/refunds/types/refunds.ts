@@ -51,6 +51,9 @@ export interface RefundDetailItem {
   quantity: number;
   unitPrice: number;
   refundAmount: number;
+  restorableQuantity?: number | null;
+  failedCustomerQty?: number;
+  failedCarrierQty?: number;
 }
 
 export interface RefundStatusHistory {
@@ -90,6 +93,7 @@ export interface RefundDetail {
   images: string[];
   refundCode?: string | null;
   shippingOrderCode?: string | null;
+  returnShippingOrderCode?: string | null;
   shippingFee?: number;
   subTotal?: number;
   totalAmount?: number;
@@ -103,6 +107,16 @@ export interface RefundDetail {
   returnShippingFeeBy?: "Store" | "Customer";
   /** Số tiền thực tế sẽ được credit vào ví khách. */
   finalRefundAmount?: number;
+  isSystemReturn?: boolean;
+  customerShippingPaid?: number;
+  includeShippingInRefund?: boolean | null;
+  voucherDiscountAmount?: number;
+  itemApprovedSubTotal?: number;
+  itemRejectedSubTotal?: number;
+  returnToCustomerFee?: number;
+  customerResponseDeadline?: string | null;
+  customerResponse?: string | null;
+  returnToCustomerFeePaid?: boolean;
 }
 
 export interface CreateRefundRequest {
