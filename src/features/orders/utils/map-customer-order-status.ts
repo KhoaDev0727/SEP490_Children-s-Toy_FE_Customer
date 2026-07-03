@@ -171,8 +171,24 @@ export function getCustomerOrderDisplay(params: {
   apiDisplayLabel?: string | null;
   statusBucket?: OrderStatus;
 }): CustomerOrderDisplay {
-  const uiStatus = params.statusBucket ?? mapCustomerStatusNameToUi(params.statusName);
+  const isCod = params.paymentMethod === "SHIP_COD";
   const raw = params.statusName?.toLowerCase().trim() ?? "";
+
+  let uiStatus = params.statusBucket ?? mapCustomerStatusNameToUi(params.statusName);
+  if (
+    isCod &&
+    (raw.includes("waitingreturn") ||
+      raw.includes("waiting return") ||
+      raw.includes("returning") ||
+      raw.includes("returncompleted") ||
+      raw.includes("return completed") ||
+      raw.includes("deliveryfailed") ||
+      raw.includes("delivery failed") ||
+      raw.includes("returnfailed") ||
+      raw.includes("return failed"))
+  ) {
+    uiStatus = "cancelled";
+  }
 
   let label = params.apiDisplayLabel
     ? params.apiDisplayLabel.toUpperCase()
@@ -450,6 +466,7 @@ export function filterTimelineAfterCancellation(
 export interface BuildOrderTimelineOptions {
   cancelledAt?: string | null;
   currentStatusName?: string | null;
+  paymentMethod?: string | null;
 }
 
 export function buildOrderTimelineEvents(
@@ -458,12 +475,29 @@ export function buildOrderTimelineEvents(
   options?: BuildOrderTimelineOptions,
 ): OrderTimelineEvent[] {
   const all: OrderTimelineEvent[] = [];
+  const isCod = options?.paymentMethod === "SHIP_COD";
 
   trackingEvents.forEach((e) => {
+    const desc = toEnglishStatusDescription(e.description) || toEnglishStatusDescription(e.status);
+    if (isCod) {
+      const descLower = desc.toLowerCase();
+      if (
+        descLower.includes("waiting for return") ||
+        descLower.includes("waiting_to_return") ||
+        descLower.includes("returning") ||
+        descLower.includes("returning to shop") ||
+        descLower.includes("returned to shop") ||
+        descLower.includes("returncompleted") ||
+        descLower.includes("return completed")
+      ) {
+        return; // Skip return events for COD
+      }
+    }
+
     all.push({
       time: e.time,
       status: mapCustomerStatusNameToUi(e.status),
-      description: toEnglishStatusDescription(e.description) || toEnglishStatusDescription(e.status),
+      description: desc,
     });
   });
 
@@ -485,6 +519,21 @@ export function buildOrderTimelineEvents(
     }
     if (!description) return;
 
+    if (isCod) {
+      const descLower = description.toLowerCase();
+      if (
+        descLower.includes("waiting for return") ||
+        descLower.includes("waiting_to_return") ||
+        descLower.includes("returning") ||
+        descLower.includes("returning to shop") ||
+        descLower.includes("returned to shop") ||
+        descLower.includes("returncompleted") ||
+        descLower.includes("return completed")
+      ) {
+        return; // Skip return events for COD
+      }
+    }
+
     all.push({
       time: h.createdAt,
       status: mapCustomerStatusNameToUi(h.statusName),
@@ -494,14 +543,52 @@ export function buildOrderTimelineEvents(
 
   const sorted = all
     .filter((ev) => ev.time)
-    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .map((ev, idx) => ({ ...ev, _idx: idx }))
+    .sort((a, b) => {
+      const timeDiff = new Date(b.time).getTime() - new Date(a.time).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      return b._idx - a._idx;
+    })
     .filter(
       (ev, idx, self) =>
         idx ===
         self.findIndex(
           (t) => t.description === ev.description && t.time === ev.time,
         ),
-    );
+    )
+    .map(({ _idx: _removed, ...ev }) => ev);
+
+  // De-duplicate generic vs detailed events within a 10-second window
+  const cleanEvents: OrderTimelineEvent[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const ev = sorted[i];
+    let isDuplicate = false;
+
+    for (let j = 0; j < sorted.length; j++) {
+      if (i === j) continue;
+      const other = sorted[j];
+
+      const timeDiff = Math.abs(
+        new Date(ev.time).getTime() - new Date(other.time).getTime()
+      );
+      if (timeDiff <= 10000) {
+        const normEv = ev.description.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const normOther = other.description.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        if (
+          normOther.length > normEv.length &&
+          normOther.includes(normEv)
+        ) {
+          isDuplicate = true;
+          break;
+        }
+      }
+    }
+
+    if (!isDuplicate) {
+      cleanEvents.push(ev);
+    }
+  }
 
   const cutoff = resolveCancellationCutoffMs(
     options?.cancelledAt,
@@ -509,5 +596,5 @@ export function buildOrderTimelineEvents(
     options?.currentStatusName,
   );
 
-  return filterTimelineAfterCancellation(sorted, cutoff);
+  return filterTimelineAfterCancellation(cleanEvents, cutoff);
 }

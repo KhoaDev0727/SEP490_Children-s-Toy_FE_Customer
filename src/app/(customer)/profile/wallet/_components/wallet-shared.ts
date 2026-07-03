@@ -35,6 +35,13 @@ export type UiTransaction = {
   statusLabel: string;
   statusClassName: string;
   kind: TransactionKind;
+  isWithdrawalRequest?: boolean;
+  referenceId?: string;
+  toBankName?: string;
+  toAccountNumber?: string;
+  toAccountName?: string;
+  failReason?: string | null;
+  processingAt?: string | null;
 };
 
 export type PinModalMode = "activate" | "topup" | "viewBalance" | "changePin" | "withdraw";

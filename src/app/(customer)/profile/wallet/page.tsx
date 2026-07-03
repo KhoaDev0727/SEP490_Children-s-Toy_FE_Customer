@@ -60,17 +60,12 @@ export default function WalletPage() {
   const [transactionPageNumber, setTransactionPageNumber] = useState(1);
   const [transactionTotalPages, setTransactionTotalPages] = useState(1);
   const [transactionTotalCount, setTransactionTotalCount] = useState(0);
-  const [hasPreviousTransactionPage, setHasPreviousTransactionPage] =
-    useState(false);
-  const [hasNextTransactionPage, setHasNextTransactionPage] = useState(false);
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalDto[]>([]);
   const [isWithdrawalsLoading, setIsWithdrawalsLoading] = useState(false);
   const [withdrawalPageNumber, setWithdrawalPageNumber] = useState(1);
   const [withdrawalTotalPages, setWithdrawalTotalPages] = useState(1);
   const [withdrawalTotalCount, setWithdrawalTotalCount] = useState(0);
-  const [hasPreviousWithdrawalPage, setHasPreviousWithdrawalPage] = useState(false);
-  const [hasNextWithdrawalPage, setHasNextWithdrawalPage] = useState(false);
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<PinModalMode>("activate");
@@ -129,8 +124,6 @@ export default function WalletPage() {
       setTransactionPageNumber(transactionResponse.pageNumber);
       setTransactionTotalPages(transactionResponse.totalPages || 1);
       setTransactionTotalCount(transactionResponse.totalCount);
-      setHasPreviousTransactionPage(transactionResponse.hasPreviousPage);
-      setHasNextTransactionPage(transactionResponse.hasNextPage);
     } catch (transactionError) {
       const transactionApiError = getApiError(transactionError);
       setTransactions([]);
@@ -150,8 +143,6 @@ export default function WalletPage() {
       setWithdrawalPageNumber(res.pageNumber);
       setWithdrawalTotalPages(res.totalPages || 1);
       setWithdrawalTotalCount(res.totalCount);
-      setHasPreviousWithdrawalPage(res.hasPreviousPage);
-      setHasNextWithdrawalPage(res.hasNextPage);
     } catch {
       // Non-critical — don't toast; the tab will show empty state
     } finally {
@@ -175,8 +166,6 @@ export default function WalletPage() {
         setTransactionPageNumber(1);
         setTransactionTotalPages(1);
         setTransactionTotalCount(0);
-        setHasPreviousTransactionPage(false);
-        setHasNextTransactionPage(false);
       } else {
         toast.error(apiError.message ?? "Unable to load wallet information.");
       }
@@ -192,16 +181,23 @@ export default function WalletPage() {
     return () => window.clearTimeout(timer);
   }, [loadWalletData]);
 
-  const handleTransactionPageChange = (nextPage: number) => {
-    if (nextPage < 1 || nextPage > transactionTotalPages) return;
-    if (nextPage === transactionPageNumber) return;
-    void loadTransactionPage(nextPage);
-  };
+  const handlePageChange = (nextPage: number) => {
+    const maxPages = Math.max(transactionTotalPages, withdrawalTotalPages);
+    if (nextPage < 1 || nextPage > maxPages) return;
 
-  const handleWithdrawalPageChange = (nextPage: number) => {
-    if (nextPage < 1 || nextPage > withdrawalTotalPages) return;
-    if (nextPage === withdrawalPageNumber) return;
-    void loadWithdrawalPage(nextPage);
+    if (nextPage <= transactionTotalPages) {
+      void loadTransactionPage(nextPage);
+    } else {
+      setTransactions([]);
+      setTransactionPageNumber(nextPage);
+    }
+
+    if (nextPage <= withdrawalTotalPages) {
+      void loadWithdrawalPage(nextPage);
+    } else {
+      setWithdrawals([]);
+      setWithdrawalPageNumber(nextPage);
+    }
   };
 
   const resetPinModalFields = () => {
@@ -580,15 +576,11 @@ export default function WalletPage() {
             transactionPageNumber={transactionPageNumber}
             transactionTotalPages={transactionTotalPages}
             transactionTotalCount={transactionTotalCount}
-            hasPreviousTransactionPage={hasPreviousTransactionPage}
-            hasNextTransactionPage={hasNextTransactionPage}
             withdrawals={withdrawals}
             isWithdrawalsLoading={isWithdrawalsLoading}
             withdrawalPageNumber={withdrawalPageNumber}
             withdrawalTotalPages={withdrawalTotalPages}
             withdrawalTotalCount={withdrawalTotalCount}
-            hasPreviousWithdrawalPage={hasPreviousWithdrawalPage}
-            hasNextWithdrawalPage={hasNextWithdrawalPage}
             onTopUp={() => openPinModal("topup")}
             onWithdraw={() => {
               setIsWithdrawPanelOpen(true);
@@ -601,8 +593,7 @@ export default function WalletPage() {
               openPinModal("viewBalance");
             }}
             onChangePin={() => openPinModal("changePin")}
-            onTransactionPageChange={handleTransactionPageChange}
-            onWithdrawalPageChange={handleWithdrawalPageChange}
+            onPageChange={handlePageChange}
           />
         )}
       </section>
