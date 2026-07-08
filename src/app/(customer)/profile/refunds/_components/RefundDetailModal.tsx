@@ -276,7 +276,10 @@ export default function RefundDetailModal({
                 {(() => {
                   const PRE_APPROVE = ["RefundRequested", "RefundRejected", "RefundCancelled", "Requested", "Rejected", "Cancelled"];
                   const isPreApproval = PRE_APPROVE.includes(refund.refundStatus);
-                  const isCompletedOrInspected = ["RefundInspectionPending", "RefundCompleted", "RefundDamage", "Completed", "Damaged"].includes(refund.refundStatus)
+                  const isCompletedOrInspected = [
+                    "RefundInspectionPending", "RefundCompleted", "RefundDamage", "Completed", "Damaged",
+                    "RefundReturnShipmentCreated", "RefundReturningToCustomer", "RefundReturnedToCustomer", "RefundReturnToCustomerFailed"
+                  ].includes(refund.refundStatus)
                     || (refund.refundStatus === "Processing" && (
                       (refund.returnToCustomerFee ?? 0) > 0 ||
                       (refund.details ?? []).some(d => d.restorableQuantity != null || (d.failedCustomerQty ?? 0) > 0 || (d.failedCarrierQty ?? 0) > 0)
