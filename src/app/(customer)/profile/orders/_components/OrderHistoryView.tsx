@@ -175,13 +175,18 @@ export default function OrderHistoryView() {
 
   const handleSecondaryAction = useCallback(
     async (order: Order) => {
-      if (order.status === "pending") {
+      const rawStatus = order.rawStatusName?.toLowerCase();
+      if (rawStatus === "pending") {
         setOrderToCancel(order);
         if (order.paymentMethod === "SE_PAY") {
           setIsCancelQRModalOpen(true);
         } else {
           setIsCancelModalOpen(true);
         }
+      } else if (rawStatus === "confirmed" && order.paymentMethod !== "SHIP_COD") {
+        // Confirmed + WALLET/SE_PAY → cho phép cancel (đã thanh toán)
+        setOrderToCancel(order);
+        setIsCancelModalOpen(true);
       } else if (order.status === "completed") {
         const loadingToast = toast.loading("Checking review status...");
         const startTime = Date.now();
