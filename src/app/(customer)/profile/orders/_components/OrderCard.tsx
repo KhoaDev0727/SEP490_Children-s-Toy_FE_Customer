@@ -92,9 +92,11 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
 
   const actions = ACTION_BUTTONS[order.status];
 
-  // SHIP_COD: cancel only before confirmed
-  const canCancel = order.status === "pending" &&
-    !(order.paymentMethod === "SHIP_COD" && order.rawStatusName?.toLowerCase() === "confirmed");
+  // Pending (tất cả PT) hoặc Confirmed (chỉ WALLET/SE_PAY) mới được tự cancel
+  const rawStatus = order.rawStatusName?.toLowerCase();
+  const canCancel =
+    rawStatus === "pending" ||
+    (rawStatus === "confirmed" && order.paymentMethod !== "SHIP_COD");
 
   const [isExpanded, setIsExpanded] = useState(false);
   const items = order.items || [];
@@ -226,11 +228,20 @@ export default function OrderCard({ order, onPrimaryAction, onSecondaryAction, o
               ) : (
                 <button
                   onClick={() => onSecondaryAction?.(order)}
-                  className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all"
+                  className="flex-1 sm:flex-none px-6 py-2.5 border border-red-200 text-red-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
                 >
                   {actions.secondary}
                 </button>
               )
+          )}
+          {/* Nút Cancel Order riêng cho Confirmed (WALLET/SE_PAY) */}
+          {canCancel && rawStatus === "confirmed" && (
+            <button
+              onClick={() => onSecondaryAction?.(order)}
+              className="flex-1 sm:flex-none px-6 py-2.5 border border-red-200 text-red-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
+            >
+              Cancel Order
+            </button>
           )}
           <button
             onClick={() => onPrimaryAction?.(order)}
