@@ -108,7 +108,7 @@ export default function VoucherList() {
 
   const tabs = [
     { value: "ALL", label: "All" },
-    { value: "ORDER_TOTAL", label: "Discount code" },
+    { value: "ORDER_TOTAL", label: "Order voucher" },
     { value: "SHIPPING_FEE", label: "Shipping voucher" },
   ];
 
