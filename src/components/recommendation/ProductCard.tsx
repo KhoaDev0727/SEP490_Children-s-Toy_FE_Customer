@@ -16,8 +16,8 @@ const FALLBACK_IMAGE =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23f1f5f9'/><text x='50%25' y='50%25' fill='%2394a3b8' font-family='Inter,sans-serif' font-size='14' text-anchor='middle' dominant-baseline='middle'>No image</text></svg>";
 
 function formatVnd(value: number): string {
-  if (!Number.isFinite(value)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value) + " ₫";
+  if (!Number.isFinite(value)) return "0 VND";
+  return value.toLocaleString("vi-VN") + " VND";
 }
 
 /**
@@ -74,12 +74,12 @@ export default function ProductCard({ item, source }: ProductCardProps) {
           {item.productName}
         </h4>
 
-        <div className="flex items-baseline gap-2 mb-2">
+        <div className="flex flex-col gap-0.5 mb-2">
           <span className="font-bold text-lg text-[#ff6a00]">
             {formatVnd(displayPrice)}
           </span>
           {hasDiscount && (
-            <span className="text-slate-400 text-xs line-through">
+            <span className="text-slate-400 text-sm line-through opacity-60">
               {formatVnd(item.price)}
             </span>
           )}
