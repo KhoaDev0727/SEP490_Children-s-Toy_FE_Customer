@@ -27,12 +27,12 @@ export default function ShippingInfo({
         </h2>
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-sm font-bold text-[#261812]">
+            <p className="text-sm font-bold text-[#261812] break-words">
               {recipientName}
             </p>
             <p className="text-sm text-[#5a4136] mt-1">{phone}</p>
           </div>
-          <p className="text-sm text-[#5a4136] leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-[#5a4136] leading-relaxed whitespace-pre-line break-words">
             {address}
           </p>
         </div>

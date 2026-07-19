@@ -149,8 +149,13 @@ export default function AddressModal({
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-slate-500">Full Name</label>
+                <span className="text-[10px] text-slate-400">{form.name.length}/100</span>
+              </div>
               <input
                 value={form.name}
+                maxLength={100}
                 onChange={(e) => {
                   const value = e.target.value;
                   setForm((prev) => ({ ...prev, name: value }));
@@ -162,10 +167,15 @@ export default function AddressModal({
               {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
             </div>
             <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-slate-500">Phone Number</label>
+                <span className="text-[10px] text-slate-400">{form.phone.length}/10</span>
+              </div>
               <input
                 value={form.phone}
+                maxLength={10}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  const value = e.target.value.replace(/\D/g, "");
                   setForm((prev) => ({ ...prev, phone: value }));
                   setErrors((prev) => ({ ...prev, phone: "" }));
                 }}
@@ -242,8 +252,13 @@ export default function AddressModal({
           </div>
 
           <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-slate-500">Street Address</label>
+              <span className="text-[10px] text-slate-400">{form.street.length}/500</span>
+            </div>
             <textarea
               value={form.street}
+              maxLength={500}
               onChange={(e) => {
                 const value = e.target.value;
                 setForm((prev) => ({ ...prev, street: value }));
