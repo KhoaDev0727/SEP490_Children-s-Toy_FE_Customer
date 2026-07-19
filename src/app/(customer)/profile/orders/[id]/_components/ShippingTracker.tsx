@@ -237,11 +237,11 @@ export default function ShippingTracker({
           <p className="text-xs text-slate-400 mt-1 max-w-[85%] text-center leading-relaxed">
             {isCancelled ? (
               refundRejectedReason ? (
-                <span className="text-rose-600 font-bold block mt-2 px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                <span className="text-rose-600 font-bold block mt-2 px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl break-words break-all">
                   ⚠️ Yêu cầu hoàn tiền bị từ chối: {refundRejectedReason}
                 </span>
               ) : cancelReason ? (
-                <span className="block mt-2 px-3 py-2 bg-red-50/50 border border-red-100 rounded-xl text-red-600 font-semibold">
+                <span className="block mt-2 px-3 py-2 bg-red-50/50 border border-red-100 rounded-xl text-red-600 font-semibold break-words break-all">
                   Cancellation reason: {cancelReason}
                 </span>
               ) : (
@@ -256,7 +256,7 @@ export default function ShippingTracker({
         </div>
       )}
 
-      <div className="bg-[#fff1eb] rounded-xl p-4 border border-[#ffdbcc] flex flex-col">
+      <div className="bg-[#fff1eb] rounded-xl p-4 border border-[#ffdbcc] flex flex-col overflow-hidden">
         {historyItems
           .slice(0, showAll ? historyItems.length : 4)
           .map((item, i) => {
@@ -283,9 +283,9 @@ export default function ShippingTracker({
                     />
                   )}
                 </div>
-                <div className={isLast ? "pb-1" : "pb-5"}>
+                <div className={isLast ? "pb-1 flex-1 min-w-0" : "pb-5 flex-1 min-w-0"}>
                   <p
-                    className={`text-sm font-semibold ${
+                    className={`text-sm font-semibold break-words break-all ${
                       item.highlight ? "text-[#261812]" : "text-slate-400"
                     }`}
                   >
