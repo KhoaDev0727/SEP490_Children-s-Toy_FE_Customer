@@ -507,6 +507,8 @@ export default function RefundDetailModal({
                   icon="flag"
                   label="Reason"
                   value={refund.refundReasonContent ?? "—"}
+                  className="col-span-2"
+                  truncate={false}
                 />
                 <InfoRow
                   icon="account_balance_wallet"
@@ -810,20 +812,26 @@ function InfoRow({
   icon,
   label,
   value,
+  className = "",
+  truncate = true,
 }: {
   icon: string;
   label: string;
   value: string;
+  className?: string;
+  truncate?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 p-3">
+    <div className={`rounded-xl border border-slate-100 p-3 ${className}`}>
       <div className="flex items-center gap-2 mb-1">
         <span className="material-symbols-outlined text-[14px] text-[#ff4f00]">
           {icon}
         </span>
         <p className="text-xs text-slate-400 font-medium">{label}</p>
       </div>
-      <p className="text-sm font-semibold text-[#0f172a] truncate">{value}</p>
+      <p className={`text-sm font-semibold text-[#0f172a] break-words whitespace-pre-wrap ${truncate ? "truncate" : ""}`}>
+        {value}
+      </p>
     </div>
   );
 }
