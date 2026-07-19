@@ -526,7 +526,7 @@ export default function RefundDetailModal({
                     </span>
                     Additional Details
                   </p>
-                  <p className="text-sm text-[#0f172a] leading-relaxed">
+                  <p className="text-sm text-[#0f172a] leading-relaxed break-words break-all whitespace-pre-wrap">
                     {refund.reasonDetails}
                   </p>
                 </div>
@@ -706,7 +706,7 @@ export default function RefundDetailModal({
                     </span>
                     Shop Receipt / Quality Inspection Result
                   </p>
-                  <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic">
+                  <p className="text-xs text-slate-600 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-50 italic break-words break-all whitespace-pre-wrap">
                     {refund.adminNote}
                   </p>
                 </div>

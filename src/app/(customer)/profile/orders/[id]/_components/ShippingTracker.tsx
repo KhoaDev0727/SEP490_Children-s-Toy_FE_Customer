@@ -116,23 +116,23 @@ export default function ShippingTracker({
 
   const historyItems = events.length
     ? events.map((event, index) => ({
-        highlight: index === 0,
-        title: event.description,
-        time: formatEventTime(event.time),
-        desc: undefined as string | undefined,
-      }))
+      highlight: index === 0,
+      title: event.description,
+      time: formatEventTime(event.time),
+      desc: undefined as string | undefined,
+    }))
     : [
-        {
-          highlight: true,
-          title: isCancelled
-            ? "Order has been cancelled"
-            : isRefundFlow
-              ? "Order has been refunded"
-              : "Updating status...",
-          time: "",
-          desc: "",
-        },
-      ];
+      {
+        highlight: true,
+        title: isCancelled
+          ? "Order has been cancelled"
+          : isRefundFlow
+            ? "Order has been refunded"
+            : "Updating status...",
+        time: "",
+        desc: "",
+      },
+    ];
 
   const badgeWrapClass = isCancelled
     ? "bg-red-50 border-red-100"
@@ -182,20 +182,18 @@ export default function ShippingTracker({
               >
                 {i > 0 && (
                   <div
-                    className={`absolute right-1/2 top-6 w-full h-[3px] transition-all duration-700 ${
-                      i <= activeStep ? "bg-emerald-500" : "bg-slate-100"
-                    }`}
+                    className={`absolute right-1/2 top-6 w-full h-[3px] transition-all duration-700 ${i <= activeStep ? "bg-emerald-500" : "bg-slate-100"
+                      }`}
                   />
                 )}
 
                 <div
-                  className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
-                    isCurrent
+                  className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isCurrent
                       ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100 scale-110"
                       : isDone
                         ? "bg-white border-emerald-500 text-emerald-500 shadow-md shadow-emerald-50"
                         : "bg-white border-slate-200 text-slate-300"
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[24px]">
                     {step.icon}
@@ -204,9 +202,8 @@ export default function ShippingTracker({
 
                 <div className="absolute top-14 flex flex-col items-center w-max">
                   <span
-                    className={`text-[10px] sm:text-[11px] font-bold transition-colors duration-500 text-center leading-tight ${
-                      isCurrent || isDone ? "text-[#261812]" : "text-slate-400"
-                    }`}
+                    className={`text-[10px] sm:text-[11px] font-bold transition-colors duration-500 text-center leading-tight ${isCurrent || isDone ? "text-[#261812]" : "text-slate-400"
+                      }`}
                   >
                     {step.label}
                   </span>
@@ -256,7 +253,7 @@ export default function ShippingTracker({
         </div>
       )}
 
-      <div className="bg-[#fff1eb] rounded-xl p-4 border border-[#ffdbcc] flex flex-col">
+      <div className="bg-[#fff1eb] rounded-xl p-4 border border-[#ffdbcc] flex flex-col overflow-hidden">
         {historyItems
           .slice(0, showAll ? historyItems.length : 4)
           .map((item, i) => {
@@ -269,33 +266,29 @@ export default function ShippingTracker({
               <div key={i} className="flex gap-4">
                 <div className="relative flex flex-col items-center mt-1 flex-shrink-0 w-3">
                   <div
-                    className={`rounded-full relative z-10 ${
-                      item.highlight
+                    className={`rounded-full relative z-10 ${item.highlight
                         ? "w-2.5 h-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
                         : "w-2 h-2 bg-slate-300"
-                    }`}
+                      }`}
                   />
                   {!isLast && (
                     <div
-                      className={`absolute top-2 -bottom-1 left-1/2 -translate-x-1/2 w-px ${
-                        item.highlight ? "bg-emerald-200" : "bg-slate-200"
-                      }`}
+                      className={`absolute top-2 -bottom-1 left-1/2 -translate-x-1/2 w-px ${item.highlight ? "bg-emerald-200" : "bg-slate-200"
+                        }`}
                     />
                   )}
                 </div>
-                <div className={isLast ? "pb-1" : "pb-5"}>
+                <div className={isLast ? "pb-1 flex-1 min-w-0" : "pb-5 flex-1 min-w-0"}>
                   <p
-                    className={`text-sm font-semibold ${
-                      item.highlight ? "text-[#261812]" : "text-slate-400"
-                    }`}
+                    className={`text-sm font-semibold break-words break-all ${item.highlight ? "text-[#261812]" : "text-slate-400"
+                      }`}
                   >
                     {item.title}
                   </p>
                   {item.time && (
                     <p
-                      className={`text-xs mt-0.5 ${
-                        item.highlight ? "text-slate-600" : "text-slate-400"
-                      }`}
+                      className={`text-xs mt-0.5 ${item.highlight ? "text-slate-600" : "text-slate-400"
+                        }`}
                     >
                       {item.time}
                     </p>
