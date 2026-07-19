@@ -301,7 +301,7 @@ export default function CheckoutForm({
                     <option value={0}>{(!isHydrated || !isAuthenticated) ? "Login required" : "Select address"}</option>
                     {addresses.map((a) => (
                       <option key={a.addressId} value={a.addressId}>
-                        {(a.recipientName ?? "").trim() || "Unnamed"} - {a.addressLine}
+                        {(a.recipientName ?? "").trim() || "Unnamed"} - {a.addressLine.length > 60 ? `${a.addressLine.slice(0, 60)}...` : a.addressLine}
                       </option>
                     ))}
                   </select>
@@ -348,8 +348,6 @@ export default function CheckoutForm({
               disabled
             />
           </div>
-
-          {/* Address - full width */}
           <div className="md:col-span-2">
             <label className={labelBase} htmlFor="address">Street address</label>
             <input
@@ -381,7 +379,6 @@ export default function CheckoutForm({
                   <option key={p.provinceId} value={p.provinceId}>{p.provinceName}</option>
                 ))}
               </select>
-              <ChevronIcon />
             </div>
           </div>
 
@@ -402,7 +399,6 @@ export default function CheckoutForm({
                   <option key={d.districtId} value={d.districtId}>{d.districtName}</option>
                 ))}
               </select>
-              <ChevronIcon />
             </div>
           </div>
 
@@ -423,7 +419,6 @@ export default function CheckoutForm({
                   <option key={w.wardCode} value={w.wardCode}>{w.wardName}</option>
                 ))}
               </select>
-              <ChevronIcon />
             </div>
           </div>
         </div>

@@ -44,15 +44,15 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
 
       {/* Card Body */}
       <div className="p-6 flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex flex-col gap-2 flex-grow">
+        <div className="flex flex-col gap-2 flex-grow min-w-0">
           {/* Reason */}
           <div className="flex items-start gap-2">
             <span className="material-symbols-outlined text-slate-400 text-[16px] mt-0.5 flex-shrink-0">
               flag
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-slate-400 mb-0.5">Reason</p>
-              <p className="text-sm font-semibold text-[#0f172a]">
+              <p className="text-sm font-semibold text-[#0f172a] break-words line-clamp-2">
                 {refund.refundReasonContent ?? "—"}
               </p>
             </div>
