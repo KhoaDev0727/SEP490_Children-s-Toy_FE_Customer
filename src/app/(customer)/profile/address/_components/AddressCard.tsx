@@ -24,17 +24,17 @@ interface AddressCardProps {
 export default function AddressCard({ address, onEdit, onDelete, onSetDefault }: AddressCardProps) {
   return (
     <div className={`border rounded-xl p-6 flex flex-col sm:flex-row justify-between items-start gap-4 transition-all ${address.isDefault ? "border-[#ff4f00] bg-[#ff4f00]/5" : "border-slate-200 bg-white"}`}>
-      <div className="flex-1">
-        <div className="flex items-center gap-4 mb-2">
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-4 mb-2">
           {address.name && (
-            <span className="font-bold text-[#0f172a] border-r border-slate-200 pr-4">
+            <span className="font-bold text-[#0f172a] border-r border-slate-200 pr-4 break-words">
               {address.name}
             </span>
           )}
           <span className="text-[#475569] text-sm">{address.phone || "No phone number"}</span>
         </div>
-        <p className="text-[#475569] text-sm mb-1">{address.street}</p>
-        <p className="text-[#475569] text-sm mb-2">
+        <p className="text-[#475569] text-sm mb-1 break-words whitespace-pre-wrap">{address.street}</p>
+        <p className="text-[#475569] text-sm mb-2 break-words">
           {address.ward}, {address.district}, {address.city}
         </p>
 
