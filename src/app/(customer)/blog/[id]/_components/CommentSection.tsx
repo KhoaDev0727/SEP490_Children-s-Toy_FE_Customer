@@ -152,6 +152,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [replyComment, setReplyComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reactingKey, setReactingKey] = useState<string | null>(null);
 
   const canSubmit = newComment.trim().length > 0 && newComment.trim().length <= 500;
 
@@ -237,15 +238,16 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       toast.error("Please login before reacting.");
       return;
     }
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    const key = `review-${reviewBlogId}`;
+    if (reactingKey === key) return;
+    setReactingKey(key);
     try {
       await customerBlogApi.reactToReview(reviewBlogId, reactionCode);
       await onReload();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to react."));
     } finally {
-      setIsSubmitting(false);
+      setReactingKey(null);
     }
   };
 
@@ -254,15 +256,16 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
       toast.error("Please login before reacting.");
       return;
     }
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    const key = `reply-${replyBlogId}`;
+    if (reactingKey === key) return;
+    setReactingKey(key);
     try {
       await customerBlogApi.reactToReply(replyBlogId, reactionCode);
       await onReload();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to react."));
     } finally {
-      setIsSubmitting(false);
+      setReactingKey(null);
     }
   };
 
@@ -292,7 +295,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                 likeCount={reply.likeCount}
                 loveCount={reply.loveCount}
                 hahaCount={reply.hahaCount}
-                disabled={isSubmitting}
+                disabled={reactingKey === `reply-${reply.replyBlogId}`}
                 onSelect={(reactionCode) => handleReactReply(reply.replyBlogId, reactionCode)}
               />
             </div>
@@ -372,7 +375,7 @@ export default function CommentSection({ blogPostId, comments, onReload }: Comme
                     likeCount={comment.likeCount}
                     loveCount={comment.loveCount}
                     hahaCount={comment.hahaCount}
-                    disabled={isSubmitting}
+                    disabled={reactingKey === `review-${comment.reviewBlogId}`}
                     onSelect={(reactionCode) => handleReactReview(comment.reviewBlogId, reactionCode)}
                   />
                 </div>

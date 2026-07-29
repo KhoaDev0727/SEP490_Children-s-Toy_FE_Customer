@@ -203,14 +203,20 @@ export const useBlogPageData = () => {
     return getPublishedDateValue(b) - getPublishedDateValue(a);
   };
 
-  const featuredBlog = useMemo(() => {
-    return [...allBlogs].sort(compareByInteractionAndCreatedAt)[0] ?? null;
+  const featuredItems = useMemo(() => {
+    return allBlogs
+      .filter((blog) => blog.isFeatured)
+      .sort(compareByInteractionAndCreatedAt)
+      .slice(0, 5);
   }, [allBlogs]);
 
+  const featuredBlog = useMemo(() => {
+    return featuredItems[0] ?? null;
+  }, [featuredItems]);
+
   const featuredBlogs = useMemo(() => {
-    const ranked = [...allBlogs].sort(compareByInteractionAndCreatedAt);
-    return ranked.slice(1, 5);
-  }, [allBlogs]);
+    return featuredItems.slice(1);
+  }, [featuredItems]);
 
   const categoryCounts = useMemo(() => {
     const total = allBlogs.length;
