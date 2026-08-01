@@ -65,11 +65,6 @@ export interface CheckoutPaymentOptions {
   codRestrictionReason: string | null;
 }
 
-export interface RetryPaymentResponse {
-  paymentAttemptCode: string;
-  qrImageUrl: string;
-  totalAmount: number;
-}
 
 export interface PaymentStatusResponse {
   orderId: number;
