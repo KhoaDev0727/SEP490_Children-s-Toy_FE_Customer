@@ -21,6 +21,11 @@ export function resolveNotificationTarget(
 
   // Already a proper path — use directly (new ROUTE format or any existing /path)
   if (target.startsWith("/")) {
+    // Alias: invalid blog zero id e.g. /blog/0 or /blog/0#reply-123
+    if (/^\/blog\/0(?:#.*)?$/.test(target)) {
+      return "/blog";
+    }
+
     // Alias: old BE resolver used "/vouchers/{code}" → rewrite to wallet page
     const voucherLegacy = target.match(/^\/vouchers\/([^/?#]+)/);
     if (voucherLegacy) {
