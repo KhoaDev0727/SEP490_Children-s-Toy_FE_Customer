@@ -8,7 +8,6 @@ import type {
   CheckoutPreviewResponse,
   OrderPaymentInfo,
   PaymentStatusResponse,
-  RetryPaymentResponse,
   OrderTrackingResponse,
 } from "@/features/checkout/types/checkout";
 
@@ -93,20 +92,6 @@ export const checkoutApi = {
     } catch (error) {
       throw new Error(
         extractCheckoutErrorMessage(error, "Unable to create order. Please try again."),
-      );
-    }
-  },
-
-  /** Sinh QR mới cho đơn SE_PAY chưa thanh toán. */
-  retryPayment: async (orderId: number): Promise<RetryPaymentResponse> => {
-    try {
-      const response = await axiosClient.post<
-        RetryPaymentResponse | ApiResponse<RetryPaymentResponse>
-      >(`/checkout/retry-payment/${orderId}`);
-      return unwrap(response);
-    } catch (error) {
-      throw new Error(
-        extractCheckoutErrorMessage(error, "Unable to generate a new QR code. Please try again."),
       );
     }
   },

@@ -960,8 +960,41 @@ function UnifiedVoucherModal({
     return true;
   };
 
-  const orderVouchers = vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE");
-  const shippingVouchers = vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE");
+  const sortVouchers = (vList: IVoucher[]) => {
+    return [...vList].sort((a, b) => {
+      const aEligible = isEligible(a);
+      const bEligible = isEligible(b);
+
+      // 1. Eligible (usable) first
+      if (aEligible && !bEligible) return -1;
+      if (!aEligible && bEligible) return 1;
+
+      // 2. Discount value descending (higher discount first)
+      if (b.discountValue !== a.discountValue) {
+        return b.discountValue - a.discountValue;
+      }
+
+      // 3. Min order amount ascending (easier to reach first)
+      const aMin = a.minOrderAmount ?? 0;
+      const bMin = b.minOrderAmount ?? 0;
+      if (aMin !== bMin) {
+        return aMin - bMin;
+      }
+
+      // 4. Expiry date ascending (expires sooner first)
+      return smartParseDate(a.endDate).getTime() - smartParseDate(b.endDate).getTime();
+    });
+  };
+
+  const orderVouchers = useMemo(() => {
+    const filtered = vouchers.filter((v) => v.discountTarget === "ORDER_TOTAL" || v.discountTarget === "FINAL_PRICE");
+    return sortVouchers(filtered);
+  }, [vouchers, subtotal, now]);
+
+  const shippingVouchers = useMemo(() => {
+    const filtered = vouchers.filter((v) => v.discountTarget === "SHIPPING_FEE");
+    return sortVouchers(filtered);
+  }, [vouchers, subtotal, now]);
 
   const handleApplyTypedCode = async () => {
     const code = typedCode.trim().toUpperCase();
