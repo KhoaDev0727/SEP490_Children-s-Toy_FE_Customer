@@ -94,6 +94,12 @@ const STATUS_CONFIG: Partial<Record<
     text: "#b91c1c",
     border: "#fecaca",
   },
+  FeePaidAwaitingShipment: {
+    label: "Fee Paid - Awaiting Shipment",
+    bg: "#f0fdf4",
+    text: "#15803d",
+    border: "#bbf7d0",
+  },
 
   // ── Legacy (không có prefix Refund) ──────────────────────────
   Requested: {
