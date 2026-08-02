@@ -42,6 +42,7 @@ export interface RefundListItem {
   finalRefundAmount?: number;
   refundStatus: string;
   createdAt: string;
+  returnToCustomerFeePaid?: boolean;
 }
 
 export interface RefundDetailItem {
@@ -158,4 +159,5 @@ export type RefundStatus =
   | "Completed"
   | "Cancelled"
   | "Processing"
-  | "Damaged";
+  | "Damaged"
+  | "FeePaidAwaitingShipment";
