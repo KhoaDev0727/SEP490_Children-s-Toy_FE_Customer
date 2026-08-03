@@ -353,7 +353,7 @@ export default function RefundDetailModal({
                         <div className="flex items-center justify-between mb-3">
                           <div>
                             <p className="text-xs text-slate-500 mb-1">Current Status</p>
-                            <RefundStatusBadge status={refund.returnToCustomerFeePaid ? "FeePaidAwaitingShipment" : refund.refundStatus} />
+                            <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 ? "FeePaidAwaitingShipment" : refund.refundStatus} />
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-slate-500 mb-1">

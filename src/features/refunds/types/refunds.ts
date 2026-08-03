@@ -43,6 +43,7 @@ export interface RefundListItem {
   refundStatus: string;
   createdAt: string;
   returnToCustomerFeePaid?: boolean;
+  returnToCustomerFee?: number;
 }
 
 export interface RefundDetailItem {
