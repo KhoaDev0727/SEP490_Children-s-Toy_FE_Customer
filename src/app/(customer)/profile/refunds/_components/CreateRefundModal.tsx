@@ -49,7 +49,7 @@ export default function CreateRefundModal({
   const [refundType, setRefundType] = useState<"ReturnAndRefund" | "RefundOnly">("ReturnAndRefund");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReasons, setIsLoadingReasons] = useState(false);
-  const [walletStatus, setWalletStatus] = useState<"checking" | "active" | "none">("checking");
+  const [walletStatus, setWalletStatus] = useState<"checking" | "active" | "frozen" | "none">("checking");
   const [orderDetail, setOrderDetail] = useState<CustomerOrderDetail | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [selectedItems, setSelectedItems] = useState<{ [productId: number]: ItemSelection }>({});
@@ -102,11 +102,20 @@ export default function CreateRefundModal({
     setWalletStatus("checking");
     try {
       const res = await axiosClient.get<{ status?: string } | null>("/wallets/me");
-      const status = res?.status ?? "";
+      if (!res) {
+        setWalletStatus("none");
+        return;
+      }
+      const status = res.status ?? "";
+      const lowerStatus = status.toLowerCase();
 
-      setWalletStatus(
-        status.toLowerCase() === "active" ? "active" : "none",
-      );
+      if (lowerStatus === "active") {
+        setWalletStatus("active");
+      } else if (lowerStatus === "frozen") {
+        setWalletStatus("frozen");
+      } else {
+        setWalletStatus("none");
+      }
     } catch {
       setWalletStatus("none");
     }
@@ -330,6 +339,22 @@ export default function CreateRefundModal({
                   </h4>
                   <p className="text-xs text-red-700 leading-relaxed">
                     You must set up and activate your wallet inside profile management first to receive refunds.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {walletStatus === "frozen" && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex gap-3">
+                <span className="material-symbols-outlined text-amber-500 text-[20px] flex-shrink-0 mt-0.5">
+                  info
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                    Wallet is Frozen
+                  </h4>
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    Your e-wallet is currently frozen. You can still submit this refund request, and refunds can be credited to your wallet. However, you will need to contact support to unfreeze it before making withdrawals.
                   </p>
                 </div>
               </div>
@@ -666,7 +691,7 @@ export default function CreateRefundModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || walletStatus !== "active" || !reasonId || estimatedRefundAmount === 0 || selectedImages.length === 0}
+              disabled={isSubmitting || (walletStatus !== "active" && walletStatus !== "frozen") || !reasonId || estimatedRefundAmount === 0 || selectedImages.length === 0}
               className="flex-grow h-11 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, #ff6a00, #ff8a1f)",

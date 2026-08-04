@@ -38,7 +38,7 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
           <span className="text-xs text-slate-500">
             Order #{refund.orderCode}
           </span>
-          <RefundStatusBadge status={refund.returnToCustomerFeePaid ? "FeePaidAwaitingShipment" : refund.refundStatus} size="sm" />
+          <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 ? "FeePaidAwaitingShipment" : refund.refundStatus} size="sm" />
         </div>
       </div>
 

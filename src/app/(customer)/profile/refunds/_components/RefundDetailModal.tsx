@@ -44,6 +44,7 @@ export default function RefundDetailModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletStatus, setWalletStatus] = useState<string | null>(null);
   const [isPayingFee, setIsPayingFee] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +52,7 @@ export default function RefundDetailModal({
     try {
       const res = await walletApi.getMyWallet();
       setWalletBalance(res.balance);
+      setWalletStatus(res.status);
     } catch (e) {
       console.error("Failed to load wallet balance", e);
     }
@@ -353,7 +355,7 @@ export default function RefundDetailModal({
                         <div className="flex items-center justify-between mb-3">
                           <div>
                             <p className="text-xs text-slate-500 mb-1">Current Status</p>
-                            <RefundStatusBadge status={refund.returnToCustomerFeePaid ? "FeePaidAwaitingShipment" : refund.refundStatus} />
+                            <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 ? "FeePaidAwaitingShipment" : refund.refundStatus} />
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-slate-500 mb-1">
@@ -457,6 +459,10 @@ export default function RefundDetailModal({
                               >
                                 Go to Wallet to Top Up →
                               </a>
+                            </div>
+                          ) : walletStatus?.toLowerCase() === "frozen" ? (
+                            <div className="rounded-lg bg-red-50 border border-red-200 p-2.5 text-[11px] text-red-700 flex flex-col gap-1">
+                              <p>⚠ Your wallet is currently frozen. Please contact support to unfreeze your wallet before making payments.</p>
                             </div>
                           ) : (
                             <button
