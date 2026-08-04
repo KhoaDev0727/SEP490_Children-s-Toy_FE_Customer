@@ -177,6 +177,7 @@ export default function ProductDetailsView({
     hasImage?: boolean;
   }>({});
   const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+  const [failedAvatars, setFailedAvatars] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     let active = true;
@@ -1045,13 +1046,26 @@ export default function ProductDetailsView({
                       key={review.reviewId}
                       className="flex gap-4 border-b border-slate-100 pb-8 last:border-0 last:pb-0"
                     >
-                      <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-500 font-bold">
-                        {review.accountName?.charAt(0).toUpperCase()}
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 relative">
+                        {review.reviewerAvatarUrl && !failedAvatars[review.reviewId] ? (
+                          <img
+                            src={review.reviewerAvatarUrl}
+                            alt={review.reviewerName || "Reviewer avatar"}
+                            onError={() => {
+                              setFailedAvatars((prev) => ({ ...prev, [review.reviewId]: true }));
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">
+                            {review.reviewerName?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-sm">
-                            {review.accountName}
+                            {review.reviewerName || "Anonymous"}
                           </span>
                           <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <span className="material-symbols-outlined text-[10px]">
