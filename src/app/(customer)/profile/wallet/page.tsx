@@ -278,6 +278,10 @@ export default function WalletPage() {
       } catch (error: unknown) {
         const apiError = getApiError(error);
         toast.error(apiError.message ?? "Unable to create SePay top-up QR.");
+        if (apiError.message?.toLowerCase().includes("pin verification has expired")) {
+          resetTopUpPanelState();
+          openPinModal("topup");
+        }
       } finally {
         setIsCreatingTopUpQr(false);
       }
@@ -285,7 +289,7 @@ export default function WalletPage() {
     [topUpToken],
   );
 
-  const checkTopUpStatus = useCallback(async () => {
+  const checkTopUpStatus = useCallback(async (isManual = false) => {
     if (!topUpAttemptCode) return false;
 
     setIsCheckingTopUpStatus(true);
@@ -308,6 +312,8 @@ export default function WalletPage() {
         toast.error(
           "Top-up payment failed. Please generate a new QR and try again.",
         );
+      } else if (isManual && normalizedStatus === "PENDING") {
+        toast.error("You have not made any transaction yet.");
       }
     } catch (error: unknown) {
       const apiError = getApiError(error);
@@ -505,7 +511,7 @@ export default function WalletPage() {
 
     const timer = window.setInterval(() => {
       void checkTopUpStatus();
-    }, 4000);
+    }, 60000);
 
     return () => window.clearInterval(timer);
   }, [checkTopUpStatus, isTopUpPanelOpen, topUpAttemptCode]);
@@ -550,7 +556,7 @@ export default function WalletPage() {
               void createTopUpQrForAmount(amount);
             }}
             onCheckStatus={() => {
-              void checkTopUpStatus();
+              void checkTopUpStatus(true);
             }}
             onBack={() => {
               resetTopUpPanelState();
