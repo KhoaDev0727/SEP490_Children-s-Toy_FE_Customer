@@ -188,7 +188,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
     };
 
     void checkStatus();
-    pollingRef.current = setInterval(checkStatus, 4000);
+    pollingRef.current = setInterval(checkStatus, 60000);
 
     return () => {
       if (pollingRef.current) {
@@ -251,7 +251,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
           `/checkout/success?orderId=${orderId}&orderCode=${encodeURIComponent(resolvedOrderCode)}`,
         );
       } else {
-        toast.error("The system has not received payment yet. Please wait a little longer.");
+        toast.error("You have not made any transaction yet.");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unable to check status.";
