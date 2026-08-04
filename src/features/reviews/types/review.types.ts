@@ -49,8 +49,9 @@ export interface UnreviewedProductDto {
 
 export interface ReviewProductListDto {
   reviewId: number;
-  accountId: number;
-  accountName: string;
+  productId: number;
+  reviewerName: string;
+  reviewerAvatarUrl: string | null;
   rating: number;
   comment: string | null;
   isEdited: boolean;

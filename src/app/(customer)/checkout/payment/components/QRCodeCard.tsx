@@ -35,6 +35,7 @@ export default function QRCodeCard({
   );
   const [expired, setExpired] = useState(false);
   const onExpiredRef = useRef(onExpired);
+  const targetTimeMsRef = useRef<number | null>(null);
 
   useEffect(() => {
     onExpiredRef.current = onExpired;
@@ -43,9 +44,11 @@ export default function QRCodeCard({
   useEffect(() => {
     const next = getSecondsLeftFromExpiry(expiresAt);
     if (next !== null) {
+      targetTimeMsRef.current = Date.now() + next * 1000;
       setSecondsLeft(next);
       setExpired(next <= 0);
     } else {
+      targetTimeMsRef.current = Date.now() + DEFAULT_EXPIRE_SECONDS * 1000;
       setSecondsLeft(DEFAULT_EXPIRE_SECONDS);
       setExpired(false);
     }
@@ -57,9 +60,35 @@ export default function QRCodeCard({
       onExpiredRef.current?.();
       return;
     }
-    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+
+    const timer = setTimeout(() => {
+      if (targetTimeMsRef.current !== null) {
+        const diffMs = targetTimeMsRef.current - Date.now();
+        const nextSeconds = Math.max(0, Math.floor(diffMs / 1000));
+        setSecondsLeft(nextSeconds);
+      } else {
+        setSecondsLeft((s) => s - 1);
+      }
+    }, 1000);
+
     return () => clearTimeout(timer);
   }, [secondsLeft]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && targetTimeMsRef.current !== null) {
+        const diffMs = targetTimeMsRef.current - Date.now();
+        const nextSeconds = Math.max(0, Math.floor(diffMs / 1000));
+        setSecondsLeft(nextSeconds);
+        setExpired(nextSeconds <= 0);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const minutes = Math.floor(secondsLeft / 60)
     .toString()
@@ -67,7 +96,7 @@ export default function QRCodeCard({
   const seconds = (secondsLeft % 60).toString().padStart(2, "0");
 
   const effectiveExpired = expired || Boolean(isExpired);
-  const progress = secondsLeft / DEFAULT_EXPIRE_SECONDS;
+  const progress = Math.min(1, Math.max(0, secondsLeft / DEFAULT_EXPIRE_SECONDS));
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
