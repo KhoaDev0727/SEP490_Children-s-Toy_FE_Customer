@@ -42,10 +42,14 @@ export default function QRCodeCard({
 
   useEffect(() => {
     const next = getSecondsLeftFromExpiry(expiresAt);
-    if (next === null) return;
-    setSecondsLeft(next);
-    setExpired(next <= 0);
-  }, [expiresAt]);
+    if (next !== null) {
+      setSecondsLeft(next);
+      setExpired(next <= 0);
+    } else {
+      setSecondsLeft(DEFAULT_EXPIRE_SECONDS);
+      setExpired(false);
+    }
+  }, [qrUrl, expiresAt]);
 
   useEffect(() => {
     if (secondsLeft <= 0) {
