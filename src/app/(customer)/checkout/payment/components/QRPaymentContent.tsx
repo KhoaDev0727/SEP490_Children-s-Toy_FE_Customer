@@ -33,6 +33,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
   const [accountName, setAccountName] = useState("");
 
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [serverTime, setServerTime] = useState<string | null>(null);
   const [expiredByServer, setExpiredByServer] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -136,6 +137,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
         setQrUrl(info.qrImageUrl ?? "");
         setAmountValue(Math.round(info.amount));
         if (info.expiresAt) setExpiresAt(info.expiresAt);
+        if (info.serverTime) setServerTime(info.serverTime);
         if (info.bankName) setBankName(info.bankName);
         if (info.accountNumber) setAccountNumber(info.accountNumber);
         if (info.accountName) setAccountName(info.accountName);
@@ -159,6 +161,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
       try {
         const res = await checkoutApi.getPaymentStatus(orderId);
         if (typeof res.expiresAt === "string") setExpiresAt(res.expiresAt);
+        if (typeof res.serverTime === "string") setServerTime(res.serverTime);
         if (res.paymentStatus === "PAID") {
           redirectedRef.current = true;
           if (pollingRef.current) {
@@ -282,6 +285,7 @@ export default function QRPaymentContent({ orderId }: QRPaymentContentProps) {
       <QRCodeCard
         qrUrl={qrImageUrl}
         expiresAt={expiresAt}
+        serverTime={serverTime}
         isExpired={expiredByServer}
         onExpired={handleQRExpired}
       />
