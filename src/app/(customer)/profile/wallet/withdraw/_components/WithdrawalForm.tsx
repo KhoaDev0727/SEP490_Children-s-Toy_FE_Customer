@@ -12,6 +12,7 @@ import { withdrawalApi } from "@/features/withdrawal/services/withdrawal-api";
 import type { WithdrawalDto } from "@/features/withdrawal/types/withdrawal";
 
 const MIN_WITHDRAWAL = 10_000;
+const MAX_WITHDRAWAL = 50_000_000;
 const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000, 1_000_000];
 
 function parseAmount(raw: string): number {
@@ -69,6 +70,8 @@ export default function WithdrawalForm({
 
     if (num > 0 && num < MIN_WITHDRAWAL) {
       setFieldError(`Minimum withdrawal amount is ${formatVND(MIN_WITHDRAWAL)}`);
+    } else if (num > MAX_WITHDRAWAL) {
+      setFieldError(`Maximum withdrawal amount is ${formatVND(MAX_WITHDRAWAL)}`);
     } else if (num > availableBalance) {
       setFieldError("Amount exceeds available balance");
     } else {
@@ -77,8 +80,13 @@ export default function WithdrawalForm({
   }
 
   function handleWithdrawAll() {
-    setRawAmount(availableBalance.toLocaleString("vi-VN"));
-    setFieldError("");
+    const amountToWithdraw = Math.min(availableBalance, MAX_WITHDRAWAL);
+    setRawAmount(amountToWithdraw.toLocaleString("vi-VN"));
+    if (amountToWithdraw < MIN_WITHDRAWAL) {
+      setFieldError(`Minimum withdrawal amount is ${formatVND(MIN_WITHDRAWAL)}`);
+    } else {
+      setFieldError("");
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -87,6 +95,11 @@ export default function WithdrawalForm({
 
     if (numericAmount < MIN_WITHDRAWAL) {
       setFieldError(`Minimum withdrawal amount is ${formatVND(MIN_WITHDRAWAL)}`);
+      inputRef.current?.focus();
+      return;
+    }
+    if (numericAmount > MAX_WITHDRAWAL) {
+      setFieldError(`Maximum withdrawal amount is ${formatVND(MAX_WITHDRAWAL)}`);
       inputRef.current?.focus();
       return;
     }
@@ -265,7 +278,7 @@ export default function WithdrawalForm({
                 <span className="material-symbols-outlined text-[16px]">warning</span>{fieldError}
               </p>
             ) : (
-              <p className="text-xs text-slate-400">Minimum {formatVND(MIN_WITHDRAWAL)}</p>
+              <p className="text-xs text-slate-400">Limit: {formatVND(MIN_WITHDRAWAL)} - {formatVND(MAX_WITHDRAWAL)}</p>
             )}
             {numericAmount > 0 && (
               <div className="space-y-1.5 pt-1">
