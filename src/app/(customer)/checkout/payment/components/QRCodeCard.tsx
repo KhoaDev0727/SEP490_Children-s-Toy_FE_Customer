@@ -9,17 +9,31 @@ const normalizeExpiresAt = (expiresAt: string): string => {
   return `${expiresAt}Z`;
 };
 
-const getSecondsLeftFromExpiry = (expiresAt?: string | null): number | null => {
+const getSecondsLeftFromExpiry = (
+  expiresAt?: string | null,
+  serverTime?: string | null,
+): number | null => {
   if (!expiresAt) return null;
   const expiresAtMs = Date.parse(normalizeExpiresAt(expiresAt));
   if (Number.isNaN(expiresAtMs)) return null;
-  const diffMs = expiresAtMs - Date.now();
+
+  let currentServerTimeMs = Date.now();
+  if (serverTime) {
+    const serverTimeMs = Date.parse(normalizeExpiresAt(serverTime));
+    if (!Number.isNaN(serverTimeMs)) {
+      const clientServerOffsetMs = serverTimeMs - Date.now();
+      currentServerTimeMs = Date.now() + clientServerOffsetMs;
+    }
+  }
+
+  const diffMs = expiresAtMs - currentServerTimeMs;
   return Math.max(0, Math.floor(diffMs / 1000));
 };
 
 interface QRCodeCardProps {
   qrUrl: string;
   expiresAt?: string | null;
+  serverTime?: string | null;
   isExpired?: boolean;
   onExpired?: () => void;
 }
@@ -27,11 +41,12 @@ interface QRCodeCardProps {
 export default function QRCodeCard({
   qrUrl,
   expiresAt,
+  serverTime,
   isExpired,
   onExpired,
 }: QRCodeCardProps) {
   const [secondsLeft, setSecondsLeft] = useState(
-    () => getSecondsLeftFromExpiry(expiresAt) ?? DEFAULT_EXPIRE_SECONDS,
+    () => getSecondsLeftFromExpiry(expiresAt, serverTime) ?? DEFAULT_EXPIRE_SECONDS,
   );
   const [expired, setExpired] = useState(false);
   const onExpiredRef = useRef(onExpired);
@@ -42,7 +57,7 @@ export default function QRCodeCard({
   });
 
   useEffect(() => {
-    const next = getSecondsLeftFromExpiry(expiresAt);
+    const next = getSecondsLeftFromExpiry(expiresAt, serverTime);
     if (next !== null) {
       targetTimeMsRef.current = Date.now() + next * 1000;
       setSecondsLeft(next);
@@ -52,7 +67,7 @@ export default function QRCodeCard({
       setSecondsLeft(DEFAULT_EXPIRE_SECONDS);
       setExpired(false);
     }
-  }, [qrUrl, expiresAt]);
+  }, [qrUrl, expiresAt, serverTime]);
 
   useEffect(() => {
     if (secondsLeft <= 0) {

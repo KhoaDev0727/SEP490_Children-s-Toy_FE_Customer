@@ -219,12 +219,13 @@ export default function CreateRefundModal({
 
     if (checkedCount === 0) return 0;
 
-    // If all items are returned with full quantities, add shipping fee
+    // If all items are returned with full quantities, use exact product total (subTotal - voucherDiscountAmount) + shipping fee
     if (isFullReturn) {
+      const targetProductSum = subTotal - voucherDiscountAmount;
       const shippingFee = orderDetail.actualShippingFee !== undefined && orderDetail.actualShippingFee !== null
         ? orderDetail.actualShippingFee
         : orderDetail.estimatedShippingFee || 0;
-      sum += shippingFee;
+      return targetProductSum + shippingFee;
     }
 
     return sum;
@@ -385,11 +386,10 @@ export default function CreateRefundModal({
                 <button
                   type="button"
                   onClick={() => setRefundType("ReturnAndRefund")}
-                  className={`p-4 rounded-xl border text-left transition-all ${
-                    refundType === "ReturnAndRefund"
+                  className={`p-4 rounded-xl border text-left transition-all ${refundType === "ReturnAndRefund"
                       ? "border-[#ff6a00] bg-[#ff6a00]/5 ring-1 ring-[#ff6a00]"
                       : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`material-symbols-outlined text-[18px] ${refundType === "ReturnAndRefund" ? "text-[#ff6a00]" : "text-slate-400"}`}>
@@ -405,11 +405,10 @@ export default function CreateRefundModal({
                 <button
                   type="button"
                   onClick={() => setRefundType("RefundOnly")}
-                  className={`p-4 rounded-xl border text-left transition-all ${
-                    refundType === "RefundOnly"
+                  className={`p-4 rounded-xl border text-left transition-all ${refundType === "RefundOnly"
                       ? "border-[#ff6a00] bg-[#ff6a00]/5 ring-1 ring-[#ff6a00]"
                       : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`material-symbols-outlined text-[18px] ${refundType === "RefundOnly" ? "text-[#ff6a00]" : "text-slate-400"}`}>
@@ -487,9 +486,14 @@ export default function CreateRefundModal({
                             {item.productName}
                           </h4>
                           <div className="flex items-center justify-between mt-2">
-                            <p className="text-xs font-semibold text-[#ff6a00]">
-                              {formatPrice(item.unitPrice)}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-[#ff6a00]">
+                                {formatPrice(item.unitPrice)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-normal">
+                                (Ordered: {item.quantity})
+                              </span>
+                            </div>
 
                             {state.checked && (
                               <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden">
@@ -549,13 +553,20 @@ export default function CreateRefundModal({
 
             {/* Dynamic Refund Estimate Display */}
             {estimatedRefundAmount > 0 && (
-              <div className="p-3.5 rounded-xl bg-orange-50/50 border border-orange-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600">
-                  Estimated Refund Amount:
-                </span>
-                <span className="text-sm font-black text-[#ff6a00]">
-                  {formatPrice(estimatedRefundAmount)}
-                </span>
+              <div className="space-y-2">
+                <div className="p-3.5 rounded-xl bg-orange-50/50 border border-orange-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-600">
+                    Estimated Refund Amount:
+                  </span>
+                  <span className="text-sm font-black text-[#ff6a00]">
+                    {formatPrice(estimatedRefundAmount)}
+                  </span>
+                </div>
+                {orderDetail && orderDetail.voucherDiscountAmount > 0 && (
+                  <p className="text-[10px] text-slate-400 bg-slate-50 border border-slate-100 rounded-lg p-2.5 leading-relaxed">
+                    Note: The refund amount has been adjusted proportionally to account for the voucher discount applied to this order.
+                  </p>
+                )}
               </div>
             )}
 
