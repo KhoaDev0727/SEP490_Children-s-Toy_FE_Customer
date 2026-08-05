@@ -72,6 +72,7 @@ export interface PaymentStatusResponse {
   paymentStatus: string;
   paidAt?: string | null;
   expiresAt?: string | null;
+  serverTime?: string | null;
 }
 
 export interface OrderTrackingEvent {
@@ -106,6 +107,7 @@ export interface OrderPaymentInfo {
   paymentAttemptCode: string;
   qrImageUrl?: string | null;
   expiresAt?: string | null;
+  serverTime?: string | null;
   /** Effective payment status — used by FE to redirect cancelled/expired/paid orders */
   paymentStatus?: string | null;
   bankName?: string | null;
