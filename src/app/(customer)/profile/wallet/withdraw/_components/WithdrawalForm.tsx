@@ -65,7 +65,8 @@ export default function WithdrawalForm({
   const afterBalance = availableBalance - numericAmount;
 
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const num = parseInt(e.target.value.replace(/\D/g, ""), 10) || 0;
+    const rawDigits = e.target.value.replace(/\D/g, "").slice(0, 9);
+    const num = parseInt(rawDigits, 10) || 0;
     setRawAmount(num > 0 ? num.toLocaleString("vi-VN") : "");
 
     if (num > 0 && num < MIN_WITHDRAWAL) {
@@ -266,6 +267,7 @@ export default function WithdrawalForm({
                 id="amount"
                 type="text"
                 inputMode="numeric"
+                maxLength={15}
                 value={rawAmount}
                 onChange={handleAmountChange}
                 placeholder="0"
