@@ -264,10 +264,11 @@ export default function BankAccountModal({
               <input
                 type="text"
                 required
+                maxLength={20}
                 placeholder="e.g. 1903123456789"
                 value={accountNumber}
                 disabled={isSubmitting || lookupLoading}
-                onChange={(e) => handleInputChange(selectedBankCode, e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
+                onChange={(e) => handleInputChange(selectedBankCode, e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20))}
                 className="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ff4f00] focus:border-[#ff4f00] transition-all text-slate-800 font-medium disabled:opacity-60"
               />
               <button

@@ -427,9 +427,10 @@ export default function ProfileForm() {
                 <span className="font-semibold tracking-[0.01em]">Phone Number</span>
                 <input
                   type="tel"
+                  maxLength={10}
                   value={phoneNumber}
                   onChange={(event) => {
-                    setPhoneNumber(event.target.value);
+                    setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 10));
                     setPhoneNumberError(null);
                   }}
                   placeholder="Enter phone number"
