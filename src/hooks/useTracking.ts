@@ -98,7 +98,7 @@ export function useTracking() {
     if (!keyword.trim()) return;
     tracking.enqueue({
       eventType: EVENT_TYPES.SEARCH,
-      entityId: keyword.trim().slice(0, 100),
+      entityId: keyword.trim().slice(0, 50),
       entityType: ENTITY_TYPES.SEARCH,
     });
   }, []);
