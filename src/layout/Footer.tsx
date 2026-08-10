@@ -26,13 +26,13 @@ export default function Footer() {
                 <div className="rounded-lg text-white" style={{ backgroundColor: "#ff6a00" }}>
                   <Image
                     src={logoImage}
-                    alt="Toy Store Logo"
+                    alt="Children's Toy Store Logo"
                     width={40}
                     height={40}
                     className="rounded-lg"
                   />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900">Toy Store</h2>
+                <h2 className="text-lg font-bold text-slate-900">children's toy store</h2>
               </div>
               <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                 Safe, fun, and high-quality toys designed for every stage of childhood.
@@ -58,11 +58,11 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* About ToyStore */}
+            {/* About children's toy store */}
             <div>
-              <h4 className="font-bold text-slate-900 mb-4">About ToyStore</h4>
+              <h4 className="font-bold text-slate-900 mb-4">About children's toy store</h4>
               <p className="text-sm text-slate-500 leading-relaxed">
-                ToyStore offers safe, creative, and educational toys that make learning fun and support
+                children's toy store offers safe, creative, and educational toys that make learning fun and support
                 healthy development as children grow.
               </p>
             </div>

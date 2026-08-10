@@ -98,29 +98,29 @@ export default function ForgotPasswordForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      <div className="w-full max-w-lg sm:pt-10 mx-auto mb-6 px-6 lg:px-0">
+    <div className="flex flex-col flex-1 w-full">
+      <div className="w-full max-w-md sm:pt-10 mx-auto lg:mx-0 mb-5 px-6 lg:px-10">
         <Link
           href="/login"
-          className="inline-flex items-center text-base text-gray-500 transition-colors hover:text-gray-700"
+          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
             <path d="M15 18l-6-6 6-6" />
           </svg>
           Back to sign in
         </Link>
       </div>
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto px-6 lg:px-0">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto lg:mx-0 px-6 lg:px-10 pb-10">
         <div>
-          <div className="mb-10">
-            <div className="flex items-center gap-2 mb-7">
-              <span className="text-3xl font-bold" style={{ color: "#ff6a00" }}>ToyStore</span>
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>children's toy store</span>
             </div>
-            <h1 className="mb-3 font-semibold text-gray-800 text-4xl tracking-tight">
+            <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
               Forgot password
             </h1>
-            <p className="text-base text-gray-500 leading-relaxed max-w-prose">
+            <p className="text-sm text-gray-500">
               {step === "email"
                 ? "Enter your email to receive an OTP to reset your password."
                 : `Enter the OTP sent to ${email} and your new password.`}

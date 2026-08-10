@@ -28,7 +28,7 @@ function GoogleAuthButton({ mode }: GoogleAuthButtonProps) {
         response = await authApi.googleRegister({
           idToken: credentialResponse.credential,
         });
-        toast.success("Registration successful! Welcome to ToyStore.");
+        toast.success("Registration successful! Welcome to children's toy store.");
       } else {
         response = await authApi.googleLogin({
           idToken: credentialResponse.credential,
