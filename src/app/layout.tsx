@@ -10,8 +10,11 @@ import { NotificationRealtimeProvider } from "@/features/notifications/context/N
 import TrackingBootstrapper from "@/components/shared/TrackingBootstrapper";
 
 export const metadata: Metadata = {
-  title: "ToyStore - High-Quality Children's Toys",
+  title: "children's toy store - High-Quality Children's Toys",
   description: "High-quality children's toy store, safe and creative",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

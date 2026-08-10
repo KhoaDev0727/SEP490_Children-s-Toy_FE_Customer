@@ -267,14 +267,14 @@ export default function Header() {
                 >
                   <Image
                     src={logoImage}
-                    alt="Toy Store Logo"
+                    alt="Children's Toy Store Logo"
                     width={40}
                     height={40}
                     className="rounded-lg"
                   />
                 </div>
                 <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Toy Store
+                  children's toy store
                 </span>
               </Link>
 
