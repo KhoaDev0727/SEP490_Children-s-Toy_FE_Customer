@@ -2,8 +2,8 @@ import VerifyRegisterOtpForm from "@/features/auth/components/VerifyRegisterOtpF
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Verify email | ToyStore",
-  description: "Verify your email to complete ToyStore account registration.",
+  title: "Verify email | children's toy store",
+  description: "Verify your email to complete children's toy store account registration.",
 };
 
 interface VerifyRegisterOtpPageProps {
