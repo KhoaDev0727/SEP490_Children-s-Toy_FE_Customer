@@ -8,6 +8,7 @@ import ShippingInfo from "./ShippingInfo";
 import PaymentSummary from "./PaymentSummary";
 import CancelOrderModal from "@/components/common/CancelOrderModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import DeliveryImageModal from "./DeliveryImageModal";
 import { useCart } from "@/features/cart/context/CartContext";
 import { checkoutApi } from "@/features/checkout/services/checkout-api";
 import { ordersApi } from "@/features/orders/services/orders-api";
@@ -72,7 +73,9 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelQRModalOpen, setIsCancelQRModalOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const { refreshCart } = useCart();
+
 
   const handleBack = () => {
     if (fromCheckoutSuccess) {
@@ -319,6 +322,8 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
             cancelReason={order.cancelReason}
             statusBucket={order.statusBucket as any}
             apiDisplayLabel={order.displayLabel}
+            deliveryImageUrl={order.deliveryImageUrl}
+            onViewDeliveryImage={() => setIsImageModalOpen(true)}
           />
           <OrderProductList products={products} />
         </div>
@@ -341,6 +346,13 @@ export default function OrderDetailView({ orderId }: OrderDetailViewProps) {
           />
         </div>
       </div>
+
+      <DeliveryImageModal
+        isOpen={isImageModalOpen}
+        imageUrl={order.deliveryImageUrl}
+        onClose={() => setIsImageModalOpen(false)}
+      />
     </section>
   );
+
 }

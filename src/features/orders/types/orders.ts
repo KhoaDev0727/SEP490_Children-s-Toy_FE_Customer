@@ -87,6 +87,7 @@ export interface CustomerOrderDetail {
   completedAt?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  deliveryImageUrl?: string | null;
   shippingName: string;
   shippingPhone: string;
   shippingAddress: string;
