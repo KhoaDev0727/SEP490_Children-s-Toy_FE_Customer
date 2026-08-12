@@ -72,7 +72,7 @@ export default function LoginForm() {
         <div>
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>children's toy store</span>
+              <span className="text-2xl font-bold" style={{ color: "#ff6a00" }}>Children's Toy Store</span>
             </div>
             <h1 className="mb-2 font-semibold text-gray-800 text-3xl">
               Sign in

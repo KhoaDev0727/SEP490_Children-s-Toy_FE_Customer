@@ -274,7 +274,7 @@ export default function Header() {
                   />
                 </div>
                 <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  children's toy store
+                  Children's Toy Store
                 </span>
               </Link>
 
