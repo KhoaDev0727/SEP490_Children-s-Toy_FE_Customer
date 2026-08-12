@@ -738,8 +738,9 @@ export default function RefundDetailModal({
                         </button>
                         {refund.returnToCustomerImageUrl && (
                           <button
-                            onClick={() => setSelectedDeliveryImage(refund.returnToCustomerImageUrl)}
-                            className="text-[11px] font-bold text-emerald-600 hover:underline hover:text-emerald-700"
+                            type="button"
+                            onClick={() => setSelectedDeliveryImage(refund.returnToCustomerImageUrl ?? null)}
+                            className="text-[11px] font-bold text-emerald-600 hover:underline hover:text-emerald-700 ml-2"
                           >
                             View delivery image
                           </button>
@@ -857,7 +858,6 @@ export default function RefundDetailModal({
   );
 
   return typeof document !== "undefined"
-<<<<<<< HEAD
     ? createPortal(
         <>
           {modal}
@@ -869,45 +869,6 @@ export default function RefundDetailModal({
         </>,
         document.body
       )
-=======
-    ? (
-      <>
-        {createPortal(modal, document.body)}
-        {selectedDeliveryImage && createPortal(
-          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6">
-            <div
-              className="absolute inset-0 bg-slate-900/50 transition-opacity"
-              onClick={() => setSelectedDeliveryImage(null)}
-            />
-            <div className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-5 text-left align-middle shadow-2xl transition-all border border-gray-200/80 flex flex-col gap-3">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
-                  <span className="material-symbols-outlined text-green-600 text-xl">verified</span>
-                  <span>Delivery Image</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDeliveryImage(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-lg">close</span>
-                </button>
-              </div>
-              <div className="overflow-auto flex items-center justify-center max-h-[75vh] py-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedDeliveryImage}
-                  alt="Proof of Delivery Full"
-                  className="max-h-[70vh] w-auto object-contain rounded-xl shadow-xs"
-                />
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-      </>
-    )
->>>>>>> 083302f2e67688e63be98ada058d88132e97317f
     : null;
 }
 
