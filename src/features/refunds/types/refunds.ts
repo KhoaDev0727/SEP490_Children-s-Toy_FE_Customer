@@ -119,6 +119,7 @@ export interface RefundDetail {
   customerResponseDeadline?: string | null;
   customerResponse?: string | null;
   returnToCustomerFeePaid?: boolean;
+  returnDeliveryImageUrl?: string | null;
 }
 
 export interface CreateRefundRequest {

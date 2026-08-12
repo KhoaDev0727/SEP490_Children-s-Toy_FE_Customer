@@ -8,6 +8,7 @@ import RefundStatusBadge from "./RefundStatusBadge";
 import { refundsApi } from "@/features/refunds/services/refunds-api";
 import { walletApi } from "@/features/wallet/services/wallet-api";
 import type { RefundDetail } from "@/features/refunds/types/refunds";
+import DeliveryImageModal from "../../orders/[id]/_components/DeliveryImageModal";
 
 interface RefundDetailModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export default function RefundDetailModal({
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletStatus, setWalletStatus] = useState<string | null>(null);
   const [isPayingFee, setIsPayingFee] = useState(false);
+  const [selectedDeliveryImage, setSelectedDeliveryImage] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const fetchWallet = async () => {
@@ -654,6 +656,15 @@ export default function RefundDetailModal({
                         >
                           Copy
                         </button>
+                        {refund.returnDeliveryImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDeliveryImage(refund.returnDeliveryImageUrl ?? null)}
+                            className="text-[11px] font-bold text-emerald-600 hover:underline hover:text-emerald-700 ml-2"
+                          >
+                            View delivery image
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -810,7 +821,17 @@ export default function RefundDetailModal({
   );
 
   return typeof document !== "undefined"
-    ? createPortal(modal, document.body)
+    ? createPortal(
+        <>
+          {modal}
+          <DeliveryImageModal
+            isOpen={!!selectedDeliveryImage}
+            imageUrl={selectedDeliveryImage}
+            onClose={() => setSelectedDeliveryImage(null)}
+          />
+        </>,
+        document.body
+      )
     : null;
 }
 
