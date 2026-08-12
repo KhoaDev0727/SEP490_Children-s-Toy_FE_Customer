@@ -16,6 +16,8 @@ interface ShippingTrackerProps {
   cancelReason?: string | null;
   statusBucket?: OrderStatus;
   apiDisplayLabel?: string | null;
+  deliveryImageUrl?: string | null;
+  onViewDeliveryImage?: () => void;
 }
 
 const STEPS = [
@@ -89,6 +91,8 @@ export default function ShippingTracker({
   cancelReason,
   statusBucket,
   apiDisplayLabel,
+  deliveryImageUrl,
+  onViewDeliveryImage,
 }: ShippingTrackerProps) {
   const display = getCustomerOrderDisplay({
     statusName,
@@ -262,6 +266,25 @@ export default function ShippingTracker({
               : Math.min(4, historyItems.length);
             const isLast = i === visibleCount - 1;
 
+            const hasDeliveredRow = historyItems.some(
+              (it) =>
+                (it.title.toLowerCase().includes("delivered") ||
+                  it.title.toLowerCase().includes("giao hàng thành công") ||
+                  it.title.toLowerCase().includes("đã giao")) &&
+                !it.title.toLowerCase().includes("failed")
+            );
+
+            const isDeliveredItem =
+              !!deliveryImageUrl &&
+              ((item.title.toLowerCase().includes("delivered") ||
+                item.title.toLowerCase().includes("giao hàng thành công") ||
+                item.title.toLowerCase().includes("đã giao")) ||
+                (!hasDeliveredRow &&
+                  i === 0 &&
+                  (item.title.toLowerCase().includes("completed") ||
+                    item.title.toLowerCase().includes("hoàn thành")))) &&
+              !item.title.toLowerCase().includes("failed");
+
             return (
               <div key={i} className="flex gap-4">
                 <div className="relative flex flex-col items-center mt-1 flex-shrink-0 w-3">
@@ -279,20 +302,33 @@ export default function ShippingTracker({
                   )}
                 </div>
                 <div className={isLast ? "pb-1 flex-1 min-w-0" : "pb-5 flex-1 min-w-0"}>
-                  <p
-                    className={`text-sm font-semibold break-words break-all ${item.highlight ? "text-[#261812]" : "text-slate-400"
-                      }`}
-                  >
-                    {item.title}
-                  </p>
-                  {item.time && (
-                    <p
-                      className={`text-xs mt-0.5 ${item.highlight ? "text-slate-600" : "text-slate-400"
-                        }`}
-                    >
-                      {item.time}
-                    </p>
-                  )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm font-semibold break-words ${item.highlight ? "text-[#261812]" : "text-slate-400"
+                          }`}
+                      >
+                        {item.title}
+                      </p>
+                      {item.time && (
+                        <p
+                          className={`text-xs mt-0.5 ${item.highlight ? "text-slate-600" : "text-slate-400"
+                            }`}
+                        >
+                          {item.time}
+                        </p>
+                      )}
+                    </div>
+                    {isDeliveredItem && onViewDeliveryImage && (
+                      <button
+                        type="button"
+                        onClick={onViewDeliveryImage}
+                        className="shrink-0 mt-0.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors cursor-pointer"
+                      >
+                        View delivery image
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
