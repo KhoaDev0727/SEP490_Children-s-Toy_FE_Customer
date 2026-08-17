@@ -38,7 +38,7 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
           <span className="text-xs text-slate-500">
             Order #{refund.orderCode}
           </span>
-          <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 ? "FeePaidAwaitingShipment" : refund.refundStatus} size="sm" />
+          <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 && !["Cancelled", "Rejected"].includes(refund.refundStatus) ? "FeePaidAwaitingShipment" : refund.refundStatus} size="sm" />
         </div>
       </div>
 
@@ -76,22 +76,25 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
         <div className="flex flex-col items-end justify-between gap-4">
           <div className="text-right">
             {(() => {
-              const PRE_APPROVE = ["RefundRequested", "RefundRejected", "RefundCancelled", "Requested", "Rejected", "Cancelled"];
-              const isPreApproval = PRE_APPROVE.includes(refund.refundStatus);
-              const hasDeduction = !isPreApproval
+              const isCancelled = refund.refundStatus === "Cancelled";
+              const isRejected = refund.refundStatus === "Rejected";
+              const isPreApproval = refund.refundStatus === "Requested";
+              const hasDeduction = !isPreApproval && !isCancelled && !isRejected
                 && refund.finalRefundAmount != null
                 && refund.finalRefundAmount !== refund.approvedAmount
                 && refund.finalRefundAmount >= 0;
-              const displayAmount = isPreApproval
+              const displayAmount = isCancelled || isRejected
+                ? 0
+                : isPreApproval
                 ? refund.approvedAmount
                 : (refund.finalRefundAmount ?? refund.approvedAmount);
 
               return (
                 <>
                   <p className="text-xs text-slate-400 mb-0.5">
-                    {hasDeduction ? "You will receive" : "Refund Amount"}
+                    {isCancelled || isRejected ? "Refund Amount" : hasDeduction ? "You will receive" : isPreApproval ? "Expected Refund" : "Refund Amount"}
                   </p>
-                  <p className="text-xl font-black text-[#ff4f00]">
+                  <p className={`text-xl font-black ${isCancelled || isRejected ? "text-slate-400" : "text-[#ff4f00]"}`}>
                     {formatPrice(displayAmount)}
                   </p>
                   {hasDeduction && (
