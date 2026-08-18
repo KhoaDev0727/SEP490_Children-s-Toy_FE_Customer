@@ -38,7 +38,18 @@ export default function RefundCard({ refund, onViewDetail }: RefundCardProps) {
           <span className="text-xs text-slate-500">
             Order #{refund.orderCode}
           </span>
-          <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 && !["Cancelled", "Rejected"].includes(refund.refundStatus) ? "FeePaidAwaitingShipment" : refund.refundStatus} size="sm" />
+          {(() => {
+            const isFeePaidAwaitingShipment =
+              refund.returnToCustomerFeePaid &&
+              (refund.returnToCustomerFee ?? 0) > 0 &&
+              ["Processing", "RefundInspectionPending"].includes(refund.refundStatus);
+            return (
+              <RefundStatusBadge
+                status={isFeePaidAwaitingShipment ? "FeePaidAwaitingShipment" : refund.refundStatus}
+                size="sm"
+              />
+            );
+          })()}
         </div>
       </div>
 
