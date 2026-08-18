@@ -323,11 +323,14 @@ export default function RefundDetailModal({
                 style={{ background: "linear-gradient(135deg, #f8fafc, #fff)" }}
               >
                 {(() => {
-                  const isCancelled = ["Cancelled"].includes(refund.refundStatus);
-                  const isRejected = ["Rejected"].includes(refund.refundStatus);
-                  const isPreApproval = ["Requested"].includes(refund.refundStatus);
-                  // Detect if this is a return-to-customer cancellation (shop didn't hand over items)
-                  const isReturnToCustomerCancel = isCancelled && !!refund.returnShippingOrderCode && refund.returnToCustomerFeePaid;
+                  const isDeliveryFailed = ["RefundReturnToCustomerFailed", "ReturnFailed"].includes(refund.refundStatus)
+                    || (!["RefundApproved", "RefundPickupCreated", "RefundShipping", "RefundReceived", "RefundInspectionPending", "RefundCompleted", "Completed"].includes(refund.refundStatus)
+                        && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
+                  const isCancelled = (["Cancelled", "RefundCancelled"].includes(refund.refundStatus) || latestShippingStatus === "cancel") && !isDeliveryFailed;
+                  const isRejected = ["Rejected", "RefundRejected"].includes(refund.refundStatus);
+                  const isPreApproval = ["Requested", "RefundRequested"].includes(refund.refundStatus);
+                  // Detect if this is a return-to-customer cancellation by shop (shop didn't hand over items)
+                  const isReturnToCustomerCancel = isCancelled && !isDeliveryFailed && !!refund.returnShippingOrderCode && refund.returnToCustomerFeePaid;
                   const isCompletedOrInspected = [
                     "Completed", "Damaged"
                   ].includes(refund.refundStatus)
@@ -336,16 +339,26 @@ export default function RefundDetailModal({
                       (refund.details ?? []).some(d => d.restorableQuantity != null || (d.failedCustomerQty ?? 0) > 0 || (d.failedCarrierQty ?? 0) > 0)
                     ));
 
-                  if (isCancelled) {
-                    const cancelHistory = refund.statusHistory?.slice().reverse().find(
-                      h => h.statusName?.toLowerCase().includes("cancel") || h.note
+                  if (isDeliveryFailed) {
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Current Status</p>
+                            <RefundStatusBadge status="RefundReturnToCustomerFailed" />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500 mb-1">Refund Amount</p>
+                            <p className="text-xl font-black text-slate-400">
+                              0 ₫
+                            </p>
+                          </div>
+                        </div>
+                      </>
                     );
-                    const cancelNote = cancelHistory?.note || (
-                      isReturnToCustomerCancel
-                        ? "Return delivery of rejected items to customer failed — shop did not hand over items to courier."
-                        : "This refund request has been cancelled."
-                    );
+                  }
 
+                  if (isCancelled) {
                     return (
                       <>
                         <div className="flex items-center justify-between mb-3">
@@ -359,26 +372,6 @@ export default function RefundDetailModal({
                               0 ₫
                             </p>
                           </div>
-                        </div>
-                        <div className="mt-2 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 space-y-1.5">
-                          <div className="flex items-start gap-2">
-                            <span className="material-symbols-outlined text-slate-400 text-[16px] shrink-0 mt-0.5">info</span>
-                            <p className="break-words leading-relaxed font-medium text-slate-700">{cancelNote}</p>
-                          </div>
-                          {/* Return shipping fee refund (shop didn't hand over items for return-to-customer) */}
-                          {isReturnToCustomerCancel && (refund.returnToCustomerFee ?? 0) > 0 && (
-                            <div className="flex justify-between text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md p-2 font-semibold mt-1.5">
-                              <span>Return shipping fee refunded to your wallet:</span>
-                              <span>+{formatPrice(refund.returnToCustomerFee ?? 0)}</span>
-                            </div>
-                          )}
-                          {/* Original shipping fee refund (shop didn't hand over items for pickup) */}
-                          {!isReturnToCustomerCancel && (refund.customerShippingPaid ?? 0) > 0 && refund.shippingOrderCode && (
-                            <div className="flex justify-between text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md p-2 font-semibold mt-1.5">
-                              <span>Shipping fee refunded to your wallet:</span>
-                              <span>+{formatPrice(refund.customerShippingPaid ?? 0)}</span>
-                            </div>
-                          )}
                         </div>
                       </>
                     );
@@ -472,15 +465,21 @@ export default function RefundDetailModal({
                     const displayAmount = (refund.finalRefundAmount != null && refund.finalRefundAmount > 0)
                       ? refund.finalRefundAmount
                       : refund.returnShippingFeeBy === "Customer"
-                        ? 0
+                        ? Math.max(0, refund.approvedAmount - (refund.returnShippingFee ?? 0))
                         : refund.approvedAmount;
+
+                    const isFeePaidAwaitingShipment =
+                      refund.returnToCustomerFeePaid &&
+                      (refund.returnToCustomerFee ?? 0) > 0 &&
+                      !refund.returnShippingOrderCode &&
+                      ["Processing", "RefundInspectionPending"].includes(refund.refundStatus);
 
                     return (
                       <>
                         <div className="flex items-center justify-between mb-3">
                           <div>
                             <p className="text-xs text-slate-500 mb-1">Current Status</p>
-                            <RefundStatusBadge status={refund.returnToCustomerFeePaid && (refund.returnToCustomerFee ?? 0) > 0 ? "FeePaidAwaitingShipment" : refund.refundStatus} />
+                            <RefundStatusBadge status={isFeePaidAwaitingShipment ? "FeePaidAwaitingShipment" : refund.refundStatus} />
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-slate-500 mb-1">
@@ -714,68 +713,40 @@ export default function RefundDetailModal({
                 </div>
               )}
 
-              {/* Preparation Checklist Card */}
-              {refund.shippingOrderCode && !isPickedUp && !["Cancelled", "Rejected"].includes(refund.refundStatus) && (
-                <div className="rounded-xl border border-amber-100 bg-amber-50/20 p-4">
-                  <p className="text-xs font-bold text-amber-800 mb-3 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">
-                      assignment
-                    </span>
-                    Return Package Preparation Checklist
-                  </p>
-                  <ul className="space-y-2.5 text-xs text-slate-650">
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-amber-500 text-[16px] shrink-0 mt-0.5">
-                        check_box_outline_blank
-                      </span>
-                      <span>
-                        <strong>Pack the items:</strong> Place all returned toy items securely inside a carton box or original bag to prevent damage in transit.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-amber-500 text-[16px] shrink-0 mt-0.5">
-                        check_box_outline_blank
-                      </span>
-                      <span>
-                        <strong>Write the waybill code:</strong> Write the code <strong className="font-mono bg-amber-100/50 px-1.5 py-0.5 rounded text-amber-900">{refund.shippingOrderCode}</strong> clearly on the package surface.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-amber-500 text-[16px] shrink-0 mt-0.5">
-                        check_box_outline_blank
-                      </span>
-                      <span>
-                        <strong>Hand over to courier:</strong> Wait for the GHN shipper to call and pick up the package.
-                        {refund.returnShippingFeeBy === "Customer" ? (
-                          <em className="text-amber-700"> Note: A return shipping fee of <strong>{formatPrice(refund.returnShippingFee ?? 0)}</strong> will be deducted from your refund.</em>
-                        ) : (
-                          <em> Note: You do not need to pay any shipping fee to the shipper.</em>
-                        )}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
               {/* Unified Courier Tracking Card */}
               {activeWaybillCode && (() => {
-                const isShipmentCancelled = refund.refundStatus === "Cancelled" || latestShippingStatus === "cancel";
+                const isDeliveryFail = ["RefundReturnToCustomerFailed", "ReturnFailed"].includes(refund.refundStatus)
+                  || ["delivery_fail", "return_fail", "exception", "returned"].includes(latestShippingStatus || "")
+                  || (!["RefundApproved", "RefundPickupCreated", "RefundShipping", "RefundReceived", "RefundInspectionPending", "RefundCompleted", "Completed"].includes(refund.refundStatus)
+                      && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
                 const isReturnToCust = isReturnToCustomerWaybill;
+                const isDamagedOrLost = ["damage", "lost"].includes(latestShippingStatus || "") || refund.refundStatus === "Damaged";
+                const isShipmentCancelled = refund.refundStatus === "Cancelled" || latestShippingStatus === "cancel" || isDeliveryFail || (isReturnToCust && isDamagedOrLost);
                 const cardTitle = isReturnToCust ? "Return-to-Customer Waybill (Courier Tracking)" : "Return Waybill (Courier Tracking)";
                 const deliveryImg = isReturnToCust ? refund.returnToCustomerImageUrl : refund.returnDeliveryImageUrl;
 
                 if (isShipmentCancelled) {
+                  const badgeLabel = (isReturnToCust && isDamagedOrLost)
+                    ? "Damaged / Lost in Transit"
+                    : isDeliveryFail
+                      ? "Delivery Failed"
+                      : "Shipment Cancelled";
+                  const statusDesc = (isReturnToCust && isDamagedOrLost)
+                    ? "The return shipment was damaged or lost in transit by the carrier. Your return shipping fee has been refunded to your wallet."
+                    : isDeliveryFail
+                      ? "Delivery of rejected items back to you failed (customer was unreachable or refused package). The return shipping fee is non-refundable."
+                      : isReturnToCust
+                        ? "The return shipment was cancelled because the shop did not hand over items to the courier. Your return shipping fee has been refunded to your wallet."
+                        : "The return shipment was cancelled because items were not handed over to the courier.";
+
                   return (
                     <div className="rounded-xl border border-red-200 bg-red-50/25 p-4 space-y-3">
                       <div className="flex items-start gap-3">
-                        <span className="material-symbols-outlined text-red-500 text-[20px] mt-0.5">
-                          cancel
-                        </span>
                         <div className="flex-grow">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <p className="text-xs font-bold text-slate-800">{cardTitle}</p>
                             <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
-                              Shipment Cancelled
+                              {badgeLabel}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -802,15 +773,8 @@ export default function RefundDetailModal({
                             )}
                           </div>
                           <p className="text-[11px] text-red-600 mt-2 leading-relaxed">
-                            {isReturnToCust
-                              ? "The return shipment was cancelled because the shop did not hand over items to the courier. Your return shipping fee has been refunded to your wallet."
-                              : "The return shipment was cancelled because items were not handed over to the courier."}
+                            {statusDesc}
                           </p>
-                          {isReturnToCust && refund.shippingOrderCode && (
-                            <p className="text-[10px] text-slate-400 mt-1">
-                              Previous return-to-shop waybill: #{refund.shippingOrderCode} (Delivered to Shop)
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -848,11 +812,6 @@ export default function RefundDetailModal({
                             </button>
                           )}
                         </div>
-                        {isReturnToCust && refund.shippingOrderCode && (
-                          <p className="text-[10px] text-slate-400 mt-1">
-                            Previous return-to-shop waybill: #{refund.shippingOrderCode} (Delivered to Shop)
-                          </p>
-                        )}
                       </div>
                     </div>
 
@@ -1040,16 +999,16 @@ export default function RefundDetailModal({
 
   return typeof document !== "undefined"
     ? createPortal(
-        <>
-          {modal}
-          <DeliveryImageModal
-            isOpen={!!selectedDeliveryImage}
-            imageUrl={selectedDeliveryImage}
-            onClose={() => setSelectedDeliveryImage(null)}
-          />
-        </>,
-        document.body
-      )
+      <>
+        {modal}
+        <DeliveryImageModal
+          isOpen={!!selectedDeliveryImage}
+          imageUrl={selectedDeliveryImage}
+          onClose={() => setSelectedDeliveryImage(null)}
+        />
+      </>,
+      document.body
+    )
     : null;
 }
 

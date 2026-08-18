@@ -61,8 +61,8 @@ export default function RecommendationWidget({
       widgetCode === "pdp_similar" || widgetCode === "pdp_also_bought"
         ? Boolean(productId && productId > 0)
         : widgetCode === "after_purchase"
-        ? Boolean(orderId && orderId > 0)
-        : true,
+          ? Boolean(orderId && orderId > 0)
+          : true,
   });
 
   if (isLoading) {
