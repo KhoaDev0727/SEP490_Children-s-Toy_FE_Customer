@@ -29,6 +29,9 @@ interface SelectedImage {
   preview: string;
 }
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+
 export default function ReviewModal({
   isOpen,
   onClose,
@@ -98,6 +101,20 @@ export default function ReviewModal({
         toast.error("Maximum 3 images");
         e.target.value = "";
         return;
+      }
+
+      for (const file of filesArray) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
+          toast.error("Only .jpg, .jpeg, .png, and .webp formats are allowed.");
+          e.target.value = "";
+          return;
+        }
+
+        if (file.size > MAX_IMAGE_SIZE) {
+          toast.error("Each image must not exceed 5MB.");
+          e.target.value = "";
+          return;
+        }
       }
 
       // Tối ưu: Tạo Object URL một lần duy nhất tại đây thay vì gọi trong lúc render (.map)
@@ -313,7 +330,7 @@ export default function ReviewModal({
                   </span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
                     multiple
                     className="hidden"
                     onChange={handleImageChange}
