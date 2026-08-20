@@ -220,7 +220,7 @@ const ProductCard = memo(function ProductCard({
       onClick={(e) => {
         if (isUpcoming) {
           e.preventDefault();
-          toast("This flash sale has not started yet.", { icon: "ℹ️" });
+          toast("This flash sale has not started yet.");
         }
       }}
     >

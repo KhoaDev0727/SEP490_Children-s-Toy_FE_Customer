@@ -30,6 +30,9 @@ interface SelectedImage {
   preview: string;
 }
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg", "image/gif"];
+
 function formatPrice(amount: number): string {
   return amount.toLocaleString("vi-VN") + " ₫";
 }
@@ -76,6 +79,20 @@ export default function CreateRefundModal({
         toast.error("Maximum 5 evidence images");
         e.target.value = "";
         return;
+      }
+
+      for (const file of filesArray) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
+          toast.error("Only .jpg, .jpeg, .png, .gif, and .webp formats are allowed.");
+          e.target.value = "";
+          return;
+        }
+
+        if (file.size > MAX_IMAGE_SIZE) {
+          toast.error("Each image must not exceed 5MB.");
+          e.target.value = "";
+          return;
+        }
       }
 
       const newImages = filesArray.map((file) => ({
@@ -661,7 +678,7 @@ export default function CreateRefundModal({
                     </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/jpg,image/gif"
                       multiple
                       className="hidden"
                       onChange={handleImageChange}

@@ -325,7 +325,7 @@ export default function RefundDetailModal({
                 {(() => {
                   const isDeliveryFailed = ["RefundReturnToCustomerFailed", "ReturnFailed"].includes(refund.refundStatus)
                     || (!["RefundApproved", "RefundPickupCreated", "RefundShipping", "RefundReceived", "RefundInspectionPending", "RefundCompleted", "Completed"].includes(refund.refundStatus)
-                        && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
+                      && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
                   const isCancelled = (["Cancelled", "RefundCancelled"].includes(refund.refundStatus) || latestShippingStatus === "cancel") && !isDeliveryFailed;
                   const isRejected = ["Rejected", "RefundRejected"].includes(refund.refundStatus);
                   const isPreApproval = ["Requested", "RefundRequested"].includes(refund.refundStatus);
@@ -537,7 +537,7 @@ export default function RefundDetailModal({
                         <div className="flex justify-between">
                           <span>Original Shipping Fee Refund</span>
                           <span className="font-medium text-slate-800">
-                            {(refund.itemRejectedSubTotal ?? 0) > 0 ? "0 (Forfeited)" : formatPrice(refund.shippingFee ?? 0)}
+                            {(refund.itemRejectedSubTotal ?? 0) > 0 ? "0 ₫" : formatPrice(refund.shippingFee ?? 0)}
                           </span>
                         </div>
                         {(refund.returnToCustomerFee ?? 0) > 0 && (
@@ -718,7 +718,7 @@ export default function RefundDetailModal({
                 const isDeliveryFail = ["RefundReturnToCustomerFailed", "ReturnFailed"].includes(refund.refundStatus)
                   || ["delivery_fail", "return_fail", "exception", "returned"].includes(latestShippingStatus || "")
                   || (!["RefundApproved", "RefundPickupCreated", "RefundShipping", "RefundReceived", "RefundInspectionPending", "RefundCompleted", "Completed"].includes(refund.refundStatus)
-                      && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
+                    && refund.statusHistory?.some(h => h.statusName?.toLowerCase().includes("returntocustomerfailed") || h.note?.toLowerCase().includes("failed") || h.note?.includes("thất bại")));
                 const isReturnToCust = isReturnToCustomerWaybill;
                 const isDamagedOrLost = ["damage", "lost"].includes(latestShippingStatus || "") || refund.refundStatus === "Damaged";
                 const isShipmentCancelled = refund.refundStatus === "Cancelled" || latestShippingStatus === "cancel" || isDeliveryFail || (isReturnToCust && isDamagedOrLost);
